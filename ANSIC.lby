@@ -6,4 +6,9 @@
     <File Description="Common includes">StCoreMain.h</File>
     <File Description="Initialize control interface">StCoreInit.c</File>
   </Files>
+  <Dependencies>
+    <Dependency ObjectName="SuperTrak" />
+    <Dependency ObjectName="UserLog" />
+    <Dependency ObjectName="StPos" />
+  </Dependencies>
 </Library>

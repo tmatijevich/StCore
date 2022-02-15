@@ -46,12 +46,15 @@ long StCoreInit(char *storagePath, char *simIPAddress, char *ethernetInterfaces,
 	
 	/* Determine target count */
 	args.i[0] = SuperTrakServChanRead(0, stPAR_TARGET_SECTION, 1, sizeof(dataUInt16) / sizeof(dataUInt16[0]), (unsigned long)&dataUInt16, sizeof(dataUInt16));
-	for(i = 0, targetCount = 0; i++; i < sizeof(dataUInt16) / sizeof(dataUInt16[0])) {
+	if(args.i[0] != scERR_SUCCESS) {
+		CustomFormatMessage(USERLOG_SEVERITY_CRITICAL, 102, "Service channel error %i when reading target section numbers", &args, "StCoreLog", 1);
+	}
+	for(i = 0, targetCount = 0; i < sizeof(dataUInt16) / sizeof(dataUInt16[0]); i++) {
 		if(dataUInt16[i])
 			targetCount = i + 1;
 	}
 	args.i[0] = targetCount;
-	CustomFormatMessage(USERLOG_SEVERITY_INFORMATION, 102, "%i targets found in global parameters", &args, "StCoreLog", 1);
+	CustomFormatMessage(USERLOG_SEVERITY_INFORMATION, 103, "%i targets found in global parameters", &args, "StCoreLog", 1);
 
 	return 0;
 	
