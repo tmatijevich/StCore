@@ -2,5 +2,8 @@
 <?AutomationStudio FileVersion="4.9"?>
 <Library SubType="ANSIC" Description="Core functions to interface with SuperTrak commands, statuses, and parameters" xmlns="http://br-automation.co.at/AS/Library">
   <Files>
+    <File Description="Function declarations">StCore.fun</File>
+    <File Description="Common includes">StCoreMain.h</File>
+    <File Description="Initialize control interface">StCoreInit.c</File>
   </Files>
 </Library>
