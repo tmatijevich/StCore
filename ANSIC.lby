@@ -1,0 +1,6 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<?AutomationStudio FileVersion="4.9"?>
+<Library SubType="ANSIC" Description="Core functions to interface with SuperTrak commands, statuses, and parameters" xmlns="http://br-automation.co.at/AS/Library">
+  <Files>
+  </Files>
+</Library>
