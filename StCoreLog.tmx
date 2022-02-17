@@ -1,0 +1,62 @@
+﻿<tmx version="1.4">
+  <header creationtool="B&amp;R Automation Studio" creationtoolversion="4.2" datatype="unknown" segtype="sentence" adminlang="en" srclang="en" o-tmf="TMX">
+    <note>Change the namespace to define where this text module should be located within the logical structure of your texts</note>
+    <prop type="x-BR-TS:Namespace">User/EventLog</prop>
+  </header>
+  <body>
+    <tu tuid="-536805912">
+      <note>StCoreInit 65000</note>
+      <tuv xml:lang="en">
+        <seg>StCore library is unable to create StCoreLog logbook</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536804376">
+      <note>StCoreInit 1000</note>
+      <tuv xml:lang="en">
+        <seg>StCoreInit() call has invalid parameter inputs</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536804375">
+      <note>StCoreInit 1001</note>
+      <tuv xml:lang="en">
+        <seg>SuperTrakInit() call unsuccessful</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536804276">
+      <note>StCoreInit 1100</note>
+      <tuv xml:lang="en">
+        <seg>StCoreInit() is unable to read system layout</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536804275">
+      <note>StCoreInit 1101</note>
+      <tuv xml:lang="en">
+        <seg>SuperTrak system layout has invalid logical head section</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536804274">
+      <note>StCoreInit 1102</note>
+      <tuv xml:lang="en">
+        <seg>SuperTrak system layout section numbering non-ascending in flow direction</seg>
+      </tuv>
+    </tu>
+    <tu tuid="536937551">
+      <note>StCoreInit 1103</note>
+      <tuv xml:lang="en">
+        <seg>SuperTrak system layout verified</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536804176">
+      <note>StCoreInit 1200</note>
+      <tuv xml:lang="en">
+        <seg>StCoreInit() is unable to read target information</seg>
+      </tuv>
+    </tu>
+    <tu tuid="536937649">
+      <note>StCoreInit 1201</note>
+      <tuv xml:lang="en">
+        <seg>SuperTrak target definitions identified</seg>
+      </tuv>
+    </tu>
+  </body>
+</tmx>

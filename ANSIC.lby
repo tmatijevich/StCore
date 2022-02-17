@@ -5,6 +5,7 @@
     <File Description="Function declarations">StCore.fun</File>
     <File Description="Common includes">StCoreMain.h</File>
     <File Description="Initialize control interface">StCoreInit.c</File>
+    <File Description="User event texts">StCoreLog.tmx</File>
   </Files>
   <Dependencies>
     <Dependency ObjectName="SuperTrak" />
