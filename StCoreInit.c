@@ -23,22 +23,23 @@ long StCoreInit(char *storagePath, char *simIPAddress, char *ethernetInterfaces,
 	/* Assume configuration error is true until finished */
 	configError = true;
 	
+	/******************** 
+	 Initialize SuperTrak 
+	********************/
+	/* Required to call SuperTrakInit() or else SuperTrakCyclic1() will have cycle time violation */
+	if(!SuperTrakInit(storagePath, simIPAddress, ethernetInterfaces)) {
+		LogFormatMessage(USERLOG_SEVERITY_CRITICAL, 65000, "Check storagePath, simIPAddress, or ethernetInferfaces input parameters to StCoreInit()", &args);
+		return ArEventLogMakeEventID(arEVENTLOG_SEVERITY_ERROR, 0, 65000);
+	}
+	
 	/*********************
 	 Create StCore logbook 
 	*********************/
 	args.i[0] = CreateCustomLogbook("StCoreLog", 200000);
 	if(args.i[0] != 0 && args.i[0] != arEVENTLOG_ERR_LOGBOOK_EXISTS) { 
 		/* Description: StCore library unable to create StCoreLog logbook */
-		LogFormatMessage(USERLOG_SEVERITY_CRITICAL, 65000, "CreateCustomLogbook() error %i. Check naming conflict with StCoreLog or insufficient user partition", &args);
-		return ArEventLogMakeEventID(arEVENTLOG_SEVERITY_ERROR, 0, 65000);
-	}
-	
-	/******************** 
-	 Initialize SuperTrak 
-	********************/
-	if(!SuperTrakInit(storagePath, simIPAddress, ethernetInterfaces)) {
-		CustomMessage(USERLOG_SEVERITY_CRITICAL, 1000, "Check storagePath, simIPAddress, or ethernetInferfaces input parameters to StCoreInit()", "StCoreLog", 1);
-		return ArEventLogMakeEventID(arEVENTLOG_SEVERITY_ERROR, 1, 1000);
+		LogFormatMessage(USERLOG_SEVERITY_CRITICAL, 65001, "CreateCustomLogbook() error %i. Check naming conflict with StCoreLog or insufficient user partition", &args);
+		return ArEventLogMakeEventID(arEVENTLOG_SEVERITY_ERROR, 0, 65001);
 	}
 	
 	/****************** 

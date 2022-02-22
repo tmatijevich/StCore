@@ -7,13 +7,13 @@
     <tu tuid="-536805912">
       <note>StCoreInit 65000</note>
       <tuv xml:lang="en">
-        <seg>StCoreInit() is unable to create StCoreLog logbook</seg>
+        <seg>SuperTrakInit() call is unsuccessful from StCoreInit()</seg>
       </tuv>
     </tu>
-    <tu tuid="-536804376">
-      <note>StCoreInit 1000</note>
+    <tu tuid="-536805911">
+      <note>StCoreInit 65001</note>
       <tuv xml:lang="en">
-        <seg>SuperTrakInit() call is unsuccessful from StCoreInit()</seg>
+        <seg>StCoreInit() is unable to create StCoreLog logbook</seg>
       </tuv>
     </tu>
     <tu tuid="-536804276">
