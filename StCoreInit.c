@@ -26,34 +26,28 @@ long StCoreInit(char *storagePath, char *simIPAddress, char *ethernetInterfaces,
 	/*********************
 	 Create StCore logbook 
 	*********************/
-	/* NAME_INVALID, SIZE_INVALID, and PERSISTENCE_INVAL should not apply */
-	/* LOGBOOK_EXISTS, MODULE_EXISTS could be naming conflict */
-	/* INTERNAL could mean insufficient memory */
-	if(args.i[0] = CreateCustomLogbook("StCoreLog", 200000)) { /* Returns 0 if LOGBOOK_EXISTS error */
+	args.i[0] = CreateCustomLogbook("StCoreLog", 200000);
+	if(args.i[0] != 0 && args.i[0] != arEVENTLOG_ERR_LOGBOOK_EXISTS) { 
 		/* Description: StCore library unable to create StCoreLog logbook */
-		LogFormatMessage(USERLOG_SEVERITY_CRITICAL, 65000, "ArEventLog error %i. Check naming conflict with StCoreLog or insufficient user partition", &args);
+		LogFormatMessage(USERLOG_SEVERITY_CRITICAL, 65000, "CreateCustomLogbook() error %i. Check naming conflict with StCoreLog or insufficient user partition", &args);
 		return ArEventLogMakeEventID(arEVENTLOG_SEVERITY_ERROR, 0, 65000);
 	}
 	
 	/******************** 
 	 Initialize SuperTrak 
 	********************/
-	/* Check null pointers */
-	if(storagePath == NULL || simIPAddress == NULL || ethernetInterfaces == NULL) {
-		CustomMessage(USERLOG_SEVERITY_CRITICAL, 1000, "Check storagePath, simIPAddress, or ethernetInferfaces input parameters to StCoreInit()", "StCoreLog", 1);
-		return -1;
-	}
 	if(!SuperTrakInit(storagePath, simIPAddress, ethernetInterfaces)) {
-		CustomMessage(USERLOG_SEVERITY_CRITICAL, 1001, "Check storagePath, simIPAddress, or ethernetInferfaces input parameters to StCoreInit()", "StCoreLog", 1);
-		return -1;
+		CustomMessage(USERLOG_SEVERITY_CRITICAL, 1000, "Check storagePath, simIPAddress, or ethernetInferfaces input parameters to StCoreInit()", "StCoreLog", 1);
+		return ArEventLogMakeEventID(arEVENTLOG_SEVERITY_ERROR, 1, 1000);
 	}
 	
 	/****************** 
 	 Read system layout
 	******************/
-	if(args.i[0] = SuperTrakSystemLayout(&layout, &positionInfo) != stPOS_ERROR_NONE) {
+	if((args.i[0] = SuperTrakSystemLayout(&layout, &positionInfo)) != stPOS_ERROR_NONE) {
 		/* Description: StCoreInit() is unable to read system layout */
-		CustomFormatMessage(USERLOG_SEVERITY_CRITICAL, 1100, "StPos error %i from SuperTrakSystemLayout()", &args, "StCoreLog", 1);
+		CustomFormatMessage(USERLOG_SEVERITY_CRITICAL, 1100, "StPos error %i from SuperTrakSystemLayout(). Check storagePath, simIPAddress, or ethernetInferfaces inputs", &args, "StCoreLog", 1);
+		StCoreLogPosition(args.i[0], positionInfo);
 		return ArEventLogMakeEventID(arEVENTLOG_SEVERITY_ERROR, 1, 1100);
 	}
 	

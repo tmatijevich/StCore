@@ -34,6 +34,9 @@ struct StCorePLCControlIFConfig_typ {
 	unsigned short revision; /* (Par 1444) */
 };
 
+/* Function prototypes */
+void StCoreLogPosition(enum SuperTrakPositionErrorEnum error, struct SuperTrakPositionInfoType info);
+
 #ifdef __cplusplus
 };
 #endif

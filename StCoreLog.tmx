@@ -7,19 +7,13 @@
     <tu tuid="-536805912">
       <note>StCoreInit 65000</note>
       <tuv xml:lang="en">
-        <seg>StCore library is unable to create StCoreLog logbook</seg>
+        <seg>StCoreInit() is unable to create StCoreLog logbook</seg>
       </tuv>
     </tu>
     <tu tuid="-536804376">
       <note>StCoreInit 1000</note>
       <tuv xml:lang="en">
-        <seg>StCoreInit() call has invalid parameter inputs</seg>
-      </tuv>
-    </tu>
-    <tu tuid="-536804375">
-      <note>StCoreInit 1001</note>
-      <tuv xml:lang="en">
-        <seg>SuperTrakInit() call unsuccessful</seg>
+        <seg>SuperTrakInit() call is unsuccessful from StCoreInit()</seg>
       </tuv>
     </tu>
     <tu tuid="-536804276">
@@ -56,6 +50,12 @@
       <note>StCoreInit 1201</note>
       <tuv xml:lang="en">
         <seg>SuperTrak target definitions identified</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536755376">
+      <note>StPos 50000</note>
+      <tuv xml:lang="en">
+        <seg>StPos function error</seg>
       </tuv>
     </tu>
   </body>
