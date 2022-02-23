@@ -6,7 +6,7 @@
 
 #include "StCoreMain.h"
 
-struct StCorePLCControlIFConfig_typ plcControlIFConfig;
+SuperTrakControlIfConfig_t plcInterfaceConfig;
 unsigned char configError = false;
 
 /* Read layout and targets. Configure PLC control interface */
@@ -19,6 +19,7 @@ long StCoreInit(char *storagePath, char *simIPAddress, char *ethernetInterfaces,
 	struct SuperTrakSystemLayoutType layout;
 	struct SuperTrakPositionInfoType positionInfo;
 	unsigned short i, targetCount, dataUInt16[255];
+	unsigned long saveParameters;
 	
 	/* Assume configuration error is true until finished */
 	configError = true;
@@ -79,7 +80,7 @@ long StCoreInit(char *storagePath, char *simIPAddress, char *ethernetInterfaces,
 	 Determine target count
 	**********************/
 	/* Read section of 255 targets, indexed 0..254 */
-	args.i[0] = SuperTrakServChanRead(0, stPAR_TARGET_SECTION, 1, sizeof(dataUInt16) / sizeof(dataUInt16[0]), (unsigned long)&dataUInt16, sizeof(dataUInt16));
+	args.i[0] = SuperTrakServChanRead(0, stPAR_TARGET_SECTION, 1, COUNT_OF(dataUInt16), (unsigned long)&dataUInt16, sizeof(dataUInt16));
 	if(args.i[0] != scERR_SUCCESS) {
 		args.i[1] = stPAR_TARGET_SECTION;
 		CustomFormatMessage(USERLOG_SEVERITY_CRITICAL, 1200, "Service channel error %i when reading target section number parameter %i", &args, "StCoreLog", 1);
@@ -94,6 +95,73 @@ long StCoreInit(char *storagePath, char *simIPAddress, char *ethernetInterfaces,
 	args.i[0] = targetCount;
 	CustomFormatMessage(USERLOG_SEVERITY_SUCCESS, 1201, "%i targets found in global parameters", &args, "StCoreLog", 1);
 
+	/*******************************
+	 Configure PLC control interface
+	*******************************/
+	memset(&plcInterfaceConfig, 0, sizeof(plcInterfaceConfig));
+	
+	/* Options */
+	/* Enable interface (0) and use system control & status */
+	plcInterfaceConfig.options = stCONTROL_IF_ENABLED + stCONTROL_IF_SYSTEM_ENABLED;
+	/* Assign to interface 0 */
+	args.i[0] = SuperTrakServChanWrite(0, stPAR_PLC_IF_OPTIONS, 0, 1, (unsigned long)&plcInterfaceConfig.options, sizeof(plcInterfaceConfig.options));
+	if(args.i[0] != scERR_SUCCESS) 
+		return StCoreLogServChan(args.i[0], stPAR_PLC_IF_OPTIONS);
+	
+	/* Section start */
+	plcInterfaceConfig.sectionStartIndex = 0;
+	args.i[0] = SuperTrakServChanWrite(0, stPAR_PLC_IF_SECTION_START, 0, 1, (unsigned long)&plcInterfaceConfig.sectionStartIndex, sizeof(plcInterfaceConfig.sectionStartIndex));
+	if(args.i[0] != scERR_SUCCESS) 
+		return StCoreLogServChan(args.i[0], stPAR_PLC_IF_SECTION_START);
+	
+	/* Section count */
+	plcInterfaceConfig.sectionCount = layout.sectionCount;
+	args.i[0] = SuperTrakServChanWrite(0, stPAR_PLC_IF_SECTION_COUNT, 0, 1, (unsigned long)&plcInterfaceConfig.sectionCount, sizeof(plcInterfaceConfig.sectionCount));
+	if(args.i[0] != scERR_SUCCESS) 
+		return StCoreLogServChan(args.i[0], stPAR_PLC_IF_SECTION_COUNT);
+	
+	/* Target start */
+	plcInterfaceConfig.targetStartIndex = 0;
+	args.i[0] = SuperTrakServChanWrite(0, stPAR_PLC_IF_TARGET_START, 0, 1, (unsigned long)&plcInterfaceConfig.targetStartIndex, sizeof(plcInterfaceConfig.targetStartIndex));
+	if(args.i[0] != scERR_SUCCESS) 
+		return StCoreLogServChan(args.i[0], stPAR_PLC_IF_TARGET_START);
+	
+	/* Target count */
+	plcInterfaceConfig.targetCount = ((targetCount + 1) / 4 + (unsigned short)(((targetCount + 1) % 4) != 0)) * 4;
+	args.i[0] = SuperTrakServChanWrite(0, stPAR_PLC_IF_TARGET_COUNT, 0, 1, (unsigned long)&plcInterfaceConfig.targetCount, sizeof(plcInterfaceConfig.targetCount));
+	if(args.i[0] != scERR_SUCCESS) 
+		return StCoreLogServChan(args.i[0], stPAR_PLC_IF_TARGET_COUNT);
+	
+	/* Command count */
+	plcInterfaceConfig.commandCount = ((palletCount + 1) / 8 + (unsigned short)(((palletCount + 1) % 8) != 0)) * 8;
+	args.i[0] = SuperTrakServChanWrite(0, stPAR_PLC_IF_COMMAND_COUNT, 0, 1, (unsigned long)&plcInterfaceConfig.commandCount, sizeof(plcInterfaceConfig.commandCount));
+	if(args.i[0] != scERR_SUCCESS) 
+		return StCoreLogServChan(args.i[0], stPAR_PLC_IF_COMMAND_COUNT);
+	
+	/* Network IO start */
+	plcInterfaceConfig.networkIoStartIndex = 0;
+	args.i[0] = SuperTrakServChanWrite(0, stPAR_PLC_IF_NETWORK_IO_START, 0, 1, (unsigned long)&plcInterfaceConfig.networkIoStartIndex, sizeof(plcInterfaceConfig.networkIoStartIndex));
+	if(args.i[0] != scERR_SUCCESS) 
+		return StCoreLogServChan(args.i[0], stPAR_PLC_IF_NETWORK_IO_START);
+	
+	/* Network IO count */
+	plcInterfaceConfig.networkIoCount = ((networkIOCount + 1) / 8 + (unsigned short)(((networkIOCount + 1) % 8) != 0)) * 8;
+	args.i[0] = SuperTrakServChanWrite(0, stPAR_PLC_IF_NETWORK_IO_COUNT, 0, 1, (unsigned long)&plcInterfaceConfig.networkIoCount, sizeof(plcInterfaceConfig.networkIoCount));
+	if(args.i[0] != scERR_SUCCESS) 
+		return StCoreLogServChan(args.i[0], stPAR_PLC_IF_NETWORK_IO_COUNT);
+	
+	/* Revision */
+	plcInterfaceConfig.revision = 0;
+	args.i[0] = SuperTrakServChanWrite(0, stPAR_PLC_IF_REVISION, 0, 1, (unsigned long)&plcInterfaceConfig.revision, sizeof(plcInterfaceConfig.revision));
+	if(args.i[0] != scERR_SUCCESS) 
+		return StCoreLogServChan(args.i[0], stPAR_PLC_IF_REVISION);
+	
+	/* Save parameters */
+	saveParameters = 0x000020; /* Global parameters, PLC interface configuration */
+	args.i[0] = SuperTrakServChanWrite(0, stPAR_SAVE_PARAMETERS, 0, 1, (unsigned long)&saveParameters, sizeof(saveParameters));
+	if(args.i[0] != scERR_SUCCESS) 
+		return StCoreLogServChan(args.i[0], stPAR_SAVE_PARAMETERS);
+	
 	configError = false;
 	return 0;
 	

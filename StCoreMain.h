@@ -17,9 +17,15 @@ extern "C"
 /* Headers */
 #include <string.h>
 #include <limits.h>
+#include <stddef.h>
 #include <stdbool.h>
 #include <math.h>
 #include "StCore.h"
+
+/* Macros */
+#define COUNT_OF(x) ((sizeof(x)/sizeof(0[x])) / ((size_t)(!(sizeof(x) % sizeof(0[x]))))) /* https://stackoverflow.com/a/1598827 */
+#define MAX(x,y) (((x) > (y)) ? (x) : (y))
+#define MIN(x,y) (((x) < (y)) ? (x) : (y))
 
 /* Type definitions */
 struct StCorePLCControlIFConfig_typ {
@@ -36,6 +42,7 @@ struct StCorePLCControlIFConfig_typ {
 
 /* Function prototypes */
 void StCoreLogPosition(enum SuperTrakPositionErrorEnum error, struct SuperTrakPositionInfoType info);
+long StCoreLogServChan(unsigned short result, unsigned short parameter);
 
 #ifdef __cplusplus
 };

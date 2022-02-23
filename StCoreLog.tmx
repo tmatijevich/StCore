@@ -58,5 +58,11 @@
         <seg>StPos function error</seg>
       </tuv>
     </tu>
+    <tu tuid="-536755276">
+      <note>Service channel 50100</note>
+      <tuv xml:lang="en">
+        <seg>Service channel error</seg>
+      </tuv>
+    </tu>
   </body>
 </tmx>
