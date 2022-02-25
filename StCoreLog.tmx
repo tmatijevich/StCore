@@ -16,6 +16,12 @@
         <seg>StCoreInit() is unable to create StCoreLog logbook</seg>
       </tuv>
     </tu>
+    <tu tuid="-536804376">
+      <note>StCoreInit 1000</note>
+      <tuv xml:lang="en">
+        <seg>SuperTrak control requires TC#1 and 800 us cycle time</seg>
+      </tuv>
+    </tu>
     <tu tuid="-536804276">
       <note>StCoreInit 1100</note>
       <tuv xml:lang="en">

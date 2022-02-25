@@ -10,7 +10,10 @@
   </Files>
   <Dependencies>
     <Dependency ObjectName="SuperTrak" />
+    <Dependency ObjectName="IecString" />
     <Dependency ObjectName="UserLog" />
     <Dependency ObjectName="StPos" />
+    <Dependency ObjectName="ArEventLog" />
+    <Dependency ObjectName="brsystem" />
   </Dependencies>
 </Library>

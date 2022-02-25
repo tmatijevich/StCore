@@ -6,8 +6,8 @@
 
 #include "StCoreMain.h"
 
-SuperTrakControlIfConfig_t plcInterfaceConfig;
-unsigned char configError = false;
+SuperTrakControlIfConfig_t configPLCInterface;
+unsigned char configPalletCount, configNetworkIOCount, configError = false;
 
 /* Read layout and targets. Configure PLC control interface */
 long StCoreInit(char *storagePath, char *simIPAddress, char *ethernetInterfaces, unsigned char palletCount, unsigned char networkIOCount) {
@@ -16,10 +16,10 @@ long StCoreInit(char *storagePath, char *simIPAddress, char *ethernetInterfaces,
 	 Declare local variables 
 	***********************/
 	struct FormatStringArgumentsType args;
+	RTInfo_typ fbRTInfo;
 	struct SuperTrakSystemLayoutType layout;
 	struct SuperTrakPositionInfoType positionInfo;
 	unsigned short i, targetCount, dataUInt16[255];
-	unsigned long saveParameters;
 	
 	/* Assume configuration error is true until finished */
 	configError = true;
@@ -41,6 +41,19 @@ long StCoreInit(char *storagePath, char *simIPAddress, char *ethernetInterfaces,
 		/* Description: StCore library unable to create StCoreLog logbook */
 		LogFormatMessage(USERLOG_SEVERITY_CRITICAL, 65001, "CreateCustomLogbook() error %i. Check naming conflict with StCoreLog or insufficient user partition", &args);
 		return ArEventLogMakeEventID(arEVENTLOG_SEVERITY_ERROR, 0, 65001);
+	}
+	
+	/********************************
+	 Verify task class and cycle time
+	********************************/
+	memset(&fbRTInfo, 0, sizeof(fbRTInfo));
+	fbRTInfo.enable = true;
+	RTInfo(&fbRTInfo);
+	if(fbRTInfo.task_class != 1 || fbRTInfo.cycle_time != 800) {
+		args.i[0] = fbRTInfo.task_class;
+		args.i[1] = fbRTInfo.cycle_time;
+		CustomFormatMessage(USERLOG_SEVERITY_CRITICAL, 1000, "SuperTrak initialized in invalid task class %i or invalid cycle time %i us. Use TC#1 with 800 us", &args, "StCoreLog", 1);
+		return ArEventLogMakeEventID(arEVENTLOG_SEVERITY_ERROR, 1, 1000);
 	}
 	
 	/****************** 
@@ -98,69 +111,73 @@ long StCoreInit(char *storagePath, char *simIPAddress, char *ethernetInterfaces,
 	/*******************************
 	 Configure PLC control interface
 	*******************************/
-	memset(&plcInterfaceConfig, 0, sizeof(plcInterfaceConfig));
+	configPalletCount = palletCount;
+	configNetworkIOCount = networkIOCount;
+	memset(&configPLCInterface, 0, sizeof(configPLCInterface));
 	
 	/* Options */
 	/* Enable interface (0) and use system control & status */
-	plcInterfaceConfig.options = stCONTROL_IF_ENABLED + stCONTROL_IF_SYSTEM_ENABLED;
+	configPLCInterface.options = (1 << stCONTROL_IF_ENABLED) + (1 << stCONTROL_IF_SYSTEM_ENABLED);
 	/* Assign to interface 0 */
-	args.i[0] = SuperTrakServChanWrite(0, stPAR_PLC_IF_OPTIONS, 0, 1, (unsigned long)&plcInterfaceConfig.options, sizeof(plcInterfaceConfig.options));
+	args.i[0] = SuperTrakServChanWrite(0, stPAR_PLC_IF_OPTIONS, 0, 1, (unsigned long)&configPLCInterface.options, sizeof(configPLCInterface.options));
 	if(args.i[0] != scERR_SUCCESS) 
 		return StCoreLogServChan(args.i[0], stPAR_PLC_IF_OPTIONS);
 	
 	/* Section start */
-	plcInterfaceConfig.sectionStartIndex = 0;
-	args.i[0] = SuperTrakServChanWrite(0, stPAR_PLC_IF_SECTION_START, 0, 1, (unsigned long)&plcInterfaceConfig.sectionStartIndex, sizeof(plcInterfaceConfig.sectionStartIndex));
+	configPLCInterface.sectionStartIndex = 0;
+	args.i[0] = SuperTrakServChanWrite(0, stPAR_PLC_IF_SECTION_START, 0, 1, (unsigned long)&configPLCInterface.sectionStartIndex, sizeof(configPLCInterface.sectionStartIndex));
 	if(args.i[0] != scERR_SUCCESS) 
 		return StCoreLogServChan(args.i[0], stPAR_PLC_IF_SECTION_START);
 	
 	/* Section count */
-	plcInterfaceConfig.sectionCount = layout.sectionCount;
-	args.i[0] = SuperTrakServChanWrite(0, stPAR_PLC_IF_SECTION_COUNT, 0, 1, (unsigned long)&plcInterfaceConfig.sectionCount, sizeof(plcInterfaceConfig.sectionCount));
+	configPLCInterface.sectionCount = layout.sectionCount;
+	args.i[0] = SuperTrakServChanWrite(0, stPAR_PLC_IF_SECTION_COUNT, 0, 1, (unsigned long)&configPLCInterface.sectionCount, sizeof(configPLCInterface.sectionCount));
 	if(args.i[0] != scERR_SUCCESS) 
 		return StCoreLogServChan(args.i[0], stPAR_PLC_IF_SECTION_COUNT);
 	
 	/* Target start */
-	plcInterfaceConfig.targetStartIndex = 0;
-	args.i[0] = SuperTrakServChanWrite(0, stPAR_PLC_IF_TARGET_START, 0, 1, (unsigned long)&plcInterfaceConfig.targetStartIndex, sizeof(plcInterfaceConfig.targetStartIndex));
+	configPLCInterface.targetStartIndex = 0;
+	args.i[0] = SuperTrakServChanWrite(0, stPAR_PLC_IF_TARGET_START, 0, 1, (unsigned long)&configPLCInterface.targetStartIndex, sizeof(configPLCInterface.targetStartIndex));
 	if(args.i[0] != scERR_SUCCESS) 
 		return StCoreLogServChan(args.i[0], stPAR_PLC_IF_TARGET_START);
 	
 	/* Target count */
-	plcInterfaceConfig.targetCount = ((targetCount + 1) / 4 + (unsigned short)(((targetCount + 1) % 4) != 0)) * 4;
-	args.i[0] = SuperTrakServChanWrite(0, stPAR_PLC_IF_TARGET_COUNT, 0, 1, (unsigned long)&plcInterfaceConfig.targetCount, sizeof(plcInterfaceConfig.targetCount));
+	configPLCInterface.targetCount = ROUND_UP_MULTIPLE(targetCount + 1, 4);
+	args.i[0] = SuperTrakServChanWrite(0, stPAR_PLC_IF_TARGET_COUNT, 0, 1, (unsigned long)&configPLCInterface.targetCount, sizeof(configPLCInterface.targetCount));
 	if(args.i[0] != scERR_SUCCESS) 
 		return StCoreLogServChan(args.i[0], stPAR_PLC_IF_TARGET_COUNT);
 	
 	/* Command count */
-	plcInterfaceConfig.commandCount = ((palletCount + 1) / 8 + (unsigned short)(((palletCount + 1) % 8) != 0)) * 8;
-	args.i[0] = SuperTrakServChanWrite(0, stPAR_PLC_IF_COMMAND_COUNT, 0, 1, (unsigned long)&plcInterfaceConfig.commandCount, sizeof(plcInterfaceConfig.commandCount));
+	configPLCInterface.commandCount = ROUND_UP_MULTIPLE(palletCount + 1, 8);
+	args.i[0] = SuperTrakServChanWrite(0, stPAR_PLC_IF_COMMAND_COUNT, 0, 1, (unsigned long)&configPLCInterface.commandCount, sizeof(configPLCInterface.commandCount));
 	if(args.i[0] != scERR_SUCCESS) 
 		return StCoreLogServChan(args.i[0], stPAR_PLC_IF_COMMAND_COUNT);
 	
 	/* Network IO start */
-	plcInterfaceConfig.networkIoStartIndex = 0;
-	args.i[0] = SuperTrakServChanWrite(0, stPAR_PLC_IF_NETWORK_IO_START, 0, 1, (unsigned long)&plcInterfaceConfig.networkIoStartIndex, sizeof(plcInterfaceConfig.networkIoStartIndex));
+	configPLCInterface.networkIoStartIndex = 0;
+	args.i[0] = SuperTrakServChanWrite(0, stPAR_PLC_IF_NETWORK_IO_START, 0, 1, (unsigned long)&configPLCInterface.networkIoStartIndex, sizeof(configPLCInterface.networkIoStartIndex));
 	if(args.i[0] != scERR_SUCCESS) 
 		return StCoreLogServChan(args.i[0], stPAR_PLC_IF_NETWORK_IO_START);
 	
 	/* Network IO count */
-	plcInterfaceConfig.networkIoCount = ((networkIOCount + 1) / 8 + (unsigned short)(((networkIOCount + 1) % 8) != 0)) * 8;
-	args.i[0] = SuperTrakServChanWrite(0, stPAR_PLC_IF_NETWORK_IO_COUNT, 0, 1, (unsigned long)&plcInterfaceConfig.networkIoCount, sizeof(plcInterfaceConfig.networkIoCount));
+	configPLCInterface.networkIoCount = ROUND_UP_MULTIPLE(networkIOCount + 1, 8);
+	args.i[0] = SuperTrakServChanWrite(0, stPAR_PLC_IF_NETWORK_IO_COUNT, 0, 1, (unsigned long)&configPLCInterface.networkIoCount, sizeof(configPLCInterface.networkIoCount));
 	if(args.i[0] != scERR_SUCCESS) 
 		return StCoreLogServChan(args.i[0], stPAR_PLC_IF_NETWORK_IO_COUNT);
 	
 	/* Revision */
-	plcInterfaceConfig.revision = 0;
-	args.i[0] = SuperTrakServChanWrite(0, stPAR_PLC_IF_REVISION, 0, 1, (unsigned long)&plcInterfaceConfig.revision, sizeof(plcInterfaceConfig.revision));
+	configPLCInterface.revision = 0;
+	args.i[0] = SuperTrakServChanWrite(0, stPAR_PLC_IF_REVISION, 0, 1, (unsigned long)&configPLCInterface.revision, sizeof(configPLCInterface.revision));
 	if(args.i[0] != scERR_SUCCESS) 
 		return StCoreLogServChan(args.i[0], stPAR_PLC_IF_REVISION);
-	
-	/* Save parameters */
-	saveParameters = 0x000020; /* Global parameters, PLC interface configuration */
-	args.i[0] = SuperTrakServChanWrite(0, stPAR_SAVE_PARAMETERS, 0, 1, (unsigned long)&saveParameters, sizeof(saveParameters));
-	if(args.i[0] != scERR_SUCCESS) 
-		return StCoreLogServChan(args.i[0], stPAR_SAVE_PARAMETERS);
+		
+	/* Set offset table */
+	configPLCInterface.systemControlOffset = 0;
+	configPLCInterface.sectionControlOffset = 4;
+	configPLCInterface.targetControlOffset = configPLCInterface.sectionControlOffset + ROUND_UP_MULTIPLE(configPLCInterface.sectionCount, 4);
+	configPLCInterface.commandTriggerOffset = configPLCInterface.targetControlOffset + ROUND_UP_MULTIPLE(configPLCInterface.targetCount / 4, 4);
+	configPLCInterface.commandDataOffset = configPLCInterface.commandTriggerOffset + ROUND_UP_MULTIPLE(configPLCInterface.commandCount / 8, 4);
+	configPLCInterface.networkInputOffset = configPLCInterface.commandDataOffset + configPLCInterface.commandCount * 8;
 	
 	configError = false;
 	return 0;
