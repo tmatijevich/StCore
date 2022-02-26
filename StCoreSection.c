@@ -1,17 +1,12 @@
 /*******************************************************************************
- * File: StCoreExit.c
+ * File: StCoreSection.c
  * Author: Tyler Matijevich
- * Date: 2022-02-25
+ * Date: 2022-02-26
 *******************************************************************************/
 
 #include "StCoreMain.h"
 
-long StCoreExit(void) {
-	
-	TMP_free(configPLCInterface.controlSize, (void**)control);
-	TMP_free(configPLCInterface.statusSize, (void**)status);
-	
-	SuperTrakExit();
+long StCoreSectionControl(unsigned char section, struct StCoreSectionCommandType* control) {	
 	
 	return 0;
 	

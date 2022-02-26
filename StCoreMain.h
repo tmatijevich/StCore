@@ -27,13 +27,28 @@ extern "C"
 #define MAX(x,y) (((x) > (y)) ? (x) : (y))
 #define MIN(x,y) (((x) < (y)) ? (x) : (y))
 #define ROUND_UP_MULTIPLE(x,y) ((x) / (y) + (size_t)((x) % (y) != 0)) * (y)
+#define GET_BIT(x,y) ((x) & 1U << (y) ? true : false)
+#define SET_BIT(x,y) ((x) |= 1U << (y))
+#define CLEAR_BIT(x,y) ((x) &= ~(1U << (y)))
+#define TOGGLE_BIT(x,y) ((x) ^= 1U << (y))
+
+/* Type declarations */
+struct StCoreUserInterfaceType {
+	struct StCoreSystemCommandType *systemCommand;
+	struct StCoreSectionCommandType *sectionCommand;
+};
 
 /* Global variables */
+extern unsigned char configUserPalletCount, configUserNetworkIOCount;
+extern unsigned char configError;
 extern SuperTrakControlIfConfig_t configPLCInterface;
-extern unsigned char configUserPalletCount, configUserNetworkIOCount, configError;
+extern unsigned short configEnableSource;
 extern unsigned char *control, *status;
+extern unsigned long saveParameters;
+extern struct StCoreUserInterfaceType user;
 
 /* Function prototypes */
+void StCoreRunSystemControl(void);
 void StCoreLogPosition(enum SuperTrakPositionErrorEnum error, struct SuperTrakPositionInfoType info);
 long StCoreLogServChan(unsigned short result, unsigned short parameter);
 

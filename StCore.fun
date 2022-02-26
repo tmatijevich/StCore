@@ -20,3 +20,16 @@ END_FUNCTION
 
 FUNCTION StCoreExit : DINT (*Free internal memory*)
 END_FUNCTION
+
+FUNCTION StCoreSystemControl : DINT (*Register system control inputs*)
+	VAR_INPUT
+		control : StCoreSystemCommandType;
+	END_VAR
+END_FUNCTION
+
+FUNCTION StCoreSectionControl : DINT (*Register section control inputs*)
+	VAR_INPUT
+		section : USINT;
+		control : StCoreSectionCommandType;
+	END_VAR
+END_FUNCTION
