@@ -5,6 +5,8 @@
     <File Description="Function declarations">StCore.fun</File>
     <File Description="Common includes">StCoreMain.h</File>
     <File Description="Initialize control interface">StCoreInit.c</File>
+    <File Description="Process communication">StCoreCyclic.c</File>
+    <File Description="Free memory">StCoreExit.c</File>
     <File Description="Additional logging">StCoreLog.c</File>
     <File Description="User event texts">StCoreLog.tmx</File>
   </Files>
@@ -15,5 +17,6 @@
     <Dependency ObjectName="StPos" />
     <Dependency ObjectName="ArEventLog" />
     <Dependency ObjectName="brsystem" />
+    <Dependency ObjectName="sys_lib" />
   </Dependencies>
 </Library>

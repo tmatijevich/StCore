@@ -28,18 +28,10 @@ extern "C"
 #define MIN(x,y) (((x) < (y)) ? (x) : (y))
 #define ROUND_UP_MULTIPLE(x,y) ((x) / (y) + (size_t)((x) % (y) != 0)) * (y)
 
-/* Type definitions */
-struct StCorePLCControlIFConfig_typ {
-	unsigned short options; /* (Par 1430) */
-	unsigned short sectionStart; /* (Par 1431) */
-	unsigned short sectionCount; /* (Par 1432) */
-	unsigned short targetStart; /* (Par 1433) */
-	unsigned short targetCount; /* (Par 1434) */
-	unsigned short commandCount; /* (Par 1436) */
-	unsigned short networkIOStart; /* (Par 1437) */
-	unsigned short networkIOCount; /* (Par 1438) */
-	unsigned short revision; /* (Par 1444) */
-};
+/* Global variables */
+extern SuperTrakControlIfConfig_t configPLCInterface;
+extern unsigned char configUserPalletCount, configUserNetworkIOCount, configError;
+extern unsigned char *control, *status;
 
 /* Function prototypes */
 void StCoreLogPosition(enum SuperTrakPositionErrorEnum error, struct SuperTrakPositionInfoType info);

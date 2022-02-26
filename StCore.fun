@@ -14,3 +14,9 @@ FUNCTION StCoreInit : DINT (*Read layout and targets. Configure PLC control inte
 		networkIOCount : USINT; (*Maximum number of network I/O channels intended for use on system*)
 	END_VAR
 END_FUNCTION
+
+FUNCTION StCoreCyclic : DINT (*Process PLC communication protocol. Retrieve extended status information*)
+END_FUNCTION
+
+FUNCTION StCoreExit : DINT (*Free internal memory*)
+END_FUNCTION

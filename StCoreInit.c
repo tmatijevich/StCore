@@ -7,7 +7,8 @@
 #include "StCoreMain.h"
 
 SuperTrakControlIfConfig_t configPLCInterface;
-unsigned char configPalletCount, configNetworkIOCount, configError = false;
+unsigned char configUserPalletCount, configUserNetworkIOCount, configError = false;
+unsigned char *control, *status;
 
 /* Read layout and targets. Configure PLC control interface */
 long StCoreInit(char *storagePath, char *simIPAddress, char *ethernetInterfaces, unsigned char palletCount, unsigned char networkIOCount) {
@@ -111,8 +112,8 @@ long StCoreInit(char *storagePath, char *simIPAddress, char *ethernetInterfaces,
 	/*******************************
 	 Configure PLC control interface
 	*******************************/
-	configPalletCount = palletCount;
-	configNetworkIOCount = networkIOCount;
+	configUserPalletCount = palletCount;
+	configUserNetworkIOCount = networkIOCount;
 	memset(&configPLCInterface, 0, sizeof(configPLCInterface));
 	
 	/* Options */
@@ -171,13 +172,25 @@ long StCoreInit(char *storagePath, char *simIPAddress, char *ethernetInterfaces,
 	if(args.i[0] != scERR_SUCCESS) 
 		return StCoreLogServChan(args.i[0], stPAR_PLC_IF_REVISION);
 		
-	/* Set offset table */
-	configPLCInterface.systemControlOffset = 0;
-	configPLCInterface.sectionControlOffset = 4;
-	configPLCInterface.targetControlOffset = configPLCInterface.sectionControlOffset + ROUND_UP_MULTIPLE(configPLCInterface.sectionCount, 4);
-	configPLCInterface.commandTriggerOffset = configPLCInterface.targetControlOffset + ROUND_UP_MULTIPLE(configPLCInterface.targetCount / 4, 4);
-	configPLCInterface.commandDataOffset = configPLCInterface.commandTriggerOffset + ROUND_UP_MULTIPLE(configPLCInterface.commandCount / 8, 4);
-	configPLCInterface.networkInputOffset = configPLCInterface.commandDataOffset + configPLCInterface.commandCount * 8;
+	/***************************************
+	 Get PLC control interface configuration
+	***************************************/
+	SuperTrakGetControlIfConfig(0, &configPLCInterface);
+	
+	/***************
+	 Allocate memory
+	***************/
+	if(args.i[0] = TMP_alloc(configPLCInterface.controlSize, (void**)&control)) {
+		args.i[1] = configPLCInterface.controlSize;
+		CustomFormatMessage(USERLOG_SEVERITY_CRITICAL, 1300, "TMP_alloc error %i. Unable to allocate %i bytes of memory for cyclic control data", &args, "StCoreLog", 1);
+		return ArEventLogMakeEventID(arEVENTLOG_SEVERITY_ERROR, 1, 1300);
+	}
+	
+	if(args.i[0] = TMP_alloc(configPLCInterface.statusSize, (void**)&status)) {
+		args.i[1] = configPLCInterface.statusSize;
+		CustomFormatMessage(USERLOG_SEVERITY_CRITICAL, 1301, "TMP_alloc error %i. Unable to allocate %i bytes of memory for cyclic status data", &args, "StCoreLog", 1);
+		return ArEventLogMakeEventID(arEVENTLOG_SEVERITY_ERROR, 1, 1301);
+	}
 	
 	configError = false;
 	return 0;
