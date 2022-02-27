@@ -35,7 +35,7 @@ extern "C"
 /* Type declarations */
 struct StCoreUserInterfaceType {
 	struct StCoreSystemCommandType *systemCommand;
-	struct StCoreSectionCommandType *sectionCommand;
+	struct StCoreSectionCommandType **sectionCommand;
 };
 
 /* Global variables */
