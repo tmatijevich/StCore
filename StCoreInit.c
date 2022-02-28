@@ -205,11 +205,11 @@ long StCoreInit(char *storagePath, char *simIPAddress, char *ethernetInterfaces,
 	args.i[0] = sizeof(StCoreSectionCommandType*) * configPLCInterface.sectionCount;
 	args.i[1] = configPLCInterface.sectionCount;
 	CustomFormatMessage(USERLOG_SEVERITY_DEBUG, 1311, "Allocate %i bytes for %i sections' user command structure references", &args, "StCoreLog", 1);
-	if((args.i[0] = TMP_alloc(sizeof(StCoreSectionCommandType*) * configPLCInterface.sectionCount, (void**)&user.sectionCommand))) {
+	if((args.i[0] = TMP_alloc(sizeof(StCoreSectionCommandType*) * configPLCInterface.sectionCount, (void**)&user.section.command))) {
 		CustomFormatMessage(USERLOG_SEVERITY_CRITICAL, 1310, "TMP_alloc error %i. Unable to allocate %i bytes of memory for user section command references", &args, "StCoreLog", 1);
 		return ArEventLogMakeEventID(arEVENTLOG_SEVERITY_ERROR, 1, 1310);
 	}
-	memset(user.sectionCommand, 0, sizeof(StCoreSectionCommandType*) * configPLCInterface.sectionCount);
+	memset(user.section.command, 0, sizeof(StCoreSectionCommandType*) * configPLCInterface.sectionCount);
 	
 	configError = false;
 	return 0;

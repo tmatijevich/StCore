@@ -10,7 +10,7 @@ long StCoreExit(void) {
 	
 	TMP_free(configPLCInterface.controlSize, (void**)control);
 	TMP_free(configPLCInterface.statusSize, (void**)status);
-	TMP_free(sizeof(StCoreSectionCommandType*) * configPLCInterface.sectionCount, (void**)user.sectionCommand);
+	TMP_free(sizeof(StCoreSectionCommandType*) * configPLCInterface.sectionCount, (void**)user.section.command);
 	
 	SuperTrakExit();
 	

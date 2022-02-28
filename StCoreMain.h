@@ -33,9 +33,15 @@ extern "C"
 #define TOGGLE_BIT(x,y) ((x) ^= 1U << (y))
 
 /* Type declarations */
+struct StCoreUserSystemInterfaceType {
+	struct StCoreSystemCommandType *command;
+};
+struct StCoreUserSectionInterfaceType {
+	struct StCoreSectionCommandType **command;
+};
 struct StCoreUserInterfaceType {
-	struct StCoreSystemCommandType *systemCommand;
-	struct StCoreSectionCommandType **sectionCommand;
+	struct StCoreUserSystemInterfaceType system;
+	struct StCoreUserSectionInterfaceType section;
 };
 
 /* Global variables */

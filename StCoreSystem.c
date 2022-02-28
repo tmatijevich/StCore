@@ -13,7 +13,7 @@ long StCoreSystemControl(struct StCoreSystemCommandType* command) {
 	if(command == NULL)
 		return -1;
 	
-	user.systemCommand = command;
+	user.system.command = command;
 	return 0;
 	
 } /* Function definition */
@@ -42,12 +42,12 @@ void StCoreRunSystemControl(void) {
 	 Enable and acknowledge
 	**********************/
 	/* Enable and acknowledge faults only if user command has registered */
-	if(user.systemCommand) {
+	if(user.system.command) {
 		/* Enable/disabled system (bit 0) */
 		/* Check user command, system control as enable signal source (1107), no configuration error, configuration has been saved */
-		user.systemCommand->Enable && !configError && saveParameters ? SET_BIT(*systemControl, 0) : CLEAR_BIT(*systemControl, 0);
+		user.system.command->EnableAllSections && !configError && saveParameters ? SET_BIT(*systemControl, 0) : CLEAR_BIT(*systemControl, 0);
 		/* Acknowledge faults and warnings (bit 7) */
-		user.systemCommand->ErrorReset && !GET_BIT(*systemControl, 7) ? SET_BIT(*systemControl, 7) : CLEAR_BIT(*systemControl, 7);
+		user.system.command->AcknowledgeFaults && !GET_BIT(*systemControl, 7) ? SET_BIT(*systemControl, 7) : CLEAR_BIT(*systemControl, 7);
 	}
 	
 	/*********

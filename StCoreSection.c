@@ -14,7 +14,7 @@ long StCoreSectionControl(unsigned char section, struct StCoreSectionCommandType
 		return -1;
 	
 	/* Register user section command reference to array */
-	*(user.sectionCommand + section - 1) = command;
+	*(user.section.command + section - 1) = command;
 	
 	return 0;
 	
@@ -45,7 +45,7 @@ void StCoreRunSectionControl(void) {
 		sectionControl = control + configPLCInterface.sectionControlOffset + i;
 		
 		/* Get the pointer for this section command */
-		command = *(user.sectionCommand + i); 
+		command = *(user.section.command + i); 
 		
 		/**********************
 		 Enable and acknowledge
@@ -54,9 +54,12 @@ void StCoreRunSectionControl(void) {
 		if(command) {
 			/* Enable/disable section (bit 0) */
 			/* Check: 1. User command 2. Enable signal source 3. Error 4. Saved */
-			command->Enable && !configError && saveParameters ? SET_BIT(*sectionControl, 0) : CLEAR_BIT(*sectionControl, 0);
+			command->EnableSection && !configError && saveParameters ? SET_BIT(*sectionControl, 0) : CLEAR_BIT(*sectionControl, 0);
+			
+			command->ResumePallets && !configError && saveParameters ? SET_BIT(*sectionControl, 2) : CLEAR_BIT(*sectionControl, 2);
+			
 			/* Acknowledge faults and warnings (bit 7) */
-			command->ErrorReset && !GET_BIT(*sectionControl, 7) ? SET_BIT(*sectionControl, 7) : CLEAR_BIT(*sectionControl, 7);
+			command->AcknowledgeFaults && !GET_BIT(*sectionControl, 7) ? SET_BIT(*sectionControl, 7) : CLEAR_BIT(*sectionControl, 7);
 		}
 	}
 	
