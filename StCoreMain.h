@@ -49,6 +49,7 @@ extern struct StCoreUserInterfaceType user;
 
 /* Function prototypes */
 void StCoreRunSystemControl(void);
+void StCoreRunSectionControl(void);
 void StCoreLogPosition(enum SuperTrakPositionErrorEnum error, struct SuperTrakPositionInfoType info);
 long StCoreLogServChan(unsigned short result, unsigned short parameter);
 

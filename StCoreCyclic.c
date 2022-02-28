@@ -46,6 +46,7 @@ long StCoreCyclic(void) {
 	controlInterface.connectionType = stCONNECTION_LOCAL;
 	
 	StCoreRunSystemControl();
+	StCoreRunSectionControl();
 	
 	SuperTrakProcessControl(0, &controlInterface);
 	SuperTrakCyclic1();

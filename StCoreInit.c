@@ -193,12 +193,14 @@ long StCoreInit(char *storagePath, char *simIPAddress, char *ethernetInterfaces,
 		CustomFormatMessage(USERLOG_SEVERITY_CRITICAL, 1300, "TMP_alloc error %i. Unable to allocate %i bytes of memory for cyclic control data", &args, "StCoreLog", 1);
 		return ArEventLogMakeEventID(arEVENTLOG_SEVERITY_ERROR, 1, 1300);
 	}
+	memset(control, 0, configPLCInterface.controlSize);
 	
 	if((args.i[0] = TMP_alloc(configPLCInterface.statusSize, (void**)&status))) {
 		args.i[1] = configPLCInterface.statusSize;
 		CustomFormatMessage(USERLOG_SEVERITY_CRITICAL, 1301, "TMP_alloc error %i. Unable to allocate %i bytes of memory for cyclic status data", &args, "StCoreLog", 1);
 		return ArEventLogMakeEventID(arEVENTLOG_SEVERITY_ERROR, 1, 1301);
 	}
+	memset(status, 0, configPLCInterface.statusSize);
 	
 	args.i[0] = sizeof(StCoreSectionCommandType*) * configPLCInterface.sectionCount;
 	args.i[1] = configPLCInterface.sectionCount;
@@ -207,6 +209,7 @@ long StCoreInit(char *storagePath, char *simIPAddress, char *ethernetInterfaces,
 		CustomFormatMessage(USERLOG_SEVERITY_CRITICAL, 1310, "TMP_alloc error %i. Unable to allocate %i bytes of memory for user section command references", &args, "StCoreLog", 1);
 		return ArEventLogMakeEventID(arEVENTLOG_SEVERITY_ERROR, 1, 1310);
 	}
+	memset(user.sectionCommand, 0, sizeof(StCoreSectionCommandType*) * configPLCInterface.sectionCount);
 	
 	configError = false;
 	return 0;

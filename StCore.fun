@@ -23,13 +23,13 @@ END_FUNCTION
 
 FUNCTION StCoreSystemControl : DINT (*Register system control inputs*)
 	VAR_INPUT
-		control : StCoreSystemCommandType;
+		command : StCoreSystemCommandType; (*Command structure reference*)
 	END_VAR
 END_FUNCTION
 
 FUNCTION StCoreSectionControl : DINT (*Register section control inputs*)
 	VAR_INPUT
-		section : USINT;
-		control : StCoreSectionCommandType;
+		section : USINT; (*Section*)
+		command : StCoreSectionCommandType; (*Command structure reference*)
 	END_VAR
 END_FUNCTION
