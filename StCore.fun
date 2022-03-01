@@ -15,11 +15,12 @@ FUNCTION StCoreInit : DINT (*Read layout and targets. Configure PLC control inte
 	END_VAR
 END_FUNCTION
 
-FUNCTION StCoreCyclic : DINT (*Process PLC communication protocol. Retrieve extended status information*)
+FUNCTION StCoreCyclic : DINT (*Process PLC communication protocol*)
 END_FUNCTION
 
 FUNCTION StCoreExit : DINT (*Free internal memory*)
 END_FUNCTION
+(*Interface functions*)
 
 FUNCTION StCoreSystemControl : DINT (*Register system control inputs*)
 	VAR_INPUT
@@ -27,9 +28,24 @@ FUNCTION StCoreSystemControl : DINT (*Register system control inputs*)
 	END_VAR
 END_FUNCTION
 
+FUNCTION StCoreSystemStatus : DINT (*Register system status outputs*)
+	VAR_INPUT
+		status : StCoreSystemStatusType; (*Status structure reference*)
+	END_VAR
+END_FUNCTION
+
 FUNCTION StCoreSectionControl : DINT (*Register section control inputs*)
 	VAR_INPUT
 		section : USINT; (*Section*)
 		command : StCoreSectionCommandType; (*Command structure reference*)
+	END_VAR
+END_FUNCTION
+
+FUNCTION StCoreReleaseToTarget : DINT
+	VAR_INPUT
+		currentTarget : USINT;
+		palletID : USINT;
+		direction : UINT;
+		destinationTarget : USINT;
 	END_VAR
 END_FUNCTION

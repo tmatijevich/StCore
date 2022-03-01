@@ -39,9 +39,9 @@ long StCoreCyclic(void) {
 	else
 		timerSave += 800;
 		
-	controlInterface.pControl = (unsigned long)control;
+	controlInterface.pControl = (unsigned long)controlData;
 	controlInterface.controlSize = configPLCInterface.controlSize;
-	controlInterface.pStatus = (unsigned long)status;
+	controlInterface.pStatus = (unsigned long)statusData;
 	controlInterface.statusSize = configPLCInterface.statusSize;
 	controlInterface.connectionType = stCONNECTION_LOCAL;
 	

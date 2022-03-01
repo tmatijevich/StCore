@@ -32,7 +32,7 @@ void StCoreRunSectionControl(void) {
 	unsigned char *sectionControl, i;
 	
 	/* Check if cyclic control data was initialized */
-	if(control == NULL) 
+	if(controlData == NULL) 
 		return -1;
 	
 	/****************
@@ -42,7 +42,7 @@ void StCoreRunSectionControl(void) {
 		/******************
 		 Access cyclic data
 		******************/
-		sectionControl = control + configPLCInterface.sectionControlOffset + i;
+		sectionControl = controlData + configPLCInterface.sectionControlOffset + i;
 		
 		/* Get the pointer for this section command */
 		command = *(user.section.command + i); 

@@ -19,6 +19,19 @@ long StCoreSystemControl(struct StCoreSystemCommandType* command) {
 } /* Function definition */
 
 
+/* Register user's system status structure */
+long StCoreSystemStatus(StCoreSystemStatusType* status) {
+	
+	/* Guard null pointer */
+	if(status == NULL) 
+		return -1;
+		
+	user.system.status = status;
+	return 0;
+	
+} /* Function definition */
+
+
 /* Write system commands to SuperTrak cyclic control data */
 void StCoreRunSystemControl(void) {
 	
@@ -32,11 +45,11 @@ void StCoreRunSystemControl(void) {
 	 Access cyclic data
 	******************/
 	/* Check if cyclic control data was initialized */
-	if(control == NULL) 
+	if(controlData == NULL) 
 		return -1;
 	
 	/* Access system control word */
-	systemControl = control + configPLCInterface.systemControlOffset;
+	systemControl = controlData + configPLCInterface.systemControlOffset;
 	
 	/**********************
 	 Enable and acknowledge

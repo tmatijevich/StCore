@@ -22,6 +22,11 @@ extern "C"
 #include <math.h>
 #include "StCore.h"
 
+/* Constants */
+#define stCORE_LOGBOOK_NAME "StCoreLog"
+#define stCORE_LOGBOOK_FACILITY 1
+#define stCORE_COMMANDBUFFER_SIZE 4U
+
 /* Macros */
 #define COUNT_OF(x) ((sizeof(x)/sizeof(0[x])) / ((size_t)(!(sizeof(x) % sizeof(0[x]))))) /* https://stackoverflow.com/a/1598827 */
 #define MAX(x,y) (((x) > (y)) ? (x) : (y))
@@ -34,10 +39,11 @@ extern "C"
 
 /* Type declarations */
 struct StCoreUserSystemInterfaceType {
-	struct StCoreSystemCommandType *command;
+	StCoreSystemCommandType *command;
+	StCoreSystemStatusType *status;
 };
 struct StCoreUserSectionInterfaceType {
-	struct StCoreSectionCommandType **command;
+	StCoreSectionCommandType **command;
 };
 struct StCoreUserInterfaceType {
 	struct StCoreUserSystemInterfaceType system;
@@ -45,11 +51,11 @@ struct StCoreUserInterfaceType {
 };
 
 /* Global variables */
-extern unsigned char configUserPalletCount, configUserNetworkIOCount;
+extern unsigned char configInitialTargetCount, configUserPalletCount, configUserNetworkIOCount;
 extern unsigned char configError;
 extern SuperTrakControlIfConfig_t configPLCInterface;
 extern unsigned short configEnableSource;
-extern unsigned char *control, *status;
+extern unsigned char *controlData, *statusData;
 extern unsigned long saveParameters;
 extern struct StCoreUserInterfaceType user;
 
