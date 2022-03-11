@@ -4,6 +4,7 @@
   <Files>
     <File Description="Function declarations">StCore.fun</File>
     <File Description="Type declarations">StCore.typ</File>
+    <File Description="Constants">StCore.var</File>
     <File Description="Common includes">StCoreMain.h</File>
     <File Description="Initialize control interface">StCoreInit.c</File>
     <File Description="Process communication">StCoreCyclic.c</File>
@@ -18,7 +19,6 @@
     <Dependency ObjectName="SuperTrak" />
     <Dependency ObjectName="IecString" />
     <Dependency ObjectName="UserLog" />
-    <Dependency ObjectName="StPos" />
     <Dependency ObjectName="ArEventLog" />
     <Dependency ObjectName="brsystem" />
     <Dependency ObjectName="sys_lib" />

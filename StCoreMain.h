@@ -26,6 +26,7 @@ extern "C"
 #define stCORE_LOGBOOK_NAME "StCoreLog"
 #define stCORE_LOGBOOK_FACILITY 1
 #define stCORE_COMMANDBUFFER_SIZE 4U
+#define stCORE_SECTION_MAX 64
 
 /* Macros */
 #define COUNT_OF(x) ((sizeof(x)/sizeof(0[x])) / ((size_t)(!(sizeof(x) % sizeof(0[x]))))) /* https://stackoverflow.com/a/1598827 */
@@ -37,33 +38,10 @@ extern "C"
 #define CLEAR_BIT(x,y) ((x) &= ~(1U << (y)))
 #define TOGGLE_BIT(x,y) ((x) ^= 1U << (y))
 
-/* Type declarations */
-struct StCoreUserSystemInterfaceType {
-	StCoreSystemCommandType *command;
-	StCoreSystemStatusType *status;
-};
-struct StCoreUserSectionInterfaceType {
-	StCoreSectionCommandType **command;
-};
-struct StCoreUserInterfaceType {
-	struct StCoreUserSystemInterfaceType system;
-	struct StCoreUserSectionInterfaceType section;
-};
-
-/* Global variables */
-extern unsigned char configInitialTargetCount, configUserPalletCount, configUserNetworkIOCount;
-extern unsigned char configError;
-extern SuperTrakControlIfConfig_t configPLCInterface;
-extern unsigned short configEnableSource;
-extern unsigned char *controlData, *statusData;
-extern unsigned long saveParameters;
-extern struct StCoreUserInterfaceType user;
-
 /* Function prototypes */
-void StCoreRunSystemControl(void);
-void StCoreRunSectionControl(void);
-void StCoreLogPosition(enum SuperTrakPositionErrorEnum error, struct SuperTrakPositionInfoType info);
-long StCoreLogServChan(unsigned short result, unsigned short parameter);
+void StCoreLogMessage(UserLogSeverityEnum severity, unsigned short code, char *message);
+void StCoreFormatMessage(UserLogSeverityEnum severity, unsigned short code, char *message, FormatStringArgumentsType *args);
+unsigned short StCoreEventCode(long eventID);
 
 #ifdef __cplusplus
 };

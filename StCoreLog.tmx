@@ -5,75 +5,51 @@
   </header>
   <body>
     <tu tuid="-536805912">
-      <note>StCoreInit 65000</note>
+      <note>StCoreInit() 65000</note>
       <tuv xml:lang="en">
-        <seg>SuperTrakInit() call is unsuccessful from StCoreInit()</seg>
-      </tuv>
-    </tu>
-    <tu tuid="-536805911">
-      <note>StCoreInit 65001</note>
-      <tuv xml:lang="en">
-        <seg>StCoreInit() is unable to create StCoreLog logbook</seg>
+        <seg>StCoreInit() is unable to create logbook</seg>
       </tuv>
     </tu>
     <tu tuid="-536804376">
-      <note>StCoreInit 1000</note>
+      <note>StCoreInit() 1000</note>
       <tuv xml:lang="en">
-        <seg>SuperTrak control requires TC#1 and 800 us cycle time</seg>
+        <seg>Multiple calls of StCoreInit()</seg>
       </tuv>
     </tu>
     <tu tuid="-536804276">
-      <note>StCoreInit 1100</note>
+      <note>StCoreInit() 1100</note>
       <tuv xml:lang="en">
-        <seg>StCoreInit() is unable to read system layout</seg>
+        <seg>SuperTrak service channel error from StCoreInit()</seg>
       </tuv>
     </tu>
-    <tu tuid="-536804275">
-      <note>StCoreInit 1101</note>
+    <tu tuid="-536804176">
+      <note>StCoreInit() 1200</note>
       <tuv xml:lang="en">
-        <seg>SuperTrak system layout has invalid logical head section</seg>
+        <seg>Invalid SuperTrak system layout. Use TrakMaster's Easy Setup for System Layout</seg>
       </tuv>
     </tu>
-    <tu tuid="-536804274">
-      <note>StCoreInit 1102</note>
-      <tuv xml:lang="en">
-        <seg>SuperTrak system layout section numbering non-ascending in flow direction</seg>
-      </tuv>
-    </tu>
-    <tu tuid="536937551">
-      <note>StCoreInit 1103</note>
+    <tu tuid="536937649">
+      <note>StCoreInit() 1201</note>
       <tuv xml:lang="en">
         <seg>SuperTrak system layout verified</seg>
       </tuv>
     </tu>
-    <tu tuid="-536804176">
-      <note>StCoreInit 1200</note>
+    <tu tuid="536937748">
+      <note>StCoreInit() 1300</note>
       <tuv xml:lang="en">
-        <seg>StCoreInit() is unable to read target information</seg>
+        <seg>SuperTrak target definition identified</seg>
       </tuv>
     </tu>
-    <tu tuid="536937649">
-      <note>StCoreInit 1201</note>
+    <tu tuid="-536803976">
+      <note>StCoreInit() 1400</note>
       <tuv xml:lang="en">
-        <seg>SuperTrak target definitions identified</seg>
+        <seg>StCoreInit() is unable to allocate memory</seg>
       </tuv>
     </tu>
-    <tu tuid="1610680272">
-      <note>StCoreCyclic 2000</note>
+    <tu tuid="-536795376">
+      <note>StCore 10000</note>
       <tuv xml:lang="en">
-        <seg>Saved SuperTrak PLC control interface configuration</seg>
-      </tuv>
-    </tu>
-    <tu tuid="-536755376">
-      <note>StPos 50000</note>
-      <tuv xml:lang="en">
-        <seg>StPos function error</seg>
-      </tuv>
-    </tu>
-    <tu tuid="-536755276">
-      <note>Service channel 50100</note>
-      <tuv xml:lang="en">
-        <seg>Service channel error</seg>
+        <seg>SuperTrak service channel error</seg>
       </tuv>
     </tu>
   </body>

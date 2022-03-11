@@ -1,0 +1,12 @@
+(*******************************************************************************
+ * File: StCore.var
+ * Author: Tyler Matijevich
+ * Date: 2022-03-02
+*******************************************************************************)
+VAR CONSTANT
+	stCORE_ERROR_LOGBOOK : DINT := -536805912;
+	stCORE_ERROR_INIT : DINT := -536804376;
+	stCORE_ERROR_CYCLETIME : DINT := -536804375;
+	stCORE_ERROR_SERVCHAN : DINT := -536804366;
+	stCORE_ERROR_SYSTEMLAYOUT : DINT := -536804356;
+END_VAR
