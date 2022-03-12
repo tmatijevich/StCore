@@ -20,3 +20,22 @@ END_FUNCTION
 
 FUNCTION StCoreExit : DINT (*Free internal memory*)
 END_FUNCTION
+(*SuperTrak control interface*)
+
+FUNCTION_BLOCK StCoreSystem
+	VAR_INPUT
+		Enable : BOOL;
+		EnableAllSections : BOOL;
+		AcknowledgeFaults : BOOL;
+	END_VAR
+	VAR_OUTPUT
+		Valid : BOOL;
+		Error : BOOL;
+		StatusID : DINT;
+		PalletsStopped : BOOL;
+		WarningPresent : BOOL;
+		FaultPresent : BOOL;
+		PalletCount : USINT;
+		Info : StCoreSystemInfoType;
+	END_VAR
+END_FUNCTION_BLOCK

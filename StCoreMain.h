@@ -38,6 +38,10 @@ extern "C"
 #define CLEAR_BIT(x,y) ((x) &= ~(1U << (y)))
 #define TOGGLE_BIT(x,y) ((x) ^= 1U << (y))
 
+/* Global variables */
+extern unsigned char *pCyclicControlData, *pCyclicStatusData;
+extern SuperTrakControlIfConfig_t coreControlInterfaceConfig;
+
 /* Function prototypes */
 void StCoreLogMessage(UserLogSeverityEnum severity, unsigned short code, char *message);
 void StCoreFormatMessage(UserLogSeverityEnum severity, unsigned short code, char *message, FormatStringArgumentsType *args);
