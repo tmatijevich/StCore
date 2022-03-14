@@ -9,10 +9,10 @@ TYPE
 		Warnings : UDINT;
 		Faults : UDINT;
 		SectionCount : USINT;
-		ExternallyDisabled : BOOL;
-		MotorPower : BOOL;
 		Enabled : BOOL;
 		Disabled : BOOL;
+		MotorPower : BOOL;
+		DisabledExternally : BOOL;
 		SectionWarningPresent : BOOL;
 		SectionFaultPresent : BOOL;
 	END_STRUCT;

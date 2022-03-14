@@ -39,3 +39,25 @@ FUNCTION_BLOCK StCoreSystem
 		Info : StCoreSystemInfoType;
 	END_VAR
 END_FUNCTION_BLOCK
+
+FUNCTION_BLOCK StCoreSection
+	VAR_INPUT
+		Enable : BOOL;
+		Section : USINT;
+		EnableSection : BOOL;
+		AcknowledgeFaults : BOOL;
+	END_VAR
+	VAR_OUTPUT
+		Valid : BOOL;
+		Error : BOOL;
+		StatusID : DINT;
+		Enabled : BOOL;
+		UnrecognizedPalletsPresent : BOOL;
+		MotorPowerOn : BOOL;
+		PalletsRecovering : BOOL;
+		LocatingPallets : BOOL;
+		DisabledExternally : BOOL;
+		WarningPresent : BOOL;
+		FaultPresent : BOOL;
+	END_VAR
+END_FUNCTION_BLOCK
