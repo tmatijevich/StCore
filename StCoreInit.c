@@ -18,6 +18,10 @@ SuperTrakControlIfConfig_t coreControlInterfaceConfig;
 /* StCore configuration */
 unsigned char coreError = true, coreInitialTargetCount, userPalletCount, userNetworkIOCount;
 
+/* Command buffer */
+SuperTrakCommand_t *pCoreCommandBuffer;
+StCoreBufferControlType *pCoreBufferControl;
+
 /* Read layout and targets, then size control interface */
 long StCoreInit(char *storagePath, char *simIPAddress, char *ethernetInterfaces, unsigned char palletCount, unsigned char networkIOCount) {
 	
@@ -243,7 +247,7 @@ long StCoreInit(char *storagePath, char *simIPAddress, char *ethernetInterfaces,
 //		CustomFormatMessage(USERLOG_SEVERITY_CRITICAL, 1300, "TMP_alloc error %i. Unable to allocate %i bytes of memory for cyclic control data", &args, "StCoreLog", 1);
 //		return ArEventLogMakeEventID(arEVENTLOG_SEVERITY_ERROR, 1, 1300);
 //	}
-	memset(pCyclicControlData, 0, coreControlInterfaceConfig.controlSize);
+	memset(pCyclicControlData, 0, allocationSize);
 	
 	allocationSize = coreControlInterfaceConfig.statusSize;
 	TMP_alloc(allocationSize, (void**)&pCyclicStatusData);
@@ -252,7 +256,7 @@ long StCoreInit(char *storagePath, char *simIPAddress, char *ethernetInterfaces,
 //		CustomFormatMessage(USERLOG_SEVERITY_CRITICAL, 1301, "TMP_alloc error %i. Unable to allocate %i bytes of memory for cyclic status data", &args, "StCoreLog", 1);
 //		return ArEventLogMakeEventID(arEVENTLOG_SEVERITY_ERROR, 1, 1301);
 //	}
-	memset(pCyclicStatusData, 0, coreControlInterfaceConfig.statusSize); 
+	memset(pCyclicStatusData, 0, allocationSize); 
 //	
 //	if((args.i[0] = TMP_alloc(sizeof(StCoreSectionCommandType*) * configPLCInterface.sectionCount, (void**)&user.section.command))) {
 //		CustomFormatMessage(USERLOG_SEVERITY_CRITICAL, 1310, "TMP_alloc error %i. Unable to allocate %i bytes of memory for user section command references", &args, "StCoreLog", 1);
@@ -260,38 +264,26 @@ long StCoreInit(char *storagePath, char *simIPAddress, char *ethernetInterfaces,
 //	}
 //	memset(user.section.command, 0, sizeof(StCoreSectionCommandType*) * configPLCInterface.sectionCount);
 //	
-//	/* Memory for command buffers */
-//	size = sizeof(SuperTrakCommand_t) * stCORE_COMMANDBUFFER_SIZE * configPLCInterface.commandCount; /* Command data * commands per pallet * pallets */
+	/* Memory for command buffers */
+	allocationSize = sizeof(SuperTrakCommand_t) * stCORE_COMMANDBUFFER_SIZE * userPalletCount; /* Command data * commands per pallet * pallets */
+	TMP_alloc(allocationSize, (void**)&pCoreCommandBuffer);
 //	if((args.i[0] = TMP_alloc(size, (void**)&pCommandBuffer))) {
 //		args.i[1] = (long)size;
 //		CustomFormatMessage(USERLOG_SEVERITY_CRITICAL, 1320, "TMP_alloc() error %i. Unable to allocate %i bytes for command buffers", &args, stCORE_LOGBOOK_NAME, stCORE_LOGBOOK_FACILITY);
 //		return ArEventLogMakeEventID(arEVENTLOG_SEVERITY_ERROR, stCORE_LOGBOOK_FACILITY, 1320);
 //	}
-//	memset(pCommandBuffer, 0, size);
-//	
-//	/* Memory for buffer write indices */
-//	size = sizeof(unsigned char) * configPLCInterface.commandCount;
+	memset(pCoreCommandBuffer, 0, allocationSize);
+	
+	/* Memory for buffer write indices */
+	allocationSize = sizeof(StCoreBufferControlType) * userPalletCount;
+	TMP_alloc(allocationSize, (void**)&pCoreBufferControl);
 //	args.i[1] = (long)size;
 //	if((args.i[0] = TMP_alloc(size, (void**)&pCommandWriteIndex))) {
 //		CustomFormatMessage(USERLOG_SEVERITY_CRITICAL, 1320, "TMP_alloc() error %i. Unable to allocate %i bytes for command buffer write indices", &args, stCORE_LOGBOOK_NAME, stCORE_LOGBOOK_FACILITY);
 //		return ArEventLogMakeEventID(arEVENTLOG_SEVERITY_ERROR, stCORE_LOGBOOK_FACILITY, 1320);
 //	}
-//	memset(pCommandWriteIndex, 0, size);
-//	
-//	/* Memory for buffer read indices */
-//	if((args.i[0] = TMP_alloc(size, (void**)&pCommandReadIndex))) {
-//		CustomFormatMessage(USERLOG_SEVERITY_CRITICAL, 1320, "TMP_alloc() error %i. Unable to allocate %i bytes for command buffer read indices", &args, stCORE_LOGBOOK_NAME, stCORE_LOGBOOK_FACILITY);
-//		return ArEventLogMakeEventID(arEVENTLOG_SEVERITY_ERROR, stCORE_LOGBOOK_FACILITY, 1320);
-//	}
-//	memset(pCommandReadIndex, 0, size);
-//	
-//	/* Memory for buffer full flags */
-//	if((args.i[0] = TMP_alloc(size, (void**)&pCommandBufferFull))) {
-//		CustomFormatMessage(USERLOG_SEVERITY_CRITICAL, 1320, "TMP_alloc() error %i. Unable to allocate %i bytes for command buffer full flags", &args, stCORE_LOGBOOK_NAME, stCORE_LOGBOOK_FACILITY);
-//		return ArEventLogMakeEventID(arEVENTLOG_SEVERITY_ERROR, stCORE_LOGBOOK_FACILITY, 1320);
-//	}
-//	memset(pCommandBufferFull, 0, size);
-//	
+	memset(pCoreBufferControl, 0, allocationSize);
+	
 //	configError = false;
 	return 0;
 	
