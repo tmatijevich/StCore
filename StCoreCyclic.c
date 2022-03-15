@@ -16,6 +16,8 @@ long StCoreCyclic(void) {
 	controlInterface.statusSize = coreControlInterfaceConfig.statusSize;
 	controlInterface.connectionType = stCONNECTION_LOCAL;
 	
+	StCoreRunCommand();
+	
 	SuperTrakProcessControl(0, &controlInterface);
 	SuperTrakCyclic1();
 	SuperTrakProcessStatus(0, &controlInterface);

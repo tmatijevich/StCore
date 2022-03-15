@@ -61,3 +61,12 @@ FUNCTION_BLOCK StCoreSection
 		FaultPresent : BOOL;
 	END_VAR
 END_FUNCTION_BLOCK
+
+FUNCTION StCoreReleaseToTarget : DINT
+	VAR_INPUT
+		target : USINT;
+		palletID : USINT;
+		direction : UINT;
+		destinationTarget : USINT;
+	END_VAR
+END_FUNCTION

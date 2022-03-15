@@ -57,6 +57,7 @@ extern StCoreBufferControlType *pCoreBufferControl;
 void StCoreLogMessage(UserLogSeverityEnum severity, unsigned short code, char *message);
 void StCoreFormatMessage(UserLogSeverityEnum severity, unsigned short code, char *message, FormatStringArgumentsType *args);
 unsigned short StCoreEventCode(long eventID);
+void StCoreRunCommand(void);
 
 #ifdef __cplusplus
 };
