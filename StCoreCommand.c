@@ -5,11 +5,14 @@
 *******************************************************************************/
 
 #include "StCoreMain.h"
+#define FORMAT_SIZE 125
 
 long StCoreReleaseToTarget(unsigned char target, unsigned char palletID, unsigned short direction, unsigned char destinationTarget) {
 	
 	unsigned char index, context, commandID, *pTargetPalletID, *pCommand;
 	StCoreBufferControlType *pBufferControl;
+	char format[FORMAT_SIZE + 1];
+	FormatStringArgumentsType args;
 	
 	if(target != 0) {
 		if(target > coreInitialTargetCount)
@@ -52,8 +55,15 @@ long StCoreReleaseToTarget(unsigned char target, unsigned char palletID, unsigne
 	pCommand[2] = destinationTarget;
 	
 	pBufferControl->write = (pBufferControl->write + 1) % stCORE_COMMANDBUFFER_SIZE;
-	if(pBufferControl->write == pBufferControl->read)
+	if(pBufferControl->write == pBufferControl->read) {
 		pBufferControl->full = true;
+		/* Write to logger */
+		format[FORMAT_SIZE] = '\0';
+		strncpy(format, "Pallet %i command buffer full (size=%i)", FORMAT_SIZE);
+		args.i[0] = index;
+		args.i[1] = stCORE_COMMANDBUFFER_SIZE;
+		StCoreFormatMessage(USERLOG_SEVERITY_WARNING, 5000, format, &args);
+	}
 	
 }
 
@@ -63,6 +73,8 @@ void StCoreRunCommand(void) {
 	StCoreBufferControlType *pBufferControl;
 	unsigned char *pTrigger, *pComplete, *pSuccess, complete, success;
 	unsigned short i;
+	char format[FORMAT_SIZE + 1];
+	FormatStringArgumentsType args;
 	
 	if(pCoreCommandBuffer == NULL || pCoreBufferControl == NULL || pCyclicControlData == NULL || pCyclicStatusData == NULL)
 		return;
@@ -97,6 +109,24 @@ void StCoreRunCommand(void) {
 			/* Set the trigger and activate */
 			SET_BIT(*pTrigger, i % 8);
 			pBufferControl->active = true;
+			
+			/* Write to logger */
+			format[FORMAT_SIZE] = '\0';
+			if(pCommand->u1[0] == 16 || pCommand->u1[0] == 17)
+				strncpy(format, "Target %i release to target direction=%s destination=T%i", FORMAT_SIZE);
+			else if(pCommand->u1[0] == 18 || pCommand->u1[0] == 19)
+				strncpy(format, "Pallet %i release to target direction=%s destination=T%i", FORMAT_SIZE);
+			// Target %i release to offset direction=%s destination=T%i offset=%ium
+			if(pCommand->u1[0] == 16 || pCommand->u1[0] == 18)
+				strncpy(args.s[0], "left", IECSTRING_FORMATARGS_LEN);
+			else
+				strncpy(args.s[0], "right", IECSTRING_FORMATARGS_LEN);
+				
+			args.i[0] = pCommand->u1[1];
+			args.i[1] = pCommand->u1[2];
+			
+			StCoreFormatMessage(USERLOG_SEVERITY_DEBUG, 5000, format, &args);
+			
 		} /* Active? */
 	} /* Loop pallets */
 	
