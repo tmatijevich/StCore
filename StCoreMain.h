@@ -25,6 +25,7 @@ extern "C"
 /* Constants */
 #define stCORE_LOGBOOK_NAME "StCoreLog"
 #define stCORE_LOGBOOK_FACILITY 1
+#define stCORE_FORMAT_SIZE 125
 #define stCORE_COMMANDBUFFER_SIZE 4U
 #define stCORE_SECTION_MAX 64
 
@@ -57,6 +58,7 @@ extern StCoreBufferControlType *pCoreBufferControl;
 void StCoreLogMessage(UserLogSeverityEnum severity, unsigned short code, char *message);
 void StCoreFormatMessage(UserLogSeverityEnum severity, unsigned short code, char *message, FormatStringArgumentsType *args);
 unsigned short StCoreEventCode(long eventID);
+void StCoreLogServChan(unsigned short result, unsigned short parameter);
 void StCoreRunCommand(void);
 
 #ifdef __cplusplus

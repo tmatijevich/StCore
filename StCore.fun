@@ -5,7 +5,7 @@
 *******************************************************************************)
 (*SuperTrak controller program*)
 
-FUNCTION StCoreInit : DINT (*Read layout and targets. Configure PLC control interface*)
+FUNCTION StCoreInit : DINT (*Initialize SuperTrak, read layout and targets, then size control interface*)
 	VAR_INPUT
 		storagePath : STRING[127]; (*Specifies the filesystem location for conveyor configuration data*)
 		simIPAddress : STRING[15]; (*Simulation IP address as specified in CPU Configuration*)
@@ -15,7 +15,7 @@ FUNCTION StCoreInit : DINT (*Read layout and targets. Configure PLC control inte
 	END_VAR
 END_FUNCTION
 
-FUNCTION StCoreCyclic : DINT (*Process PLC communication protocol*)
+FUNCTION StCoreCyclic : DINT (*Process SuperTrak control interface*)
 END_FUNCTION
 
 FUNCTION StCoreExit : DINT (*Free internal memory*)

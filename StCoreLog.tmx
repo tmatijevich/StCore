@@ -7,7 +7,7 @@
     <tu tuid="-536805912">
       <note>StCoreInit() 65000</note>
       <tuv xml:lang="en">
-        <seg>StCoreInit() is unable to create logbook</seg>
+        <seg>StCoreInit() is unable to create a logbook</seg>
       </tuv>
     </tu>
     <tu tuid="-536804376">
@@ -25,7 +25,7 @@
     <tu tuid="-536804176">
       <note>StCoreInit() 1200</note>
       <tuv xml:lang="en">
-        <seg>Invalid SuperTrak system layout. Use TrakMaster's Easy Setup for System Layout</seg>
+        <seg>Invalid SuperTrak system layout. Use TrakMaster's easy setup of the system layout</seg>
       </tuv>
     </tu>
     <tu tuid="536937649">
@@ -44,6 +44,12 @@
       <note>StCoreInit() 1400</note>
       <tuv xml:lang="en">
         <seg>StCoreInit() is unable to allocate memory</seg>
+      </tuv>
+    </tu>
+    <tu tuid="536937948">
+      <note>StCoreInit() 1500</note>
+      <tuv xml:lang="en">
+        <seg>SuperTrak and StCore initialization complete</seg>
       </tuv>
     </tu>
     <tu tuid="-536795376">

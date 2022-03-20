@@ -7,7 +7,7 @@
 #include "StCoreMain.h"
 
 /****************************
- Global variable declarationss
+ Global variable declarations
 ****************************/
 /* Cyclic communication data */
 unsigned char *pCyclicControlData, *pCyclicStatusData;
@@ -17,12 +17,13 @@ SuperTrakControlIfConfig_t coreControlInterfaceConfig;
 
 /* StCore configuration */
 unsigned char coreError = true, coreInitialTargetCount, userPalletCount, userNetworkIOCount;
+long coreStatusID = stCORE_ERROR_INITCALL;
 
 /* Command buffer */
 SuperTrakCommand_t *pCoreCommandBuffer;
 StCoreBufferControlType *pCoreBufferControl;
 
-/* Read layout and targets, then size control interface */
+/* Initialize SuperTrak, read layout and targets, then size control interface */
 long StCoreInit(char *storagePath, char *simIPAddress, char *ethernetInterfaces, unsigned char palletCount, unsigned char networkIOCount) {
 	
 	/***********************
@@ -38,7 +39,7 @@ long StCoreInit(char *storagePath, char *simIPAddress, char *ethernetInterfaces,
 	/********************
 	 Initialize SuperTrak
 	********************/
-	/* SuperTrakCyclic1() has cycle-time violation is SuperTrakInit() is not called */
+	/* SuperTrakCyclic1() has cycle-time violation if SuperTrakInit() is not called */
 	/* Only call SuperTrakInit() if it's the first call to StCoreInit(), if multiple calls are made it will be caught in the next step */
 	if(firstCall) {
 		/* SuperTrakInit() does not appear to return status information, if this fails the service channel will error */
@@ -52,11 +53,12 @@ long StCoreInit(char *storagePath, char *simIPAddress, char *ethernetInterfaces,
 	if(statusID != 0 && statusID != arEVENTLOG_ERR_LOGBOOK_EXISTS) {
 		args.i[0] = statusID;
 	
-		/* Safely copy logbook name to string argument */
+		/* Safely copy logbook name */
 		strncpy(args.s[0], stCORE_LOGBOOK_NAME, IECSTRING_FORMATARGS_LEN);
 		args.s[0][IECSTRING_FORMATARGS_LEN] = '\0';
 		
 		LogFormatMessage(USERLOG_SEVERITY_CRITICAL, StCoreEventCode(stCORE_ERROR_LOGBOOK), "ArEventLog error %i. Possible naming conflict with %s or insufficient user partition size", &args);
+		coreStatusID = stCORE_ERROR_LOGBOOK;
 		return stCORE_ERROR_LOGBOOK;
 	}
 	
@@ -64,42 +66,73 @@ long StCoreInit(char *storagePath, char *simIPAddress, char *ethernetInterfaces,
 	 Verify call
 	***********/
 	if(!firstCall) {
-		StCoreLogMessage(USERLOG_SEVERITY_CRITICAL, StCoreEventCode(stCORE_ERROR_INIT), "Call StCoreInit() once during _INIT");
-		return stCORE_ERROR_INIT;
+		StCoreLogMessage(USERLOG_SEVERITY_CRITICAL, StCoreEventCode(stCORE_ERROR_INITCALL), "Call StCoreInit() once during _INIT");
+		coreStatusID = stCORE_ERROR_INITCALL;
+		return stCORE_ERROR_INITCALL;
 	}
 	firstCall = false;
 	
 	/********************
 	 Verify system layout
 	********************/
+	/* Safely copy storage path */
+	strncpy(args.s[0], storagePath, IECSTRING_FORMATARGS_LEN);
+	args.s[0][IECSTRING_FORMATARGS_LEN] = '\0';
+	
 	/* Read section count */
 	statusID = SuperTrakServChanRead(0, stPAR_SECTION_COUNT, 0, 1, (unsigned long)&sectionCount, sizeof(sectionCount));
+	if(statusID != scERR_SUCCESS) {
+		StCoreFormatMessage(USERLOG_SEVERITY_CRITICAL, StCoreEventCode(stCORE_ERROR_INITSERV), "Verify storage path \"%s\" to configuration files", &args);
+		StCoreLogServChan(statusID, stPAR_SECTION_COUNT);
+		coreStatusID = stCORE_ERROR_INITSERV;
+		return stCORE_ERROR_INITSERV;
+	}
 	
 	/* Verify section count */
 	if(sectionCount < 1 || stCORE_SECTION_MAX < sectionCount) {
 		args.i[0] = stPAR_SECTION_COUNT;
 		args.i[1] = sectionCount;
 		args.i[2] = stCORE_SECTION_MAX;
-		StCoreFormatMessage(USERLOG_SEVERITY_CRITICAL, StCoreEventCode(stCORE_ERROR_SYSTEMLAYOUT), "Section count (Par %i):%i exceeds limits [1, %i]", &args);
-		return stCORE_ERROR_SYSTEMLAYOUT;
+		StCoreFormatMessage(USERLOG_SEVERITY_CRITICAL, StCoreEventCode(stCORE_ERROR_LAYOUT), "Section count (Par %i):%i exceeds limits [1, %i]", &args);
+		coreStatusID = stCORE_ERROR_LAYOUT;
+		return stCORE_ERROR_LAYOUT;
 	}
 	
 	/* Read section addresses */
 	statusID = SuperTrakServChanRead(0, stPAR_SECTION_ADDRESS, 0, sectionCount, (unsigned long)&networkOrder, sizeof(networkOrder));
+	if(statusID != scERR_SUCCESS) {
+		StCoreFormatMessage(USERLOG_SEVERITY_CRITICAL, StCoreEventCode(stCORE_ERROR_INITSERV), "Verify storage path \"%s\" to configuration files", &args);
+		StCoreLogServChan(statusID, stPAR_SECTION_ADDRESS);
+		coreStatusID = stCORE_ERROR_INITSERV;
+		return stCORE_ERROR_INITSERV;
+	}
 	
 	/* Read head section */
 	statusID = SuperTrakServChanRead(0, stPAR_LOGICAL_HEAD_SECTION, 0, 1, (unsigned long)&headSection, sizeof(headSection));
+	if(statusID != scERR_SUCCESS) {
+		StCoreFormatMessage(USERLOG_SEVERITY_CRITICAL, StCoreEventCode(stCORE_ERROR_INITSERV), "Verify storage path \"%s\" to configuration files", &args);
+		StCoreLogServChan(statusID, stPAR_LOGICAL_HEAD_SECTION);
+		coreStatusID = stCORE_ERROR_INITSERV;
+		return stCORE_ERROR_INITSERV;
+	}
 	
 	/* Verify head section */
 	if(headSection != 1) {
 		args.i[0] = stPAR_LOGICAL_HEAD_SECTION;
 		args.i[1] = headSection;
-		StCoreLogMessage(USERLOG_SEVERITY_CRITICAL, StCoreEventCode(stCORE_ERROR_SYSTEMLAYOUT), "Logical head section (Par %i):%i is not equal to 1");
-		return stCORE_ERROR_SYSTEMLAYOUT;
+		StCoreLogMessage(USERLOG_SEVERITY_CRITICAL, StCoreEventCode(stCORE_ERROR_LAYOUT), "Logical head section (Par %i):%i is not equal to 1");
+		coreStatusID = stCORE_ERROR_LAYOUT;
+		return stCORE_ERROR_LAYOUT;
 	}
 	
 	/* Read flow direction */
 	statusID = SuperTrakServChanRead(0, stPAR_FLOW_DIRECTION, 0, 1, (unsigned long)&flowDirection, sizeof(flowDirection));
+	if(statusID != scERR_SUCCESS) {
+		StCoreFormatMessage(USERLOG_SEVERITY_CRITICAL, StCoreEventCode(stCORE_ERROR_INITSERV), "Verify storage path \"%s\" to configuration files", &args);
+		StCoreLogServChan(statusID, stPAR_FLOW_DIRECTION);
+		coreStatusID = stCORE_ERROR_INITSERV;
+		return stCORE_ERROR_INITSERV;
+	}
 	
 	/* Verify flow order */
 	memset(&flowOrder, 0, sizeof(flowOrder));
@@ -117,13 +150,19 @@ long StCoreInit(char *storagePath, char *simIPAddress, char *ethernetInterfaces,
 			break;
 		}
 	}
-	if(i >= sectionCount)
-		return stCORE_ERROR_SYSTEMLAYOUT;
+	if(i >= sectionCount) { /* Search incomplete */
+		StCoreLogMessage(USERLOG_SEVERITY_CRITICAL, StCoreEventCode(stCORE_ERROR_LAYOUT), "Unable to match head section with system layout");
+		coreStatusID = stCORE_ERROR_LAYOUT;
+		return stCORE_ERROR_LAYOUT;
+	}
 	
 	j = 1; k = 0;
 	while(networkOrder[i] != headSection) { /* Build flow order following network order in flow direction */
-		if(++k > sectionCount)
-			return stCORE_ERROR_SYSTEMLAYOUT;
+		if(++k > sectionCount) {
+			StCoreLogMessage(USERLOG_SEVERITY_CRITICAL, StCoreEventCode(stCORE_ERROR_LAYOUT), "Unexpected system layout section order");
+			coreStatusID = stCORE_ERROR_LAYOUT;
+			return stCORE_ERROR_LAYOUT;
+		}
 		flowOrder[j++] = networkOrder[i];
 		if(flowDirection == stDIRECTION_RIGHT) {
 			if(i == sectionCount - 1) i = 0;
@@ -141,8 +180,9 @@ long StCoreInit(char *storagePath, char *simIPAddress, char *ethernetInterfaces,
 			args.i[1] = flowOrder[i - 1];
 			if(flowDirection == stDIRECTION_LEFT) strcpy(args.s[0], "left");
 			else strcpy(args.s[0], "right");
-			StCoreFormatMessage(USERLOG_SEVERITY_CRITICAL, StCoreEventCode(stCORE_ERROR_SYSTEMLAYOUT), "Section %i downstream of section %i in pallet flow direction:%s. Use system layout's easy setup", &args);
-			return stCORE_ERROR_SYSTEMLAYOUT;
+			StCoreFormatMessage(USERLOG_SEVERITY_CRITICAL, StCoreEventCode(stCORE_ERROR_LAYOUT), "Section %i downstream of section %i in pallet flow direction:%s. Expecting increasing section numbers", &args);
+			coreStatusID = stCORE_ERROR_LAYOUT;
+			return stCORE_ERROR_LAYOUT;
 		}
 	}
 	
@@ -174,69 +214,99 @@ long StCoreInit(char *storagePath, char *simIPAddress, char *ethernetInterfaces,
 	/* Enable interface (0) and use system control & status */
 	coreControlInterfaceConfig.options = (1 << stCONTROL_IF_ENABLED) + (1 << stCONTROL_IF_SYSTEM_ENABLED);
 	/* Assign to interface 0 */
-	args.i[0] = SuperTrakServChanWrite(0, stPAR_PLC_IF_OPTIONS, 0, 1, (unsigned long)&coreControlInterfaceConfig.options, sizeof(coreControlInterfaceConfig.options));
-//	if(args.i[0] != scERR_SUCCESS) 
-//		return StCoreLogServChan(args.i[0], stPAR_PLC_IF_OPTIONS);
+	statusID = SuperTrakServChanWrite(0, stPAR_PLC_IF_OPTIONS, 0, 1, (unsigned long)&coreControlInterfaceConfig.options, sizeof(coreControlInterfaceConfig.options));
+	if(statusID != scERR_SUCCESS) {
+		StCoreFormatMessage(USERLOG_SEVERITY_CRITICAL, StCoreEventCode(stCORE_ERROR_INITSERV), "Verify storage path \"%s\" to configuration files", &args);
+		StCoreLogServChan(statusID, stPAR_PLC_IF_OPTIONS);
+		coreStatusID = stCORE_ERROR_INITSERV;
+		return stCORE_ERROR_INITSERV;
+	}
 	
 	/* Section start */
 	coreControlInterfaceConfig.sectionStartIndex = 0;
-	args.i[0] = SuperTrakServChanWrite(0, stPAR_PLC_IF_SECTION_START, 0, 1, (unsigned long)&coreControlInterfaceConfig.sectionStartIndex, sizeof(coreControlInterfaceConfig.sectionStartIndex));
-//	if(args.i[0] != scERR_SUCCESS) 
-//		return StCoreLogServChan(args.i[0], stPAR_PLC_IF_SECTION_START);
+	statusID = SuperTrakServChanWrite(0, stPAR_PLC_IF_SECTION_START, 0, 1, (unsigned long)&coreControlInterfaceConfig.sectionStartIndex, sizeof(coreControlInterfaceConfig.sectionStartIndex));
+	if(statusID != scERR_SUCCESS) {
+		StCoreFormatMessage(USERLOG_SEVERITY_CRITICAL, StCoreEventCode(stCORE_ERROR_INITSERV), "Verify storage path \"%s\" to configuration files", &args);
+		StCoreLogServChan(statusID, stPAR_PLC_IF_SECTION_START);
+		coreStatusID = stCORE_ERROR_INITSERV;
+		return stCORE_ERROR_INITSERV;
+	}
 	
 	/* Section count */
 	coreControlInterfaceConfig.sectionCount = sectionCount;
-	args.i[0] = SuperTrakServChanWrite(0, stPAR_PLC_IF_SECTION_COUNT, 0, 1, (unsigned long)&coreControlInterfaceConfig.sectionCount, sizeof(coreControlInterfaceConfig.sectionCount));
-//	if(args.i[0] != scERR_SUCCESS) 
-//		return StCoreLogServChan(args.i[0], stPAR_PLC_IF_SECTION_COUNT);
+	statusID = SuperTrakServChanWrite(0, stPAR_PLC_IF_SECTION_COUNT, 0, 1, (unsigned long)&coreControlInterfaceConfig.sectionCount, sizeof(coreControlInterfaceConfig.sectionCount));
+	if(statusID != scERR_SUCCESS) {
+		StCoreFormatMessage(USERLOG_SEVERITY_CRITICAL, StCoreEventCode(stCORE_ERROR_INITSERV), "Verify storage path \"%s\" to configuration files", &args);
+		StCoreLogServChan(statusID, stPAR_PLC_IF_SECTION_COUNT);
+		coreStatusID = stCORE_ERROR_INITSERV;
+		return stCORE_ERROR_INITSERV;
+	}
 	
 	/* Target start */
 	coreControlInterfaceConfig.targetStartIndex = 0;
-	args.i[0] = SuperTrakServChanWrite(0, stPAR_PLC_IF_TARGET_START, 0, 1, (unsigned long)&coreControlInterfaceConfig.targetStartIndex, sizeof(coreControlInterfaceConfig.targetStartIndex));
-//	if(args.i[0] != scERR_SUCCESS) 
-//		return StCoreLogServChan(args.i[0], stPAR_PLC_IF_TARGET_START);
+	statusID = SuperTrakServChanWrite(0, stPAR_PLC_IF_TARGET_START, 0, 1, (unsigned long)&coreControlInterfaceConfig.targetStartIndex, sizeof(coreControlInterfaceConfig.targetStartIndex));
+	if(statusID != scERR_SUCCESS) {
+		StCoreFormatMessage(USERLOG_SEVERITY_CRITICAL, StCoreEventCode(stCORE_ERROR_INITSERV), "Verify storage path \"%s\" to configuration files", &args);
+		StCoreLogServChan(statusID, stPAR_PLC_IF_TARGET_START);
+		coreStatusID = stCORE_ERROR_INITSERV;
+		return stCORE_ERROR_INITSERV;
+	}
 	
 	/* Target count */
 	coreControlInterfaceConfig.targetCount = ROUND_UP_MULTIPLE(coreInitialTargetCount + 1, 4);
-	args.i[0] = SuperTrakServChanWrite(0, stPAR_PLC_IF_TARGET_COUNT, 0, 1, (unsigned long)&coreControlInterfaceConfig.targetCount, sizeof(coreControlInterfaceConfig.targetCount));
-//	if(args.i[0] != scERR_SUCCESS) 
-//		return StCoreLogServChan(args.i[0], stPAR_PLC_IF_TARGET_COUNT);
+	statusID = SuperTrakServChanWrite(0, stPAR_PLC_IF_TARGET_COUNT, 0, 1, (unsigned long)&coreControlInterfaceConfig.targetCount, sizeof(coreControlInterfaceConfig.targetCount));
+	if(statusID != scERR_SUCCESS) {
+		StCoreFormatMessage(USERLOG_SEVERITY_CRITICAL, StCoreEventCode(stCORE_ERROR_INITSERV), "Verify storage path \"%s\" to configuration files", &args);
+		StCoreLogServChan(statusID, stPAR_PLC_IF_TARGET_COUNT);
+		coreStatusID = stCORE_ERROR_INITSERV;
+		return stCORE_ERROR_INITSERV;
+	}
 	
 	/* Command count */
 	coreControlInterfaceConfig.commandCount = ROUND_UP_MULTIPLE(palletCount + 1, 8);
-	args.i[0] = SuperTrakServChanWrite(0, stPAR_PLC_IF_COMMAND_COUNT, 0, 1, (unsigned long)&coreControlInterfaceConfig.commandCount, sizeof(coreControlInterfaceConfig.commandCount));
-//	if(args.i[0] != scERR_SUCCESS) 
-//		return StCoreLogServChan(args.i[0], stPAR_PLC_IF_COMMAND_COUNT);
+	statusID = SuperTrakServChanWrite(0, stPAR_PLC_IF_COMMAND_COUNT, 0, 1, (unsigned long)&coreControlInterfaceConfig.commandCount, sizeof(coreControlInterfaceConfig.commandCount));
+	if(statusID != scERR_SUCCESS) {
+		StCoreFormatMessage(USERLOG_SEVERITY_CRITICAL, StCoreEventCode(stCORE_ERROR_INITSERV), "Verify storage path \"%s\" to configuration files", &args);
+		StCoreLogServChan(statusID, stPAR_PLC_IF_COMMAND_COUNT);
+		coreStatusID = stCORE_ERROR_INITSERV;
+		return stCORE_ERROR_INITSERV;
+	}
 	
 	/* Network IO start */
 	coreControlInterfaceConfig.networkIoStartIndex = 0;
-	args.i[0] = SuperTrakServChanWrite(0, stPAR_PLC_IF_NETWORK_IO_START, 0, 1, (unsigned long)&coreControlInterfaceConfig.networkIoStartIndex, sizeof(coreControlInterfaceConfig.networkIoStartIndex));
-//	if(args.i[0] != scERR_SUCCESS) 
-//		return StCoreLogServChan(args.i[0], stPAR_PLC_IF_NETWORK_IO_START);
+	statusID = SuperTrakServChanWrite(0, stPAR_PLC_IF_NETWORK_IO_START, 0, 1, (unsigned long)&coreControlInterfaceConfig.networkIoStartIndex, sizeof(coreControlInterfaceConfig.networkIoStartIndex));
+	if(statusID != scERR_SUCCESS) {
+		StCoreFormatMessage(USERLOG_SEVERITY_CRITICAL, StCoreEventCode(stCORE_ERROR_INITSERV), "Verify storage path \"%s\" to configuration files", &args);
+		StCoreLogServChan(statusID, stPAR_PLC_IF_NETWORK_IO_START);
+		coreStatusID = stCORE_ERROR_INITSERV;
+		return stCORE_ERROR_INITSERV;
+	}
 	
 	/* Network IO count */
 	coreControlInterfaceConfig.networkIoCount = ROUND_UP_MULTIPLE(networkIOCount + 1, 8);
-	args.i[0] = SuperTrakServChanWrite(0, stPAR_PLC_IF_NETWORK_IO_COUNT, 0, 1, (unsigned long)&coreControlInterfaceConfig.networkIoCount, sizeof(coreControlInterfaceConfig.networkIoCount));
-//	if(args.i[0] != scERR_SUCCESS) 
-//		return StCoreLogServChan(args.i[0], stPAR_PLC_IF_NETWORK_IO_COUNT);
+	statusID = SuperTrakServChanWrite(0, stPAR_PLC_IF_NETWORK_IO_COUNT, 0, 1, (unsigned long)&coreControlInterfaceConfig.networkIoCount, sizeof(coreControlInterfaceConfig.networkIoCount));
+	if(statusID != scERR_SUCCESS) {
+		StCoreFormatMessage(USERLOG_SEVERITY_CRITICAL, StCoreEventCode(stCORE_ERROR_INITSERV), "Verify storage path \"%s\" to configuration files", &args);
+		StCoreLogServChan(statusID, stPAR_PLC_IF_NETWORK_IO_COUNT);
+		coreStatusID = stCORE_ERROR_INITSERV;
+		return stCORE_ERROR_INITSERV;
+	}
 	
 	/* Revision */
 	coreControlInterfaceConfig.revision = 0;
-	args.i[0] = SuperTrakServChanWrite(0, stPAR_PLC_IF_REVISION, 0, 1, (unsigned long)&coreControlInterfaceConfig.revision, sizeof(coreControlInterfaceConfig.revision));
-//	if(args.i[0] != scERR_SUCCESS) 
-//		return StCoreLogServChan(args.i[0], stPAR_PLC_IF_REVISION);
-		
+	statusID = SuperTrakServChanWrite(0, stPAR_PLC_IF_REVISION, 0, 1, (unsigned long)&coreControlInterfaceConfig.revision, sizeof(coreControlInterfaceConfig.revision));
+	if(statusID != scERR_SUCCESS) {
+		StCoreFormatMessage(USERLOG_SEVERITY_CRITICAL, StCoreEventCode(stCORE_ERROR_INITSERV), "Verify storage path \"%s\" to configuration files", &args);
+		StCoreLogServChan(statusID, stPAR_PLC_IF_REVISION);
+		coreStatusID = stCORE_ERROR_INITSERV;
+		return stCORE_ERROR_INITSERV;
+	}
+	
 	/***************************************
 	 Get PLC control interface configuration
 	***************************************/
 	SuperTrakGetControlIfConfig(0, &coreControlInterfaceConfig);
 	
-//	/************************
-//	 Get enable signal source
-//	************************/
-//	if((args.i[0] = SuperTrakServChanRead(0, 1107, 0, 1, (unsigned long)&configEnableSource, sizeof(configEnableSource))) != scERR_SUCCESS)
-//		return StCoreLogServChan(args.i[0], 1107);
-//	
 	/***************
 	 Allocate memory
 	***************/
