@@ -3,15 +3,15 @@
  * Author: Tyler Matijevich
  * Date: 2022-02-15
 *******************************************************************************)
-(*SuperTrak controller program*)
+(*SuperTrak control program*)
 
-FUNCTION StCoreInit : DINT (*Initialize SuperTrak, read layout and targets, then size control interface*)
+FUNCTION StCoreInit : DINT (*Initialize SuperTrak, verify layout, read targets, and size control interface*)
 	VAR_INPUT
-		storagePath : STRING[127]; (*Specifies the filesystem location for conveyor configuration data*)
-		simIPAddress : STRING[15]; (*Simulation IP address as specified in CPU Configuration*)
-		ethernetInterfaces : STRING[63]; (*Comma-delimited list of Ethernet interfaces. Example: 'IF3,IF4'*)
-		palletCount : USINT; (*Maximum number of pallets intended for use on system*)
-		networkIOCount : USINT; (*Maximum number of network I/O channels intended for use on system*)
+		StoragePath : STRING[127]; (*Filesystem location for SuperTrak configuration data*)
+		SimIPAddress : STRING[15]; (*CPU configuration's simulation IP address*)
+		EthernetInterfaceList : STRING[63]; (*Comma-separated list of ethernet interfaces ('IF3,IF4')*)
+		PalletCount : USINT; (*Maximum number of pallets on system*)
+		NetworkIOCount : USINT; (*Maximum number of network I/O channels on system*)
 	END_VAR
 END_FUNCTION
 

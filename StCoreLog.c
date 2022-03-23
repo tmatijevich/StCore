@@ -6,25 +6,25 @@
 
 #include "StCoreMain.h"
 
-void StCoreLogMessage(UserLogSeverityEnum severity, unsigned short code, char *message) {
-	CustomMessage(severity, code, message, stCORE_LOGBOOK_NAME, stCORE_LOGBOOK_FACILITY);
+void coreLogMessage(UserLogSeverityEnum severity, unsigned short code, char *message) {
+	CustomMessage(severity, code, message, CORE_LOGBOOK_NAME, CORE_LOGBOOK_FACILITY);
 }
 
-void StCoreFormatMessage(UserLogSeverityEnum severity, unsigned short code, char *message, FormatStringArgumentsType *args) {
-	CustomFormatMessage(severity, code, message, args, stCORE_LOGBOOK_NAME, stCORE_LOGBOOK_FACILITY);
+void coreLogFormatMessage(UserLogSeverityEnum severity, unsigned short code, char *message, FormatStringArgumentsType *args) {
+	CustomFormatMessage(severity, code, message, args, CORE_LOGBOOK_NAME, CORE_LOGBOOK_FACILITY);
 }
 
-unsigned short StCoreEventCode(long eventID) {
+unsigned short coreEventCode(long eventID) {
 	return (unsigned short)eventID;
 }
 
 /* Log service channel error responses for all StCore functions */
-void StCoreLogServChan(unsigned short result, unsigned short parameter) {
+void coreLogServiceChannel(unsigned short result, unsigned short parameter) {
 	
 	/***********************
 	 Declare local variables
 	***********************/
-	char format[stCORE_FORMAT_SIZE + 1];
+	char format[CORE_FORMAT_SIZE + 1];
 	FormatStringArgumentsType args;
 	unsigned long remainingLength;
 	
@@ -37,11 +37,11 @@ void StCoreLogServChan(unsigned short result, unsigned short parameter) {
 	/******************
 	 Safely copy prefix
 	******************/
-	format[stCORE_FORMAT_SIZE] = '\0';
-	strncpy(format, "Serv. chan. error %i accessing par %i: ", stCORE_FORMAT_SIZE);
+	format[CORE_FORMAT_SIZE] = '\0';
+	strncpy(format, "Serv. chan. error %i accessing par %i: ", CORE_FORMAT_SIZE);
 	args.i[0] = result;
 	args.i[1] = parameter;
-	remainingLength = stCORE_FORMAT_SIZE - strlen(format);
+	remainingLength = CORE_FORMAT_SIZE - strlen(format);
 	
 	/**********************************
 	 Concatenate specific error message
@@ -91,6 +91,6 @@ void StCoreLogServChan(unsigned short result, unsigned short parameter) {
 			break;
 	}
 	
-	StCoreFormatMessage(USERLOG_SEVERITY_ERROR, StCoreEventCode(stCORE_ERROR_SERVCHAN), format, &args);
+	coreLogFormatMessage(USERLOG_SEVERITY_ERROR, coreEventCode(stCORE_ERROR_SERVCHAN), format, &args);
 	
 } /* Function defintion */

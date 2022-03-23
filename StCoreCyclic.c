@@ -10,13 +10,13 @@ long StCoreCyclic(void) {
 	
 	static SuperTrakControlInterface_t controlInterface;
 	
-	controlInterface.pControl = (unsigned long)pCyclicControlData;
-	controlInterface.controlSize = coreControlInterfaceConfig.controlSize;
-	controlInterface.pStatus = (unsigned long)pCyclicStatusData;
-	controlInterface.statusSize = coreControlInterfaceConfig.statusSize;
+	controlInterface.pControl = (unsigned long)pCoreCyclicControl;
+	controlInterface.controlSize = coreControlInterface.controlSize;
+	controlInterface.pStatus = (unsigned long)pCoreCyclicStatus;
+	controlInterface.statusSize = coreControlInterface.statusSize;
 	controlInterface.connectionType = stCONNECTION_LOCAL;
 	
-	StCoreRunCommand();
+	coreProcessCommand();
 	
 	SuperTrakProcessControl(0, &controlInterface);
 	SuperTrakCyclic1();

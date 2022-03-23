@@ -23,11 +23,11 @@ extern "C"
 #include "StCore.h"
 
 /* Constants */
-#define stCORE_LOGBOOK_NAME "StCoreLog"
-#define stCORE_LOGBOOK_FACILITY 1
-#define stCORE_FORMAT_SIZE 125
-#define stCORE_COMMANDBUFFER_SIZE 4U
-#define stCORE_SECTION_MAX 64
+#define CORE_LOGBOOK_NAME "StCoreLog"
+#define CORE_LOGBOOK_FACILITY 1
+#define CORE_FORMAT_SIZE 125
+#define CORE_COMMANDBUFFER_SIZE 4U
+#define CORE_SECTION_MAX 64
 
 /* Macros */
 #define COUNT_OF(x) ((sizeof(x)/sizeof(0[x])) / ((size_t)(!(sizeof(x) % sizeof(0[x]))))) /* https://stackoverflow.com/a/1598827 */
@@ -40,26 +40,26 @@ extern "C"
 #define TOGGLE_BIT(x,y) ((x) ^= 1U << (y))
 
 /* Structures */
-typedef struct StCoreBufferControlType {
+typedef struct coreBufferControlType {
 	unsigned char read;
 	unsigned char write;
 	unsigned char full;
 	unsigned char active;
-} StCoreBufferControlType;
+} coreBufferControlType;
 
 /* Global variables */
-extern unsigned char *pCyclicControlData, *pCyclicStatusData;
-extern SuperTrakControlIfConfig_t coreControlInterfaceConfig;
-extern unsigned char coreError, coreInitialTargetCount, userPalletCount, userNetworkIOCount;
+extern unsigned char *pCoreCyclicControl, *pCoreCyclicStatus;
+extern SuperTrakControlIfConfig_t coreControlInterface;
+extern unsigned char coreError, coreTargetCount, corePalletCount, coreNetworkIOCount;
 extern SuperTrakCommand_t *pCoreCommandBuffer;
-extern StCoreBufferControlType *pCoreBufferControl;
+extern coreBufferControlType *pCoreBufferControl;
 
 /* Function prototypes */
-void StCoreLogMessage(UserLogSeverityEnum severity, unsigned short code, char *message);
-void StCoreFormatMessage(UserLogSeverityEnum severity, unsigned short code, char *message, FormatStringArgumentsType *args);
-unsigned short StCoreEventCode(long eventID);
-void StCoreLogServChan(unsigned short result, unsigned short parameter);
-void StCoreRunCommand(void);
+void coreLogMessage(UserLogSeverityEnum severity, unsigned short code, char *message);
+void coreLogFormatMessage(UserLogSeverityEnum severity, unsigned short code, char *message, FormatStringArgumentsType *args);
+unsigned short coreEventCode(long eventID);
+void coreLogServiceChannel(unsigned short result, unsigned short parameter);
+void coreProcessCommand(void);
 
 #ifdef __cplusplus
 };
