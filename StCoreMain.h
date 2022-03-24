@@ -58,6 +58,7 @@ extern coreBufferControlType *pCoreBufferControl;
 void coreLogMessage(UserLogSeverityEnum severity, unsigned short code, char *message);
 void coreLogFormatMessage(UserLogSeverityEnum severity, unsigned short code, char *message, FormatStringArgumentsType *args);
 unsigned short coreEventCode(long eventID);
+char* coreStringCopy(char *destination, const char *source, unsigned long size);
 void coreLogServiceChannel(unsigned short result, unsigned short parameter);
 void coreProcessCommand(void);
 

@@ -18,79 +18,76 @@ unsigned short coreEventCode(long eventID) {
 	return (unsigned short)eventID;
 }
 
+/* Safely copy a string with a specified destination size */
+char* coreStringCopy(char *destination, const char *source, unsigned long size) {
+	/* Ensure null terminator */
+	destination[size - 1] = '\0';
+	/* Copy size - 1 characters */
+	return strncpy(destination, source, size - 1);
+}
+
 /* Log service channel error responses for all StCore functions */
 void coreLogServiceChannel(unsigned short result, unsigned short parameter) {
 	
-	/***********************
-	 Declare local variables
-	***********************/
-	char format[CORE_FORMAT_SIZE + 1];
+	/* Declare local variables */
 	FormatStringArgumentsType args;
-	unsigned long remainingLength;
 	
-	/*****
-	 Abort
-	*****/
+	/* Check result */
 	if(result == scERR_SUCCESS)
 		return;
-		
-	/******************
-	 Safely copy prefix
-	******************/
-	format[CORE_FORMAT_SIZE] = '\0';
-	strncpy(format, "Serv. chan. error %i accessing par %i: ", CORE_FORMAT_SIZE);
+	
+	/* Arguments */
 	args.i[0] = result;
 	args.i[1] = parameter;
-	remainingLength = CORE_FORMAT_SIZE - strlen(format);
 	
 	/**********************************
 	 Concatenate specific error message
 	**********************************/
 	switch(result) {
 		case scERR_INVALID_SECTION:	
-			strncat(format, "An invalid section number was specified", remainingLength);
+			coreStringCopy(args.s[0], "An invalid section number was specified", sizeof(args.s[0]));
 			break;
 		case scERR_INVALID_PARAM:
-			strncat(format, "The specified parameter number was not recognized", remainingLength);
+			coreStringCopy(args.s[0], "The specified parameter number was not recognized", sizeof(args.s[0]));
 			break;
 		case scERR_INVALID_TASK:
-			strncat(format, "The specified task code was not recognized", remainingLength);
+			coreStringCopy(args.s[0], "The specified task code was not recognized", sizeof(args.s[0]));
 			break;
 		case scERR_TASK_UNAVAILABLE:
-			strncat(format, "The requested operation is currently unavailable", remainingLength);
+			coreStringCopy(args.s[0], "The requested operation is currently unavailable", sizeof(args.s[0]));
 			break;
 		case scERR_INVALID_INDEX:
-			strncat(format, "The specified starting index is invalid", remainingLength);
+			coreStringCopy(args.s[0], "The specified starting index is invalid", sizeof(args.s[0]));
 			break;
 		case scERR_INVALID_VALUE:
-			strncat(format, "The value to be written was outside of the valid range", remainingLength);
+			coreStringCopy(args.s[0], "The value to be written was outside of the valid range", sizeof(args.s[0]));
 			break;
 		case scERR_INVALID_COUNT:
-			strncat(format, "The requested number of elements is invalid", remainingLength);
+			coreStringCopy(args.s[0], "The requested number of elements is invalid", sizeof(args.s[0]));
 			break;
 		case scERR_INVALID_ARGUMENT:
-			strncat(format, "An invalid argument was specified", remainingLength);
+			coreStringCopy(args.s[0], "An invalid argument was specified", sizeof(args.s[0]));
 			break;
 		case scERR_COMMAND_TIMEOUT:
-			strncat(format, "The command did not complete in a timely manner", remainingLength);
+			coreStringCopy(args.s[0], "The command did not complete in a timely manner", sizeof(args.s[0]));
 			break;
 		case scERR_UNAUTHORIZED:
-			strncat(format, "The request was denied due to a lack of permissions", remainingLength);
+			coreStringCopy(args.s[0], "The request was denied due to a lack of permissions", sizeof(args.s[0]));
 			break;
 		case scERR_BUFFER_SIZE:
-			strncat(format, "The buffer size is insufficient", remainingLength);
+			coreStringCopy(args.s[0], "The buffer size is insufficient", sizeof(args.s[0]));
 			break;
 		case scERR_INVALID_PACKET:
-			strncat(format, "The packet is malformed, orits length is incorrect", remainingLength);
+			coreStringCopy(args.s[0], "The packet is malformed, orits length is incorrect", sizeof(args.s[0]));
 			break;
 		case scERR_INTERNAL_ERROR:
-			strncat(format, "An internal error occurred while processing the request", remainingLength);
+			coreStringCopy(args.s[0], "An internal error occurred while processing the request", sizeof(args.s[0]));
 			break;
 		default:
-			strncat(format, "Unknown error", remainingLength);
+			coreStringCopy(args.s[0], "Unknown error", sizeof(args.s[0]));			
 			break;
 	}
 	
-	coreLogFormatMessage(USERLOG_SEVERITY_ERROR, coreEventCode(stCORE_ERROR_SERVCHAN), format, &args);
+	coreLogFormatMessage(USERLOG_SEVERITY_ERROR, coreEventCode(stCORE_ERROR_SERVCHAN), "Serv. chan. error %i accessing par %i: %s", &args);
 	
 } /* Function defintion */

@@ -13,41 +13,23 @@
     <tu tuid="-536804376">
       <note>StCoreInit() 1000</note>
       <tuv xml:lang="en">
-        <seg>Multiple calls of StCoreInit()</seg>
+        <seg>StCoreInit() not called or called multiple times</seg>
       </tuv>
     </tu>
     <tu tuid="-536804276">
       <note>StCoreInit() 1100</note>
       <tuv xml:lang="en">
-        <seg>SuperTrak service channel error from StCoreInit()</seg>
+        <seg>Invalid SuperTrak system layout. Use TrakMaster's easy setup of the system layout</seg>
       </tuv>
     </tu>
     <tu tuid="-536804176">
       <note>StCoreInit() 1200</note>
       <tuv xml:lang="en">
-        <seg>Invalid SuperTrak system layout. Use TrakMaster's easy setup of the system layout</seg>
-      </tuv>
-    </tu>
-    <tu tuid="536937649">
-      <note>StCoreInit() 1201</note>
-      <tuv xml:lang="en">
-        <seg>SuperTrak system layout verified</seg>
+        <seg>StCoreInit() is unable to allocate memory</seg>
       </tuv>
     </tu>
     <tu tuid="536937748">
       <note>StCoreInit() 1300</note>
-      <tuv xml:lang="en">
-        <seg>SuperTrak target definition identified</seg>
-      </tuv>
-    </tu>
-    <tu tuid="-536803976">
-      <note>StCoreInit() 1400</note>
-      <tuv xml:lang="en">
-        <seg>StCoreInit() is unable to allocate memory</seg>
-      </tuv>
-    </tu>
-    <tu tuid="536937948">
-      <note>StCoreInit() 1500</note>
       <tuv xml:lang="en">
         <seg>SuperTrak and StCore initialization complete</seg>
       </tuv>
