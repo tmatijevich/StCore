@@ -51,6 +51,7 @@ typedef struct coreBufferControlType {
 extern unsigned char *pCoreCyclicControl, *pCoreCyclicStatus;
 extern SuperTrakControlIfConfig_t coreControlInterface;
 extern unsigned char coreError, coreTargetCount, corePalletCount, coreNetworkIOCount;
+extern long coreStatusID;
 extern SuperTrakCommand_t *pCoreCommandBuffer;
 extern coreBufferControlType *pCoreBufferControl;
 

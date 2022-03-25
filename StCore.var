@@ -7,6 +7,6 @@ VAR CONSTANT
 	stCORE_ERROR_LOGBOOK : DINT := -536805912; (*StCoreInit() is unable to create a logbook. Possible naming conflict with StCoreLog or insufficient user partition size*)
 	stCORE_ERROR_INIT : DINT := -536804376; (*StCoreInit() not called or called multiple times. Call StCoreInit() once during _INIT*)
 	stCORE_ERROR_LAYOUT : DINT := -536804276; (*Invalid SuperTrak system layout. Use TrakMaster's easy setup of the system layout*)
-	stCORE_ERROR_ALLOC : DINT := -536804076; (*StCoreInit() is unable to allocate memory for cyclic data or command buffers*)
+	stCORE_ERROR_ALLOC : DINT := -536804076; (*Unable to allocate memory or invalid reference for cyclic data and command buffers*)
 	stCORE_ERROR_SERVCHAN : DINT := -536795376; (*SuperTrak service channel error. See logger for more details*)
 END_VAR

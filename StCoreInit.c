@@ -53,6 +53,7 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 		SuperTrakInit(StoragePath, SimIPAddress, EthernetInterfaceList);
 	}
 	else {
+		/* This does not change the error status or StCore, but notifies the user of multiple calls */
 		if(firstLog) {
 			firstLog = false;
 			coreLogMessage(USERLOG_SEVERITY_CRITICAL, coreEventCode(stCORE_ERROR_INIT), "Call StCoreInit() once during _INIT");
@@ -297,7 +298,7 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	
 	/* Memory for buffer write indices */
 	allocationSize = sizeof(coreBufferControlType) * corePalletCount;
-	TMP_alloc(allocationSize, (void**)&pCoreBufferControl);
+	status = TMP_alloc(allocationSize, (void**)&pCoreBufferControl);
 	if(status) {
 		logMemoryManagement((unsigned short)status, allocationSize, "command buffer control");
 		return stCORE_ERROR_ALLOC;
