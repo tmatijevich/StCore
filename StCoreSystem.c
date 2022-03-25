@@ -6,6 +6,9 @@
 
 #include "StCoreMain.h"
 
+void clearOutputs(StCoreSystem_typ *inst);
+
+/* System control interface */
 void StCoreSystem(StCoreSystem_typ *inst) {
 	
 	/***********************
@@ -14,43 +17,54 @@ void StCoreSystem(StCoreSystem_typ *inst) {
 	static StCoreSystem_typ *firstInst;
 	unsigned short *pSystemControl, *pSystemStatus;
 	unsigned char i, *pSectionStatus;
+	unsigned long dataUInt32;
 	
-	/*******
-	 Disable
-	*******/
-	if(!(inst->Enable)) {
-		inst->Valid = false;
-		inst->Error = false;
-		inst->StatusID = ERR_FUB_ENABLE_FALSE;
-		inst->PalletsStopped = false;
-		inst->WarningPresent = false;
-		inst->FaultPresent = false;
-		inst->PalletCount = 0;
-		memset(&(inst->Info), 0, sizeof(inst->Info));
+	/***********
+	 Verify call
+	***********/
+	/* Disable */
+	if(!inst->Enable) {
+		clearOutputs(inst);
 		return;
 	}
 	
-	/***************
-	 Verify instance
-	***************/
+	/* Instance */
 	if(firstInst == NULL)
 		firstInst = inst;
 	else if(firstInst != inst) {
-		inst->Valid = false;
+		if(inst->Error == false)
+			coreLogMessage(USERLOG_SEVERITY_ERROR, coreEventCode(stCORE_ERROR_INST), "Multiple instances of StCoreSystem()");
+		clearOutputs(inst);
 		inst->Error = true;
-		inst->StatusID = -1;
-		inst->PalletsStopped = false;
-		inst->WarningPresent = false;
-		inst->FaultPresent = false;
-		inst->PalletCount = 0;
-		memset(&(inst->Info), 0, sizeof(inst->Info));
+		inst->StatusID = stCORE_ERROR_INST;
 		return;
 	}
+	
+	/* Global error */
+	if(coreError) {
+		clearOutputs(inst);
+		inst->Error = true;
+		inst->StatusID = coreStatusID;
+		return;
+	}
+	
+	/* Guard references */
+	if(pCoreCyclicControl == NULL || pCoreCyclicStatus == NULL) {
+		clearOutputs(inst);
+		inst->Error = true;
+		inst->StatusID = stCORE_ERROR_ALLOC;
+		return;
+	}
+	
+	/* Set outputs */
+	inst->Valid = true;
+	inst->Error = false;
+	inst->StatusID = 0;
 	
 	/*******
 	 Control
 	*******/
-	pSystemControl = pCoreCyclicControl + coreControlInterface.systemControlOffset;
+	pSystemControl = (unsigned short*)(pCoreCyclicControl + coreControlInterface.systemControlOffset);
 	
 	/* Enable */
 	if(inst->EnableAllSections) SET_BIT(*pSystemControl, 0);
@@ -63,7 +77,7 @@ void StCoreSystem(StCoreSystem_typ *inst) {
 	/******
 	 Status
 	******/
-	pSystemStatus = pCoreCyclicStatus + coreControlInterface.systemStatusOffset;
+	pSystemStatus = (unsigned short*)(pCoreCyclicStatus + coreControlInterface.systemStatusOffset);
 	
 	inst->PalletsStopped = GET_BIT(*pSystemStatus, 4);
 	inst->WarningPresent = GET_BIT(*pSystemStatus, 6);
@@ -71,9 +85,21 @@ void StCoreSystem(StCoreSystem_typ *inst) {
 	inst->PalletCount = (unsigned char)(*(pSystemStatus + 1)); /* Access the next 16 bits */
 	
 	/* Extended information */
-	SuperTrakServChanRead(0, stPAR_SYSTEM_FAULTS_ACTIVE, 1, 1, (unsigned long)&inst->Info.Warnings, sizeof(inst->Info.Warnings));
-	SuperTrakServChanRead(0, stPAR_SYSTEM_FAULTS_ACTIVE, 0, 1, (unsigned long)&inst->Info.Faults, sizeof(inst->Info.Faults));
+	SuperTrakServChanRead(0, stPAR_SYSTEM_FAULTS_ACTIVE, 1, 1, (unsigned long)&dataUInt32, sizeof(dataUInt32));
+	for(i = 0; i < 32; i++) {
+		if(GET_BIT(dataUInt32, i) && !GET_BIT(inst->Info.Warnings, i))
+			coreLogFaultWarning(32 + i, 0);
+	}
+	memcpy(&inst->Info.Warnings, &dataUInt32, sizeof(inst->Info.Warnings));
 	
+	SuperTrakServChanRead(0, stPAR_SYSTEM_FAULTS_ACTIVE, 0, 1, (unsigned long)&dataUInt32, sizeof(dataUInt32));
+	for(i = 0; i < 32; i++) {
+		if(GET_BIT(dataUInt32, i) && !GET_BIT(inst->Info.Faults, i))
+			coreLogFaultWarning(i, 0);
+	}
+	memcpy(&inst->Info.Faults, &dataUInt32, sizeof(inst->Info.Faults));
+	
+	/* Section information */
 	inst->Info.SectionCount = coreControlInterface.sectionCount;
 	
 	inst->Info.Enabled = true;
@@ -94,4 +120,18 @@ void StCoreSystem(StCoreSystem_typ *inst) {
 		if(GET_BIT(*pSectionStatus, 7)) inst->Info.SectionFaultPresent = true;
 	}
 	
+	/* Pallet information */
+	
 } /* Function defintion */
+
+/* Clean instance outputs */
+void clearOutputs(StCoreSystem_typ *inst) {
+	inst->Valid = false;
+	inst->Error = false;
+	inst->StatusID = 0;
+	inst->PalletsStopped = false;
+	inst->WarningPresent = false;
+	inst->FaultPresent = false;
+	inst->PalletCount = 0;
+	memset(&inst->Info, 0, sizeof(inst->Info));
+}

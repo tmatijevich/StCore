@@ -13,7 +13,7 @@
     <tu tuid="-536804376">
       <note>StCoreInit() 1000</note>
       <tuv xml:lang="en">
-        <seg>StCoreInit() not called or called multiple times</seg>
+        <seg>StCoreInit() has not been called or has been called multiple times</seg>
       </tuv>
     </tu>
     <tu tuid="-536804276">
@@ -22,14 +22,8 @@
         <seg>Invalid SuperTrak system layout. Use TrakMaster's easy setup of the system layout</seg>
       </tuv>
     </tu>
-    <tu tuid="-536804176">
+    <tu tuid="536937648">
       <note>StCoreInit() 1200</note>
-      <tuv xml:lang="en">
-        <seg>StCoreInit() is unable to allocate memory</seg>
-      </tuv>
-    </tu>
-    <tu tuid="536937748">
-      <note>StCoreInit() 1300</note>
       <tuv xml:lang="en">
         <seg>SuperTrak and StCore initialization complete</seg>
       </tuv>
@@ -38,6 +32,402 @@
       <note>StCore 10000</note>
       <tuv xml:lang="en">
         <seg>SuperTrak service channel error</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536795276">
+      <note>StCore 10100</note>
+      <tuv xml:lang="en">
+        <seg>Unable to allocate memory of reference cyclic data and command buffers</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536795176">
+      <note>StCore 10200</note>
+      <tuv xml:lang="en">
+        <seg>Multiple instances of the function block are used in the same context</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-1610481664">
+      <note>SuperTrak warning 0</note>
+      <tuv xml:lang="en">
+        <seg>Not in use</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-1610481663">
+      <note>SuperTrak warning 1</note>
+      <tuv xml:lang="en">
+        <seg>Application warning</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-1610481662">
+      <note>SuperTrak warning 2</note>
+      <tuv xml:lang="en">
+        <seg>License not present</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-1610481661">
+      <note>SuperTrak warning 3</note>
+      <tuv xml:lang="en">
+        <seg>Not in use</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-1610481660">
+      <note>SuperTrak warning 4</note>
+      <tuv xml:lang="en">
+        <seg>Thermal sensor malfunction</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-1610481659">
+      <note>SuperTrak warning 5</note>
+      <tuv xml:lang="en">
+        <seg>High temperature</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-1610481658">
+      <note>SuperTrak warning 6</note>
+      <tuv xml:lang="en">
+        <seg>Pallet position is uncertain at destination</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-1610481657">
+      <note>SuperTrak warning 7</note>
+      <tuv xml:lang="en">
+        <seg>Gateway network warning</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-1610481656">
+      <note>SuperTrak warning 8</note>
+      <tuv xml:lang="en">
+        <seg>Excessive coil current (I2T)</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-1610481655">
+      <note>SuperTrak warning 9</note>
+      <tuv xml:lang="en">
+        <seg>Coil(s) unresponsive; check connections</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-1610481654">
+      <note>SuperTrak warning 10</note>
+      <tuv xml:lang="en">
+        <seg>Not in use</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-1610481653">
+      <note>SuperTrak warning 11</note>
+      <tuv xml:lang="en">
+        <seg>Pallet position correction was required</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-1610481652">
+      <note>SuperTrak warning 12</note>
+      <tuv xml:lang="en">
+        <seg>Pallet ID tag warning</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-1610481651">
+      <note>SuperTrak warning 13</note>
+      <tuv xml:lang="en">
+        <seg>Duplicate Pallet ID</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-1610481650">
+      <note>SuperTrak warning 14</note>
+      <tuv xml:lang="en">
+        <seg>Two pallets in collision deadlock</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-1610481649">
+      <note>SuperTrak warning 15</note>
+      <tuv xml:lang="en">
+        <seg>Check encoder setup</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-1610481648">
+      <note>SuperTrak warning 16</note>
+      <tuv xml:lang="en">
+        <seg>Consecutive encoder readings out of range</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-1610481647">
+      <note>SuperTrak warning 17</note>
+      <tuv xml:lang="en">
+        <seg>Invalid region configuration</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-1610481646">
+      <note>SuperTrak warning 18</note>
+      <tuv xml:lang="en">
+        <seg>Invalid parameter configuration</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-1610481645">
+      <note>SuperTrak warning 19</note>
+      <tuv xml:lang="en">
+        <seg>Command failed</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-1610481644">
+      <note>SuperTrak warning 20</note>
+      <tuv xml:lang="en">
+        <seg>Input or output states are being forced</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-1610481643">
+      <note>SuperTrak warning 21</note>
+      <tuv xml:lang="en">
+        <seg>Encoder read warning</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-1610481642">
+      <note>SuperTrak warning 22</note>
+      <tuv xml:lang="en">
+        <seg>Coil driver communication error</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-1610481641">
+      <note>SuperTrak warning 23</note>
+      <tuv xml:lang="en">
+        <seg>Parameter save required</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-1610481640">
+      <note>SuperTrak warning 24</note>
+      <tuv xml:lang="en">
+        <seg>Pallet destination updated</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-1610481639">
+      <note>SuperTrak warning 25</note>
+      <tuv xml:lang="en">
+        <seg>Encoder communication warning</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-1610481638">
+      <note>SuperTrak warning 26</note>
+      <tuv xml:lang="en">
+        <seg>Disabled pallet arrived</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-1610481637">
+      <note>SuperTrak warning 27</note>
+      <tuv xml:lang="en">
+        <seg>Too many pallets</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-1610481636">
+      <note>SuperTrak warning 28</note>
+      <tuv xml:lang="en">
+        <seg>Reset required to activate configuration changes</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-1610481635">
+      <note>SuperTrak warning 29</note>
+      <tuv xml:lang="en">
+        <seg>Excessive pallet settling time</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-1610481634">
+      <note>SuperTrak warning 30</note>
+      <tuv xml:lang="en">
+        <seg>Controller health warning</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-1610481633">
+      <note>SuperTrak warning 31</note>
+      <tuv xml:lang="en">
+        <seg>Abnormal condition detected</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536739840">
+      <note>SuperTrak fault 0</note>
+      <tuv xml:lang="en">
+        <seg>Motor supply voltage out of range</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536739839">
+      <note>SuperTrak fault 1</note>
+      <tuv xml:lang="en">
+        <seg>Not in use</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536739838">
+      <note>SuperTrak fault 2</note>
+      <tuv xml:lang="en">
+        <seg>License not present</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536739837">
+      <note>SuperTrak fault 3</note>
+      <tuv xml:lang="en">
+        <seg>Not in use</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536739836">
+      <note>SuperTrak fault 4</note>
+      <tuv xml:lang="en">
+        <seg>Excessive coil current</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536739835">
+      <note>SuperTrak fault 5</note>
+      <tuv xml:lang="en">
+        <seg>High temperature</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536739834">
+      <note>SuperTrak fault 6</note>
+      <tuv xml:lang="en">
+        <seg>Not in use</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536739833">
+      <note>SuperTrak fault 7</note>
+      <tuv xml:lang="en">
+        <seg>Gateway network error</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536739832">
+      <note>SuperTrak fault 8</note>
+      <tuv xml:lang="en">
+        <seg>Excessive coil current (I2T)</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536739831">
+      <note>SuperTrak fault 9</note>
+      <tuv xml:lang="en">
+        <seg>Coil(s) unresponsive; check connections</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536739830">
+      <note>SuperTrak fault 10</note>
+      <tuv xml:lang="en">
+        <seg>Not in use</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536739829">
+      <note>SuperTrak fault 11</note>
+      <tuv xml:lang="en">
+        <seg>Coil driver(s) shut down</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536739828">
+      <note>SuperTrak fault 12</note>
+      <tuv xml:lang="en">
+        <seg>Not in use</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536739827">
+      <note>SuperTrak fault 13</note>
+      <tuv xml:lang="en">
+        <seg>Not in use</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536739826">
+      <note>SuperTrak fault 14</note>
+      <tuv xml:lang="en">
+        <seg>Encoder calibration required</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536739825">
+      <note>SuperTrak fault 15</note>
+      <tuv xml:lang="en">
+        <seg>Excessive pallet following error</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536739824">
+      <note>SuperTrak fault 16</note>
+      <tuv xml:lang="en">
+        <seg>Unrecognized pallet(s) detected</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536739823">
+      <note>SuperTrak fault 17</note>
+      <tuv xml:lang="en">
+        <seg>Not in use</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536739822">
+      <note>SuperTrak fault 18</note>
+      <tuv xml:lang="en">
+        <seg>Not in use</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536739821">
+      <note>SuperTrak fault 19</note>
+      <tuv xml:lang="en">
+        <seg>Two pallets in collision deadlock</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536739820">
+      <note>SuperTrak fault 20</note>
+      <tuv xml:lang="en">
+        <seg>Pallet lost position feedback</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536739819">
+      <note>SuperTrak fault 21</note>
+      <tuv xml:lang="en">
+        <seg>Encoder read error</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536739818">
+      <note>SuperTrak fault 22</note>
+      <tuv xml:lang="en">
+        <seg>Coil driver communication error</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536739817">
+      <note>SuperTrak fault 23</note>
+      <tuv xml:lang="en">
+        <seg>Conflicting pallets detected</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536739816">
+      <note>SuperTrak fault 24</note>
+      <tuv xml:lang="en">
+        <seg>PLC Interface heartbeat timeout</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536739815">
+      <note>SuperTrak fault 25</note>
+      <tuv xml:lang="en">
+        <seg>Encoder communication error</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536739814">
+      <note>SuperTrak fault 26</note>
+      <tuv xml:lang="en">
+        <seg>Disabled pallet arrived</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536739813">
+      <note>SuperTrak fault 27</note>
+      <tuv xml:lang="en">
+        <seg>Abnormal condition detected</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536739812">
+      <note>SuperTrak fault 28</note>
+      <tuv xml:lang="en">
+        <seg>Section diabled through configuration software</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536739811">
+      <note>SuperTrak fault 29</note>
+      <tuv xml:lang="en">
+        <seg>Too many pallets</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536739810">
+      <note>SuperTrak fault 30</note>
+      <tuv xml:lang="en">
+        <seg>Hardware initialization error</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536739809">
+      <note>SuperTrak fault 31</note>
+      <tuv xml:lang="en">
+        <seg>Fatal abnormal condition detected</seg>
       </tuv>
     </tu>
   </body>

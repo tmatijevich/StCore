@@ -88,6 +88,42 @@ void coreLogServiceChannel(unsigned short result, unsigned short parameter) {
 			break;
 	}
 	
-	coreLogFormatMessage(USERLOG_SEVERITY_ERROR, coreEventCode(stCORE_ERROR_SERVCHAN), "Serv. chan. error %i accessing par %i: %s", &args);
+	coreLogFormatMessage(USERLOG_SEVERITY_CRITICAL, coreEventCode(stCORE_ERROR_SERVCHAN), "Serv. chan. error %i accessing par %i: %s", &args);
 	
 } /* Function defintion */
+
+/* Log SuperTrak faults and warnings */
+void coreLogFaultWarning(unsigned char index, unsigned char section) {
+	
+	/* Local variables */
+	FormatStringArgumentsType args;
+	char temp[80];
+	UserLogSeverityEnum severity;
+	
+	/* Out of range */
+	if(index > 63)
+		return;
+	
+	/* Context */
+	if(section == 0)
+		coreStringCopy(args.s[0], "System", sizeof(args.s[0]));
+	else {
+		args.i[0] = section;
+		IecFormatString(temp, sizeof(temp), "Section %i", &args);
+		coreStringCopy(args.s[0], temp, sizeof(args.s[0]));
+	}
+		
+	/* Fault or warning */
+	if(index < 32) {
+		severity = USERLOG_SEVERITY_ERROR;
+		coreStringCopy(args.s[1], "fault", sizeof(args.s[1]));
+	}
+	else {
+		severity = USERLOG_SEVERITY_WARNING;
+		coreStringCopy(args.s[1], "warning", sizeof(args.s[1]));
+	}
+	
+	/* Write */
+	CustomFormatMessage(severity, index % 32, "%s %s", &args, CORE_LOGBOOK_NAME, 2);
+	
+} /* Function definition */

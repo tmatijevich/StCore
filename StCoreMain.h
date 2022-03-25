@@ -61,6 +61,7 @@ void coreLogFormatMessage(UserLogSeverityEnum severity, unsigned short code, cha
 unsigned short coreEventCode(long eventID);
 char* coreStringCopy(char *destination, const char *source, unsigned long size);
 void coreLogServiceChannel(unsigned short result, unsigned short parameter);
+void coreLogFaultWarning(unsigned char index, unsigned char section);
 void coreProcessCommand(void);
 
 #ifdef __cplusplus

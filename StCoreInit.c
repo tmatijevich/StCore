@@ -307,7 +307,7 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	
 	args.i[0] = sectionCount;
 	args.i[1] = coreTargetCount;
-	coreLogFormatMessage(USERLOG_SEVERITY_SUCCESS, 1300, "%i sections and %i targets defined in TrakMaster", &args);
+	coreLogFormatMessage(USERLOG_SEVERITY_SUCCESS, 1200, "%i sections and %i targets defined in TrakMaster", &args);
 	coreError = false;
 	return coreStatusID = 0;
 	
