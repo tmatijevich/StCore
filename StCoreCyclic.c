@@ -6,38 +6,32 @@
 
 #include "StCoreMain.h"
 
-unsigned long coreSaveParameters;
-
 /* Process SuperTrak control interface */
 long StCoreCyclic(void) {
 	
 	/***********************
 	 Declare local variables
 	***********************/
-	static unsigned char taskVerified, logAllocation = true;
+	static unsigned char taskVerified;
 	RTInfo_typ fbRTInfo;
 	FormatStringArgumentsType args;
-	static unsigned long timerSave;
-	long status, i;
+	static unsigned long timerSave, saveParameters;
+	long status;
 	SuperTrakControlIfConfig_t currentInterfaceConfig;
-	SuperTrakPalletInfo_t palletInfo[256];
 	static SuperTrakControlInterface_t controlInterface;
 	
-	/******************************************************************************
-	 Error check:
-	 1. Existing error
-	 2. Task class and cycle time
-	 3. Delay and save parameters
-	 4. Interface configuration changes
-	 5. Pallet IDs within configured limit
-	******************************************************************************/
-	/* 1. Do not run anything if core error from Init, Cyclic, or Exit functions */
-	/* A core error should always come with a status ID */
-	if(coreError)
-		return coreStatusID;
+	/************
+	 Verification
+	************/
+	SuperTrakGetControlIfConfig(0, &currentInterfaceConfig); /* Get current control interface configuration */
+	
+	/* 1. Existing error */
+	if(coreError) {
+		/* Do not proceed with further checks */
+	}
 		
 	/* 2. Verify task class and cycle time */
-	if(!taskVerified) {
+	else if(!taskVerified) {
 		memset(&fbRTInfo, 0, sizeof(fbRTInfo));
 		fbRTInfo.enable = true;
 		RTInfo(&fbRTInfo);
@@ -46,75 +40,68 @@ long StCoreCyclic(void) {
 			args.i[1] = fbRTInfo.cycle_time;
 			coreLogFormatMessage(USERLOG_SEVERITY_CRITICAL, coreEventCode(stCORE_ERROR_TASK), "Invalid task class %i or cycle time %i us", &args);
 			coreError = true;
-			return coreStatusID = stCORE_ERROR_TASK;
+			coreStatusID = stCORE_ERROR_TASK;
 		}
-		taskVerified = true;
+		else 
+			taskVerified = true;
 	}
 		
-	/* 3. Save parameters */
-	if(timerSave >= 500000 && coreSaveParameters == 0) {
-		coreSaveParameters = 0x000020; /* Global parameters and PLC interface configuration */
-		status = SuperTrakServChanWrite(0, stPAR_SAVE_PARAMETERS, 0, 1, (unsigned long)&coreSaveParameters, sizeof(coreSaveParameters));
-		if(status != scERR_SUCCESS) {
-			coreLogServiceChannel((unsigned short)status, stPAR_SAVE_PARAMETERS);
-			coreError = true;
-			return coreStatusID = stCORE_ERROR_SERVCHAN;
+	/* 3. Delay and save parameters */
+	else if(saveParameters == 0) {
+		if(timerSave >= 500000) {
+			saveParameters = 0x000020; /* Global parameters and PLC interface configuration */
+			status = SuperTrakServChanWrite(0, stPAR_SAVE_PARAMETERS, 0, 1, (unsigned long)&saveParameters, sizeof(saveParameters));
+			if(status != scERR_SUCCESS) {
+				coreLogServiceChannel((unsigned short)status, stPAR_SAVE_PARAMETERS);
+				coreError = true;
+				coreStatusID = stCORE_ERROR_SERVCHAN;
+			}
 		}
+		else
+			timerSave += 800;
 	}
-	else if(coreSaveParameters == 0)
-		timerSave += 800;
 		
-	/* Wait until interface configuration is saved */
-//	if(coreSaveParameters == 0)
-//		return 0;
-		
-	/* 4. Monitor for changes to control interface configuration from initilization */
-	SuperTrakGetControlIfConfig(0, &currentInterfaceConfig);
-	if(memcmp(&currentInterfaceConfig, &coreInterfaceConfig, sizeof(currentInterfaceConfig)) != 0) {
+	/* 4. Monitor changes to control interface configuration */
+	else if(memcmp(&currentInterfaceConfig, &coreInterfaceConfig, sizeof(currentInterfaceConfig)) != 0) {
 		coreLogMessage(USERLOG_SEVERITY_CRITICAL, coreEventCode(stCORE_ERROR_INTERFACE), "Please restart controller and do not modify control interface configuration");
 		coreError = true;
-		return coreStatusID = stCORE_ERROR_INTERFACE;
+		coreStatusID = stCORE_ERROR_INTERFACE;
 	}
-	
-	/* 5. Monitor pallet IDs present on system for limit */
-	/*SuperTrakGetPalletInfo((unsigned long)&palletInfo, (unsigned char)COUNT_OF(palletInfo), false);
-	for(i = corePalletCount; i < COUNT_OF(palletInfo); i++) {
-		if(GET_BIT(palletInfo[i].status, 0)) {
-			args.i[0] = palletInfo[i].palletID;
-			args.i[1] = i;
-			args.i[2] = corePalletCount;
-			coreLogFormatMessage(USERLOG_SEVERITY_CRITICAL, coreEventCode(stCORE_ERROR_MAXPALLET), "Pallet ID %i index %i preset on system exceeding configured limit of %i pallets", &args);
-			coreError = true;
-			return coreStatusID = stCORE_ERROR_MAXPALLET;
-		}
-	}*/
 	
 	/*****************************
 	 Process SuperTrak cyclic data
 	*****************************/
-	/* Guard pointers */
-	if(pCoreCyclicControl == NULL || pCoreCyclicStatus == NULL) {
-		if(logAllocation) 
-			coreLogMessage(USERLOG_SEVERITY_CRITICAL, coreEventCode(stCORE_ERROR_ALLOC), "StCoreCyclic() cannot reference cyclic control or status data due to null pointer");
-		logAllocation = false;
-		coreError = true;
-		return coreStatusID = stCORE_ERROR_ALLOC;
-	}
-	logAllocation = true;
-		
-	/* Process StCore commands */
+	/* Process StCore command buffers */
 	coreProcessCommand();
 	
+	/* Reference control interface */
 	controlInterface.pControl = (unsigned long)pCoreCyclicControl;
 	controlInterface.controlSize = coreInterfaceConfig.controlSize;
 	controlInterface.pStatus = (unsigned long)pCoreCyclicStatus;
 	controlInterface.statusSize = coreInterfaceConfig.statusSize;
 	controlInterface.connectionType = stCONNECTION_LOCAL;
 	
-	SuperTrakProcessControl(0, &controlInterface);
+	/* Process SuperTrak control */
+	if(coreError || saveParameters == 0) {
+		/* Do nothing */
+	}
+	else if(pCoreCyclicControl == NULL || pCoreCyclicStatus == NULL) {
+		coreLogMessage(USERLOG_SEVERITY_CRITICAL, coreEventCode(stCORE_ERROR_ALLOC), "StCoreCyclic() cannot reference cyclic control or status data due to null pointer");
+		coreError = true;
+		coreStatusID = stCORE_ERROR_ALLOC;
+	}
+	else {
+		/* Only call if there is no error and valid references */
+		SuperTrakProcessControl(0, &controlInterface);
+	}
+		
+	/* Process SuperTrak interface */
 	SuperTrakCyclic1();
-	SuperTrakProcessStatus(0, &controlInterface);
 	
-	return 0;
+	/* Process SuperTrak status */
+	if(!coreError && saveParameters) 
+		SuperTrakProcessStatus(0, &controlInterface);
+	
+	return coreStatusID;
 	
 } /* Function definition */
