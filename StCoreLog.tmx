@@ -28,20 +28,38 @@
         <seg>SuperTrak and StCore initialization complete</seg>
       </tuv>
     </tu>
-    <tu tuid="-536795376">
-      <note>StCore 10000</note>
+    <tu tuid="-536803376">
+      <note>StCoreCyclic() 2000</note>
+      <tuv xml:lang="en">
+        <seg>StCoreCyclic() is not called from task class #1 or does not match cycle time of 800 us</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536803276">
+      <note>StCoreCyclic() 2100</note>
+      <tuv xml:lang="en">
+        <seg>SuperTrak control interface configuration modified from initialization</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536803176">
+      <note>StCoreCyclic() 2200</note>
+      <tuv xml:lang="en">
+        <seg>A SuperTrak pallet ID exceeds the configured count</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536802376">
+      <note>StCore Init/Cyclic/Exit 3000</note>
       <tuv xml:lang="en">
         <seg>SuperTrak service channel error</seg>
       </tuv>
     </tu>
-    <tu tuid="-536795276">
-      <note>StCore 10100</note>
+    <tu tuid="-536802276">
+      <note>StCore Init/Cyclic/Exit 3100</note>
       <tuv xml:lang="en">
         <seg>Unable to allocate memory of reference cyclic data and command buffers</seg>
       </tuv>
     </tu>
-    <tu tuid="-536795176">
-      <note>StCore 10200</note>
+    <tu tuid="-536801376">
+      <note>StCoreSystem/StCoreSection 4000</note>
       <tuv xml:lang="en">
         <seg>Multiple instances of the function block are used in the same context</seg>
       </tuv>
