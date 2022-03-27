@@ -16,7 +16,7 @@ void logMemoryManagement(unsigned short result, unsigned long size, char *name);
 unsigned char *pCoreCyclicControl, *pCoreCyclicStatus;
 
 /* Control interface configuration */
-SuperTrakControlIfConfig_t coreControlInterface;
+SuperTrakControlIfConfig_t coreInterfaceConfig;
 
 /* StCore configuration */
 unsigned char coreError = true, coreTargetCount, corePalletCount, coreNetworkIOCount;
@@ -191,73 +191,73 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	
 	/* Options */
 	/* Enable interface (0) and use system control & status */
-	coreControlInterface.options = (1 << stCONTROL_IF_ENABLED) + (1 << stCONTROL_IF_SYSTEM_ENABLED);
+	coreInterfaceConfig.options = (1 << stCONTROL_IF_ENABLED) + (1 << stCONTROL_IF_SYSTEM_ENABLED);
 	/* Assign to interface 0 */
-	status = SuperTrakServChanWrite(0, stPAR_PLC_IF_OPTIONS, 0, 1, (unsigned long)&coreControlInterface.options, sizeof(coreControlInterface.options));
+	status = SuperTrakServChanWrite(0, stPAR_PLC_IF_OPTIONS, 0, 1, (unsigned long)&coreInterfaceConfig.options, sizeof(coreInterfaceConfig.options));
 	if(status != scERR_SUCCESS) {
 		coreLogServiceChannel((unsigned short)status, stPAR_PLC_IF_OPTIONS);
 		return coreStatusID = stCORE_ERROR_SERVCHAN;
 	}
 	
 	/* Section start */
-	coreControlInterface.sectionStartIndex = 0;
-	status = SuperTrakServChanWrite(0, stPAR_PLC_IF_SECTION_START, 0, 1, (unsigned long)&coreControlInterface.sectionStartIndex, sizeof(coreControlInterface.sectionStartIndex));
+	coreInterfaceConfig.sectionStartIndex = 0;
+	status = SuperTrakServChanWrite(0, stPAR_PLC_IF_SECTION_START, 0, 1, (unsigned long)&coreInterfaceConfig.sectionStartIndex, sizeof(coreInterfaceConfig.sectionStartIndex));
 	if(status != scERR_SUCCESS) {
 		coreLogServiceChannel((unsigned short)status, stPAR_PLC_IF_SECTION_START);
 		return coreStatusID = stCORE_ERROR_SERVCHAN;
 	}
 	
 	/* Section count */
-	coreControlInterface.sectionCount = sectionCount;
-	status = SuperTrakServChanWrite(0, stPAR_PLC_IF_SECTION_COUNT, 0, 1, (unsigned long)&coreControlInterface.sectionCount, sizeof(coreControlInterface.sectionCount));
+	coreInterfaceConfig.sectionCount = sectionCount;
+	status = SuperTrakServChanWrite(0, stPAR_PLC_IF_SECTION_COUNT, 0, 1, (unsigned long)&coreInterfaceConfig.sectionCount, sizeof(coreInterfaceConfig.sectionCount));
 	if(status != scERR_SUCCESS) {
 		coreLogServiceChannel((unsigned short)status, stPAR_PLC_IF_SECTION_COUNT);
 		return coreStatusID = stCORE_ERROR_SERVCHAN;
 	}
 	
 	/* Target start */
-	coreControlInterface.targetStartIndex = 0;
-	status = SuperTrakServChanWrite(0, stPAR_PLC_IF_TARGET_START, 0, 1, (unsigned long)&coreControlInterface.targetStartIndex, sizeof(coreControlInterface.targetStartIndex));
+	coreInterfaceConfig.targetStartIndex = 0;
+	status = SuperTrakServChanWrite(0, stPAR_PLC_IF_TARGET_START, 0, 1, (unsigned long)&coreInterfaceConfig.targetStartIndex, sizeof(coreInterfaceConfig.targetStartIndex));
 	if(status != scERR_SUCCESS) {
 		coreLogServiceChannel((unsigned short)status, stPAR_PLC_IF_TARGET_START);
 		return coreStatusID = stCORE_ERROR_SERVCHAN;
 	}
 	
 	/* Target count */
-	coreControlInterface.targetCount = ROUND_UP_MULTIPLE(coreTargetCount + 1, 4);
-	status = SuperTrakServChanWrite(0, stPAR_PLC_IF_TARGET_COUNT, 0, 1, (unsigned long)&coreControlInterface.targetCount, sizeof(coreControlInterface.targetCount));
+	coreInterfaceConfig.targetCount = ROUND_UP_MULTIPLE(coreTargetCount + 1, 4);
+	status = SuperTrakServChanWrite(0, stPAR_PLC_IF_TARGET_COUNT, 0, 1, (unsigned long)&coreInterfaceConfig.targetCount, sizeof(coreInterfaceConfig.targetCount));
 	if(status != scERR_SUCCESS) {
 		coreLogServiceChannel((unsigned short)status, stPAR_PLC_IF_TARGET_COUNT);
 		return coreStatusID = stCORE_ERROR_SERVCHAN;
 	}
 	
 	/* Command count */
-	coreControlInterface.commandCount = ROUND_UP_MULTIPLE(corePalletCount + 1, 8);
-	status = SuperTrakServChanWrite(0, stPAR_PLC_IF_COMMAND_COUNT, 0, 1, (unsigned long)&coreControlInterface.commandCount, sizeof(coreControlInterface.commandCount));
+	coreInterfaceConfig.commandCount = ROUND_UP_MULTIPLE(corePalletCount + 1, 8);
+	status = SuperTrakServChanWrite(0, stPAR_PLC_IF_COMMAND_COUNT, 0, 1, (unsigned long)&coreInterfaceConfig.commandCount, sizeof(coreInterfaceConfig.commandCount));
 	if(status != scERR_SUCCESS) {
 		coreLogServiceChannel((unsigned short)status, stPAR_PLC_IF_COMMAND_COUNT);
 		return coreStatusID = stCORE_ERROR_SERVCHAN;
 	}
 	
 	/* Network IO start */
-	coreControlInterface.networkIoStartIndex = 0;
-	status = SuperTrakServChanWrite(0, stPAR_PLC_IF_NETWORK_IO_START, 0, 1, (unsigned long)&coreControlInterface.networkIoStartIndex, sizeof(coreControlInterface.networkIoStartIndex));
+	coreInterfaceConfig.networkIoStartIndex = 0;
+	status = SuperTrakServChanWrite(0, stPAR_PLC_IF_NETWORK_IO_START, 0, 1, (unsigned long)&coreInterfaceConfig.networkIoStartIndex, sizeof(coreInterfaceConfig.networkIoStartIndex));
 	if(status != scERR_SUCCESS) {
 		coreLogServiceChannel((unsigned short)status, stPAR_PLC_IF_NETWORK_IO_START);
 		return coreStatusID = stCORE_ERROR_SERVCHAN;
 	}
 	
 	/* Network IO count */
-	coreControlInterface.networkIoCount = ROUND_UP_MULTIPLE(coreNetworkIOCount + 1, 8);
-	status = SuperTrakServChanWrite(0, stPAR_PLC_IF_NETWORK_IO_COUNT, 0, 1, (unsigned long)&coreControlInterface.networkIoCount, sizeof(coreControlInterface.networkIoCount));
+	coreInterfaceConfig.networkIoCount = ROUND_UP_MULTIPLE(coreNetworkIOCount + 1, 8);
+	status = SuperTrakServChanWrite(0, stPAR_PLC_IF_NETWORK_IO_COUNT, 0, 1, (unsigned long)&coreInterfaceConfig.networkIoCount, sizeof(coreInterfaceConfig.networkIoCount));
 	if(status != scERR_SUCCESS) {
 		coreLogServiceChannel((unsigned short)status, stPAR_PLC_IF_NETWORK_IO_COUNT);
 		return coreStatusID = stCORE_ERROR_SERVCHAN;
 	}
 	
 	/* Revision */
-	coreControlInterface.revision = 0;
-	status = SuperTrakServChanWrite(0, stPAR_PLC_IF_REVISION, 0, 1, (unsigned long)&coreControlInterface.revision, sizeof(coreControlInterface.revision));
+	coreInterfaceConfig.revision = 0;
+	status = SuperTrakServChanWrite(0, stPAR_PLC_IF_REVISION, 0, 1, (unsigned long)&coreInterfaceConfig.revision, sizeof(coreInterfaceConfig.revision));
 	if(status != scERR_SUCCESS) {
 		coreLogServiceChannel((unsigned short)status, stPAR_PLC_IF_REVISION);
 		return coreStatusID = stCORE_ERROR_SERVCHAN;
@@ -266,12 +266,12 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	/**************************
 	 Read PLC control interface
 	**************************/
-	SuperTrakGetControlIfConfig(0, &coreControlInterface);
+	SuperTrakGetControlIfConfig(0, &coreInterfaceConfig);
 	
 	/***************
 	 Allocate memory
 	***************/
-	allocationSize = coreControlInterface.controlSize;
+	allocationSize = coreInterfaceConfig.controlSize;
 	status = TMP_alloc(allocationSize, (void**)&pCoreCyclicControl);
 	if(status) {
 		logMemoryManagement((unsigned short)status, allocationSize, "cyclic control data");
@@ -279,7 +279,7 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	}
 	memset(pCoreCyclicControl, 0, allocationSize); /* Initialization memory to zero */
 	
-	allocationSize = coreControlInterface.statusSize;
+	allocationSize = coreInterfaceConfig.statusSize;
 	status = TMP_alloc(allocationSize, (void**)&pCoreCyclicStatus);
 	if(status) {
 		logMemoryManagement((unsigned short)status, allocationSize, "cyclic status data");

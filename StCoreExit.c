@@ -14,12 +14,12 @@ long StCoreExit(void) {
 
 	/* Free global pointers */
 	if(pCoreCyclicControl) {
-		allocationSize = coreControlInterface.controlSize;
+		allocationSize = coreInterfaceConfig.controlSize;
 		TMP_free(allocationSize, (void**)&pCoreCyclicControl);
 	}
 	
 	if(pCoreCyclicStatus) {
-		allocationSize = coreControlInterface.statusSize;
+		allocationSize = coreInterfaceConfig.statusSize;
 		TMP_free(allocationSize, (void**)&pCoreCyclicStatus);
 	}
 	

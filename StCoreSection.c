@@ -40,7 +40,7 @@ void StCoreSection(StCoreSection_typ *inst) {
 	/************
 	 Verify index
 	************/
-	if(inst->Section < 1 || coreControlInterface.sectionCount < inst->Section) { 
+	if(inst->Section < 1 || coreInterfaceConfig.sectionCount < inst->Section) { 
 		inst->Error = true;
 		inst->StatusID = -1;
 		return;
@@ -62,7 +62,7 @@ void StCoreSection(StCoreSection_typ *inst) {
 	/*******
 	 Control
 	*******/
-	pSectionControl = pCoreCyclicControl + coreControlInterface.sectionControlOffset + inst->Section - 1;
+	pSectionControl = pCoreCyclicControl + coreInterfaceConfig.sectionControlOffset + inst->Section - 1;
 	
 	if(inst->EnableSection) SET_BIT(*pSectionControl, 0);
 	else CLEAR_BIT(*pSectionControl, 0);
@@ -73,7 +73,7 @@ void StCoreSection(StCoreSection_typ *inst) {
 	/******
 	 Status
 	******/
-	pSectionStatus = pCoreCyclicStatus + coreControlInterface.sectionStatusOffset + inst->Section - 1;
+	pSectionStatus = pCoreCyclicStatus + coreInterfaceConfig.sectionStatusOffset + inst->Section - 1;
 	
 	inst->Enabled = GET_BIT(*pSectionStatus, 0);
 	inst->UnrecognizedPalletsPresent = GET_BIT(*pSectionStatus, 1);

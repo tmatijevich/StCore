@@ -70,7 +70,7 @@ long StCoreCyclic(void) {
 		
 	/* 4. Monitor for changes to control interface configuration from initilization */
 	SuperTrakGetControlIfConfig(0, &currentInterfaceConfig);
-	if(memcmp(&currentInterfaceConfig, &coreControlInterface, sizeof(currentInterfaceConfig)) != 0) {
+	if(memcmp(&currentInterfaceConfig, &coreInterfaceConfig, sizeof(currentInterfaceConfig)) != 0) {
 		coreLogMessage(USERLOG_SEVERITY_CRITICAL, coreEventCode(stCORE_ERROR_INTERFACE), "Please restart controller and do not modify control interface configuration");
 		coreError = true;
 		return coreStatusID = stCORE_ERROR_INTERFACE;
@@ -106,9 +106,9 @@ long StCoreCyclic(void) {
 	coreProcessCommand();
 	
 	controlInterface.pControl = (unsigned long)pCoreCyclicControl;
-	controlInterface.controlSize = coreControlInterface.controlSize;
+	controlInterface.controlSize = coreInterfaceConfig.controlSize;
 	controlInterface.pStatus = (unsigned long)pCoreCyclicStatus;
-	controlInterface.statusSize = coreControlInterface.statusSize;
+	controlInterface.statusSize = coreInterfaceConfig.statusSize;
 	controlInterface.connectionType = stCONNECTION_LOCAL;
 	
 	SuperTrakProcessControl(0, &controlInterface);

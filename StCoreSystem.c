@@ -64,7 +64,7 @@ void StCoreSystem(StCoreSystem_typ *inst) {
 	/*******
 	 Control
 	*******/
-	pSystemControl = (unsigned short*)(pCoreCyclicControl + coreControlInterface.systemControlOffset);
+	pSystemControl = (unsigned short*)(pCoreCyclicControl + coreInterfaceConfig.systemControlOffset);
 	
 	/* Enable */
 	if(inst->EnableAllSections) SET_BIT(*pSystemControl, 0);
@@ -77,7 +77,7 @@ void StCoreSystem(StCoreSystem_typ *inst) {
 	/******
 	 Status
 	******/
-	pSystemStatus = (unsigned short*)(pCoreCyclicStatus + coreControlInterface.systemStatusOffset);
+	pSystemStatus = (unsigned short*)(pCoreCyclicStatus + coreInterfaceConfig.systemStatusOffset);
 	
 	inst->PalletsStopped = GET_BIT(*pSystemStatus, 4);
 	inst->WarningPresent = GET_BIT(*pSystemStatus, 6);
@@ -100,7 +100,7 @@ void StCoreSystem(StCoreSystem_typ *inst) {
 	memcpy(&inst->Info.Faults, &dataUInt32, sizeof(inst->Info.Faults));
 	
 	/* Section information */
-	inst->Info.SectionCount = coreControlInterface.sectionCount;
+	inst->Info.SectionCount = coreInterfaceConfig.sectionCount;
 	
 	inst->Info.Enabled = true;
 	inst->Info.Disabled = true;
@@ -108,9 +108,9 @@ void StCoreSystem(StCoreSystem_typ *inst) {
 	inst->Info.DisabledExternally = false;
 	inst->Info.SectionWarningPresent = false;
 	inst->Info.SectionFaultPresent = false;
-	for(i = 0; i < coreControlInterface.sectionCount; i++) {
+	for(i = 0; i < coreInterfaceConfig.sectionCount; i++) {
 		/* Reference the section status byte */
-		pSectionStatus = pCoreCyclicStatus + coreControlInterface.sectionStatusOffset + i;
+		pSectionStatus = pCoreCyclicStatus + coreInterfaceConfig.sectionStatusOffset + i;
 		
 		if(GET_BIT(*pSectionStatus, 0)) inst->Info.Disabled = false;
 		else inst->Info.Enabled = false;

@@ -21,7 +21,7 @@ long StCoreReleaseToTarget(unsigned char target, unsigned char palletID, unsigne
 		if(pCoreCyclicStatus == NULL)
 			return -1;
 					
-		pTargetPalletID = pCoreCyclicStatus + coreControlInterface.targetStatusOffset + 3 * target + 1;
+		pTargetPalletID = pCoreCyclicStatus + coreInterfaceConfig.targetStatusOffset + 3 * target + 1;
 		if(*pTargetPalletID < 1 || corePalletCount < *pTargetPalletID)
 			return -1;
 		
@@ -83,10 +83,10 @@ void coreProcessCommand(void) {
 		
 		pBufferData = pCoreCommandBuffer + CORE_COMMANDBUFFER_SIZE * i;
 		pBufferControl = pCoreBufferControl + i;
-		pTrigger = pCoreCyclicControl + coreControlInterface.commandTriggerOffset + i / 8;
-		pCommand = pCoreCyclicControl + coreControlInterface.commandDataOffset + sizeof(SuperTrakCommand_t) * i;
-		pComplete = pCoreCyclicStatus + coreControlInterface.commandCompleteOffset + i / 8;
-		pSuccess = pCoreCyclicStatus + coreControlInterface.commandSuccessOffset + i / 8;
+		pTrigger = pCoreCyclicControl + coreInterfaceConfig.commandTriggerOffset + i / 8;
+		pCommand = pCoreCyclicControl + coreInterfaceConfig.commandDataOffset + sizeof(SuperTrakCommand_t) * i;
+		pComplete = pCoreCyclicStatus + coreInterfaceConfig.commandCompleteOffset + i / 8;
+		pSuccess = pCoreCyclicStatus + coreInterfaceConfig.commandSuccessOffset + i / 8;
 		complete = GET_BIT(*pComplete, i % 8);
 		success = GET_BIT(*pSuccess, i % 8);
 		
