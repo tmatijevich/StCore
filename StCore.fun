@@ -22,21 +22,25 @@ FUNCTION StCoreExit : DINT (*Free internal memory*)
 END_FUNCTION
 (*SuperTrak control interface*)
 
-FUNCTION_BLOCK StCoreSystem
+FUNCTION_BLOCK StCoreSystem (*SuperTrak system interface function*)
 	VAR_INPUT
-		Enable : BOOL;
-		EnableAllSections : BOOL;
-		AcknowledgeFaults : BOOL;
+		Enable : BOOL; (*Enable function execution*)
+		ErrorReset : BOOL; (*Reset function error*)
+		EnableAllSections : BOOL; (*(IF) Enable all sections*)
+		AcknowledgeFaults : BOOL; (*(IF) Clear SuperTrak system faults or warnings*)
 	END_VAR
 	VAR_OUTPUT
-		Valid : BOOL;
-		Error : BOOL;
-		StatusID : DINT;
-		PalletsStopped : BOOL;
-		WarningPresent : BOOL;
-		FaultPresent : BOOL;
-		PalletCount : USINT;
-		Info : StCoreSystemInfoType;
+		Valid : BOOL; (*Interface is successfully executing*)
+		Error : BOOL; (*An error has occurred with the function*)
+		StatusID : DINT; (*Error identifier. See logger for more details*)
+		PalletsStopped : BOOL; (*(IF) All pallets are currently not moving*)
+		WarningPresent : BOOL; (*(IF) A system warning message has been recorded*)
+		FaultPresent : BOOL; (*(IF) A system fault message has been recorded*)
+		PalletCount : USINT; (*(IF) Total number of pallets on the system*)
+		Info : StCoreSystemInfoType; (*Extended SuperTrak system information*)
+	END_VAR
+	VAR
+		Internal : ARRAY[0..1] OF USINT; (*Internal data*)
 	END_VAR
 END_FUNCTION_BLOCK
 
