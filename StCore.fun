@@ -30,39 +30,44 @@ FUNCTION_BLOCK StCoreSystem (*SuperTrak system interface function*)
 		AcknowledgeFaults : BOOL; (*(IF) Clear SuperTrak system faults or warnings*)
 	END_VAR
 	VAR_OUTPUT
-		Valid : BOOL; (*Interface is successfully executing*)
+		Valid : BOOL; (*Successful interface function execution*)
 		Error : BOOL; (*An error has occurred with the function*)
-		StatusID : DINT; (*Error identifier. See logger for more details*)
+		StatusID : DINT; (*Function error identifier. See logger for more details*)
 		PalletsStopped : BOOL; (*(IF) All pallets are currently not moving*)
 		WarningPresent : BOOL; (*(IF) A system warning message has been recorded*)
 		FaultPresent : BOOL; (*(IF) A system fault message has been recorded*)
 		PalletCount : USINT; (*(IF) Total number of pallets on the system*)
-		Info : StCoreSystemInfoType; (*Extended SuperTrak system information*)
+		Info : StCoreSystemInfoType; (*Extended system information*)
 	END_VAR
 	VAR
 		Internal : ARRAY[0..1] OF USINT; (*Internal data*)
 	END_VAR
 END_FUNCTION_BLOCK
 
-FUNCTION_BLOCK StCoreSection
+FUNCTION_BLOCK StCoreSection (*SuperTrak section interface function*)
 	VAR_INPUT
-		Enable : BOOL;
-		Section : USINT;
-		EnableSection : BOOL;
-		AcknowledgeFaults : BOOL;
+		Enable : BOOL; (*Enable function execution*)
+		Section : USINT; (*Select section*)
+		ErrorReset : BOOL; (*Reset function error*)
+		EnableSection : BOOL; (*(IF) Enable section control*)
+		AcknowledgeFaults : BOOL; (*(IF) Clear SuperTrak section faults or warnings*)
 	END_VAR
 	VAR_OUTPUT
-		Valid : BOOL;
-		Error : BOOL;
-		StatusID : DINT;
-		Enabled : BOOL;
-		UnrecognizedPalletsPresent : BOOL;
-		MotorPowerOn : BOOL;
-		PalletsRecovering : BOOL;
-		LocatingPallets : BOOL;
-		DisabledExternally : BOOL;
-		WarningPresent : BOOL;
-		FaultPresent : BOOL;
+		Valid : BOOL; (*Successful interface function execution*)
+		Error : BOOL; (*An error has occurred with the function*)
+		StatusID : DINT; (*Function error identifier. See logger for more details*)
+		Enabled : BOOL; (*(IF) Section control is enabled*)
+		UnrecognizedPallets : BOOL; (*(IF) Section has one or more pallets with undetermined position. The section will automatically jog these pallets to locate them*)
+		MotorPowerOn : BOOL; (*(IF) Motor supply voltage is within range*)
+		PalletsRecovering : BOOL; (*(IF) Pallets must return to their last controlled position or pallets are moving to the load target*)
+		LocatingPallets : BOOL; (*(IF) Section is automatically jogging pallets to determine their location*)
+		DisabledExternally : BOOL; (*(IF) Section is disabled due to an external condition*)
+		WarningPresent : BOOL; (*(IF) A section warning message has been recorded*)
+		FaultPresent : BOOL; (*(IF) A section fault message has been recorded*)
+		Info : StCoreSectionInfoType; (*Extended section information*)
+	END_VAR
+	VAR
+		Internal : StCoreSectionInternalType; (*Local internal data*)
 	END_VAR
 END_FUNCTION_BLOCK
 

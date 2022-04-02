@@ -12,25 +12,27 @@ long StCoreExit(void) {
 	/* Declare local variables */
 	unsigned long allocationSize;
 
+	SuperTrakExit();
+	
 	/* Free global pointers */
 	if(pCoreCyclicControl) {
 		allocationSize = coreInterfaceConfig.controlSize;
-		TMP_free(allocationSize, (void**)&pCoreCyclicControl);
+		TMP_free(allocationSize, (void**)pCoreCyclicControl);
 	}
 	
 	if(pCoreCyclicStatus) {
 		allocationSize = coreInterfaceConfig.statusSize;
-		TMP_free(allocationSize, (void**)&pCoreCyclicStatus);
+		TMP_free(allocationSize, (void**)pCoreCyclicStatus);
 	}
 	
 	if(pCoreCommandBuffer) {
 		allocationSize = sizeof(SuperTrakCommand_t) * CORE_COMMANDBUFFER_SIZE * corePalletCount;
-		TMP_free(allocationSize, (void**)&pCoreCommandBuffer);
+		TMP_free(allocationSize, (void**)pCoreCommandBuffer);
 	}
 	
 	if(pCoreBufferControl) {
 		allocationSize = sizeof(coreBufferControlType) * corePalletCount;
-		TMP_free(allocationSize, (void**)&pCoreBufferControl);
+		TMP_free(allocationSize, (void**)pCoreBufferControl);
 	}
 	
 	return 0;

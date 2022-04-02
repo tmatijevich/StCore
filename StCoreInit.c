@@ -35,7 +35,6 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	/***********************
 	 Declare local variables 
 	***********************/
-	static unsigned char firstCall = true, firstLog = true;
 	long status, i, j, k;
 	FormatStringArgumentsType args;
 	unsigned short sectionCount, networkOrder[CORE_SECTION_MAX], headSection, flowDirection, flowOrder[CORE_SECTION_MAX];
@@ -45,21 +44,11 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	/********************
 	 Initialize SuperTrak
 	********************/
-	/* SuperTrakCyclic1() has cycle-time violation if SuperTrakInit() is not called */
-	/* Only call SuperTrakInit() if it's the first call to StCoreInit(), if multiple calls are made it will be caught in the next step */
-	if(firstCall) {
-		firstCall = false;
-		/* SuperTrakInit() does not appear to return status information, if this fails the service channel will error */
-		SuperTrakInit(StoragePath, SimIPAddress, EthernetInterfaceList);
-	}
-	else {
-		/* This does not change the error status or StCore, but notifies the user of multiple calls */
-		if(firstLog) {
-			firstLog = false;
-			coreLogMessage(USERLOG_SEVERITY_CRITICAL, coreEventCode(stCORE_ERROR_INIT), "Call StCoreInit() once during _INIT");
-		}
-		return stCORE_ERROR_INIT; /* Don't set the global error status */
-	}
+	SuperTrakInit(StoragePath, SimIPAddress, EthernetInterfaceList);
+	
+	/* Assmume initialization error until the routine completes successfully (for transfer with init/exit routines) */
+	coreError = true;
+	coreStatusID = stCORE_ERROR_INIT;
 	
 	/**************
 	 Create logbook

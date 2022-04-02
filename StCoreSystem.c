@@ -6,7 +6,7 @@
 
 #include "StCoreMain.h"
 
-void clearOutputs(StCoreSystem_typ *inst);
+static void clearOutputs(StCoreSystem_typ *inst);
 
 enum systemStateEnum {
 	SYSTEM_STATE_DISABLED = 0,
@@ -14,7 +14,7 @@ enum systemStateEnum {
 	SYSTEM_STATE_ERROR = 255,
 };
 
-/* System control interface */
+/* System core interface */
 void StCoreSystem(StCoreSystem_typ *inst) {
 	
 	/***********************
@@ -172,7 +172,7 @@ void StCoreSystem(StCoreSystem_typ *inst) {
 } /* Function defintion */
 
 /* Clean instance outputs */
-void clearOutputs(StCoreSystem_typ *inst) {
+static void clearOutputs(StCoreSystem_typ *inst) {
 	inst->Valid = false;
 	inst->Error = false;
 	inst->StatusID = 0;
