@@ -71,11 +71,11 @@ FUNCTION_BLOCK StCoreSection (*SuperTrak section interface function*)
 	END_VAR
 END_FUNCTION_BLOCK
 
-FUNCTION StCoreReleaseToTarget : DINT
+FUNCTION StCoreReleaseToTarget : DINT (*Command target or pallet to release to target*)
 	VAR_INPUT
-		target : USINT;
-		palletID : USINT;
-		direction : UINT;
-		destinationTarget : USINT;
+		Target : USINT; (*Target with pallet present*)
+		Pallet : USINT; (*Pallet ID*)
+		Direction : UINT; (*Direction of motion stDIRECTION_RIGHT or stDIRECTION_LEFT*)
+		DestinationTarget : USINT; (*Destination target*)
 	END_VAR
 END_FUNCTION

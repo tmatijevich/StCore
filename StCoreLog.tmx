@@ -13,7 +13,7 @@
     <tu tuid="-536804376">
       <note>StCoreInit() 1000</note>
       <tuv xml:lang="en">
-        <seg>StCoreInit() has not been called or has been called multiple times</seg>
+        <seg>StCoreInit() has not been called</seg>
       </tuv>
     </tu>
     <tu tuid="-536804276">
@@ -62,6 +62,30 @@
       <note>StCoreSystem/StCoreSection 4000</note>
       <tuv xml:lang="en">
         <seg>Multiple instances of the function block are used in the same context</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536800376">
+      <note>StCore command 5000</note>
+      <tuv xml:lang="en">
+        <seg>StCore command function input out of range</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-1610542100">
+      <note>StCore command 5100</note>
+      <tuv xml:lang="en">
+        <seg>StCore command buffer is now full. Future commands are rejected until the buffer opens</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536800275">
+      <note>StCore command 5101</note>
+      <tuv xml:lang="en">
+        <seg>StCore command buffer is already full. The command is rejected</seg>
+      </tuv>
+    </tu>
+    <tu tuid="1610683472">
+      <note>StCore command 5200</note>
+      <tuv xml:lang="en">
+        <seg>StCore release to target command request</seg>
       </tuv>
     </tu>
     <tu tuid="-1610481664">

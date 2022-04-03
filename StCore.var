@@ -7,7 +7,7 @@
 (*Initialization*)
 VAR CONSTANT
 	stCORE_ERROR_LOGBOOK : DINT := -536805912; (*StCoreInit() is unable to create a logbook. Possible naming conflict with StCoreLog or insufficient user partition size*)
-	stCORE_ERROR_INIT : DINT := -536804376; (*StCoreInit() not called or called multiple times. Call StCoreInit() once during _INIT*)
+	stCORE_ERROR_INIT : DINT := -536804376; (*StCoreInit() has not been called. Call StCoreInit() once during _INIT*)
 	stCORE_ERROR_LAYOUT : DINT := -536804276; (*Invalid SuperTrak system layout. Use TrakMaster's easy setup of the system layout*)
 END_VAR
 (*Cyclic*)
@@ -24,4 +24,7 @@ END_VAR
 (*Function errors:*)
 VAR CONSTANT
 	stCORE_ERROR_INST : DINT := -536801376; (*Multiple instances of a function block are used in the same context*)
+	stCORE_ERROR_INPUT : DINT := -536800376; (*StCore command function input out of range*)
+	stCORE_WARNING_BUFFER : DINT := -1610542100; (*StCore command buffer is now full. Future commands are rejected until the buffer opens*)
+	stCORE_ERROR_BUFFER : DINT := -536800275; (*StCore command buffer is already full. The command is rejected*)
 END_VAR
