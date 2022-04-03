@@ -6,6 +6,10 @@
 
 #include "StCoreMain.h"
 
+static void getCommand(char *str, unsigned char command, unsigned long size);
+static void getContext(char *str, unsigned char command, unsigned long size);
+static void getDirection(char *str, unsigned char command, unsigned long size);
+
 /* Command target or pallet to release to target */
 long StCoreReleaseToTarget(unsigned char Target, unsigned char Pallet, unsigned short Direction, unsigned char DestinationTarget) {
 	
@@ -13,12 +17,11 @@ long StCoreReleaseToTarget(unsigned char Target, unsigned char Pallet, unsigned 
 	 Declare local variables
 	***********************/
 	unsigned char index, commandID, context, *pPalletPresent;
-	SuperTrakCommand_t *pCommand;
-	coreBufferControlType *pBuffer;
+	coreCommandBufferType *pBuffer;
 	FormatStringArgumentsType args;
 	
 	/* Check references */
-	if(pCoreCyclicStatus == NULL || pCoreCommandBuffer == NULL || pCoreBufferControl == NULL) {
+	if(pCoreCyclicStatus == NULL || pCoreCommandBuffer == NULL) {
 		coreLogMessage(USERLOG_SEVERITY_ERROR, coreEventCode(stCORE_ERROR_ALLOC), "StCoreReleaseToTarget is unable to reference cyclic data or command buffers");
 		return stCORE_ERROR_ALLOC;
 	}
@@ -69,19 +72,13 @@ long StCoreReleaseToTarget(unsigned char Target, unsigned char Pallet, unsigned 
 	/*********************
 	 Access command buffer
 	*********************/
-	pBuffer = pCoreBufferControl + index - 1;
-	pCommand = pCoreCommandBuffer + CORE_COMMANDBUFFER_SIZE * (index - 1) + pBuffer->write;
+	pBuffer = pCoreCommandBuffer + index - 1;
 	
-	if(Target) {
-		coreStringCopy(args.s[0], "Target", sizeof(args.s[0]));
-		args.i[0] = Target;
-	}
-	else {
-		coreStringCopy(args.s[0], "Pallet", sizeof(args.s[0]));
-		args.i[0] = Pallet;
-	}
-	if(Direction == stDIRECTION_RIGHT) coreStringCopy(args.s[1], "right", sizeof(args.s[1]));
-	else coreStringCopy(args.s[1], "left", sizeof(args.s[1]));
+	/* Prepare message */
+	getContext(args.s[0], commandID, sizeof(args.s[0]));
+	if(Target) args.i[0] = Target;
+	else args.i[0] = Pallet;
+	getDirection(args.s[1], commandID, sizeof(args.s[1]));
 	args.i[1] = DestinationTarget;
 	
 	if(pBuffer->full) {
@@ -89,85 +86,125 @@ long StCoreReleaseToTarget(unsigned char Target, unsigned char Pallet, unsigned 
 		return stCORE_ERROR_BUFFER;
 	}
 	
-	pCommand->u1[0] = commandID;
-	pCommand->u1[1] = context;
-	pCommand->u1[2] = DestinationTarget;
+	pBuffer->command[pBuffer->write].u1[0] = commandID;
+	pBuffer->command[pBuffer->write].u1[1] = context;
+	pBuffer->command[pBuffer->write].u1[2] = DestinationTarget;
 	
-	coreLogFormatMessage(USERLOG_SEVERITY_DEBUG, 5200, "%s %i release to target %s to destination target %i", &args);
+	coreLogFormatMessage(USERLOG_SEVERITY_DEBUG, 5200, "%s %i release to target direction=%s destination=T%i", &args);
 	
 	pBuffer->write = (pBuffer->write + 1) % CORE_COMMANDBUFFER_SIZE;
 	if(pBuffer->write == pBuffer->read) {
 		pBuffer->full = true;
 		args.i[0] = index;
 		args.i[1] = CORE_COMMANDBUFFER_SIZE;
-		coreLogFormatMessage(USERLOG_SEVERITY_WARNING, coreEventCode(stCORE_WARNING_BUFFER), "Pallet %i commad buffer is full (%i)", &args);
+		coreLogFormatMessage(USERLOG_SEVERITY_WARNING, coreEventCode(stCORE_WARNING_BUFFER), "Pallet %i commad buffer is full (size=%i)", &args);
 	}
 	
 	return 0;
 	
 }
 
+/* Execute requested user commands */
 void coreProcessCommand(void) {
 	
-	SuperTrakCommand_t *pBufferData, *pCommand;
-	coreBufferControlType *pBufferControl;
+	/***********************
+	 Declare local variables
+	***********************/
+	static unsigned char logAlloc = true;
+	coreCommandBufferType *pBuffer;
+	SuperTrakCommand_t *pCommand;
+	long i;
 	unsigned char *pTrigger, *pComplete, *pSuccess, complete, success;
-	unsigned short i;
-	char format[CORE_FORMAT_SIZE + 1];
 	FormatStringArgumentsType args;
 	
-	if(pCoreCommandBuffer == NULL || pCoreBufferControl == NULL || pCoreCyclicControl == NULL || pCoreCyclicStatus == NULL)
+	/****************
+	 Check references
+	****************/
+	if(pCoreCyclicControl == NULL || pCoreCyclicStatus == NULL || pCoreCommandBuffer == NULL) {
+		if(logAlloc) {
+			logAlloc = false;
+			coreLogMessage(USERLOG_SEVERITY_ERROR, coreEventCode(stCORE_ERROR_ALLOC), "StCoreCyclic() (coreProcessCommand) is unable to reference cyclic data or command buffers");
+		}
 		return;
+	}
+	else
+		logAlloc = true;
 	
+	/***********************
+	 Process command buffers
+	***********************/
 	for(i = 0; i < corePalletCount; i++) {
-		
-		pBufferData = pCoreCommandBuffer + CORE_COMMANDBUFFER_SIZE * i;
-		pBufferControl = pCoreBufferControl + i;
-		pTrigger = pCoreCyclicControl + coreInterfaceConfig.commandTriggerOffset + i / 8;
-		pCommand = pCoreCyclicControl + coreInterfaceConfig.commandDataOffset + sizeof(SuperTrakCommand_t) * i;
+		/* Access data */
+		pBuffer = pCoreCommandBuffer + i;
+		pTrigger = pCoreCyclicControl + coreInterfaceConfig.commandTriggerOffset + i / 8; /* Trigger group */
+		pCommand = (SuperTrakCommand_t*)(pCoreCyclicControl + coreInterfaceConfig.commandDataOffset) + i;
 		pComplete = pCoreCyclicStatus + coreInterfaceConfig.commandCompleteOffset + i / 8;
 		pSuccess = pCoreCyclicStatus + coreInterfaceConfig.commandSuccessOffset + i / 8;
 		complete = GET_BIT(*pComplete, i % 8);
 		success = GET_BIT(*pSuccess, i % 8);
 		
-		if(pBufferControl->active) {
-			/* While active, wait for command to complete, then clear */
+		if(pBuffer->active) {
+			/* Track time */
+			pBuffer->timer += 800;
+			
+			/* Build message */
+			getContext(args.s[0], pCommand->u1[0], sizeof(args.s[0]));
+			args.i[0] = pCommand->u1[1];
+			getCommand(args.s[1], pCommand->u1[0], sizeof(args.s[1]));
+			
+			/* Wait for complete or timeout */
 			if(complete) {
-				memset(pCommand, 0, sizeof(SuperTrakCommand_t));
-				/* Clear trigger */
+				if(success)
+					coreLogFormatMessage(USERLOG_SEVERITY_DEBUG, 6000, "%s %i %s command executed successfully", &args);
+				else
+					coreLogFormatMessage(USERLOG_SEVERITY_ERROR, coreEventCode(stCORE_ERROR_CMDFAILURE), "%s %i %s command execution failed", &args);
+				memset(pCommand, 0, sizeof(*pCommand));
 				CLEAR_BIT(*pTrigger, i % 8);
-				pBufferControl->active = false; /* Should also ensure SuperTrakCyclic1() gets called */
+				pBuffer->active = false;
+			}
+			else if(pBuffer->timer >= 500000) {
+				coreLogFormatMessage(USERLOG_SEVERITY_ERROR, coreEventCode(stCORE_ERROR_CMDTIMEOUT), "%s %i %s command execution timed out", &args);
+				memset(pCommand, 0, sizeof(*pCommand));
+				CLEAR_BIT(*pTrigger, i % 8);
+				pBuffer->active = false;
 			}
 		}
-		else if(pBufferControl->read != pBufferControl->write || pBufferControl->full) {
-			/* Pull command off buffer at the read index */
-			memcpy(pCommand, pBufferData + pBufferControl->read, sizeof(SuperTrakCommand_t));
-			/* Update read index */
-			pBufferControl->read = (pBufferControl->read + 1) % CORE_COMMANDBUFFER_SIZE;
-			/* Reset full flag */
-			pBufferControl->full = false;
+		else if(pBuffer->read != pBuffer->write || pBuffer->full) {
+			/* Read next command, iterate, and reset full */
+			memcpy(pCommand, &(pBuffer->command[pBuffer->read]), sizeof(SuperTrakCommand_t));
+			pBuffer->read = (pBuffer->read + 1) % CORE_COMMANDBUFFER_SIZE;
+			pBuffer->full = false;
+			
 			/* Set the trigger and activate */
 			SET_BIT(*pTrigger, i % 8);
-			pBufferControl->active = true;
-			
-			/* Write to logger */
-			format[CORE_FORMAT_SIZE] = '\0';
-			if(pCommand->u1[0] == 16 || pCommand->u1[0] == 17)
-				strncpy(format, "Target %i release to target direction=%s destination=T%i", CORE_FORMAT_SIZE);
-			else if(pCommand->u1[0] == 18 || pCommand->u1[0] == 19)
-				strncpy(format, "Pallet %i release to target direction=%s destination=T%i", CORE_FORMAT_SIZE);
-			// Target %i release to offset direction=%s destination=T%i offset=%ium
-			if(pCommand->u1[0] == 16 || pCommand->u1[0] == 18)
-				strncpy(args.s[0], "left", IECSTRING_FORMATARGS_LEN);
-			else
-				strncpy(args.s[0], "right", IECSTRING_FORMATARGS_LEN);
-				
-			args.i[0] = pCommand->u1[1];
-			args.i[1] = pCommand->u1[2];
-			
-			coreLogFormatMessage(USERLOG_SEVERITY_DEBUG, 5000, format, &args);
-			
+			pBuffer->active = true;
 		} /* Active? */
 	} /* Loop pallets */
 	
+}
+
+/* Get command */
+static void getCommand(char *str, unsigned char command, unsigned long size) {
+	if(command == 16 || command == 17 || command == 18 || command == 19)
+		coreStringCopy(str, "release to target", size);
+	else
+		coreStringCopy(str, "unknown", size);
+}
+
+/* Get context */
+static void getContext(char *str, unsigned char command, unsigned long size) {
+	if(command == 16 || command == 17)
+		coreStringCopy(str, "Target", size);
+	else if(command == 18 || command == 19)
+		coreStringCopy(str, "Pallet", size);
+	else
+		coreStringCopy(str, "Unknown", size);
+}
+
+/* Get direction */
+static void getDirection(char *str, unsigned char command, unsigned long size) {
+	if(command == 16 || command == 18) 
+		coreStringCopy(str, "left", size);
+	else
+		coreStringCopy(str, "right", size);
 }

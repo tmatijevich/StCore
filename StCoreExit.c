@@ -30,11 +30,6 @@ long StCoreExit(void) {
 		TMP_free(allocationSize, (void**)pCoreCommandBuffer);
 	}
 	
-	if(pCoreBufferControl) {
-		allocationSize = sizeof(coreBufferControlType) * corePalletCount;
-		TMP_free(allocationSize, (void**)pCoreBufferControl);
-	}
-	
 	return 0;
 	
 } /* Function definition */

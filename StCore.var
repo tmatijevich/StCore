@@ -25,6 +25,8 @@ END_VAR
 VAR CONSTANT
 	stCORE_ERROR_INST : DINT := -536801376; (*Multiple instances of a function block are used in the same context*)
 	stCORE_ERROR_INPUT : DINT := -536800376; (*StCore command function input out of range*)
-	stCORE_WARNING_BUFFER : DINT := -1610542100; (*StCore command buffer is now full. Future commands are rejected until the buffer opens*)
-	stCORE_ERROR_BUFFER : DINT := -536800275; (*StCore command buffer is already full. The command is rejected*)
+	stCORE_ERROR_BUFFER : DINT := -536800276; (*StCore command buffer is already full. The command is rejected*)
+	stCORE_WARNING_BUFFER : DINT := -1610542099; (*StCore command buffer is now full. Future commands are rejected until the buffer opens*)
+	stCORE_ERROR_CMDFAILURE : DINT := -536799375; (*StCore command execution failued. See SuperTrak system fault for more details*)
+	stCORE_ERROR_CMDTIMEOUT : DINT := -536799374; (*StCore command execution timeout (500 ms)*)
 END_VAR

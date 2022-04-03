@@ -70,22 +70,40 @@
         <seg>StCore command function input out of range</seg>
       </tuv>
     </tu>
-    <tu tuid="-1610542100">
+    <tu tuid="-536800276">
       <note>StCore command 5100</note>
       <tuv xml:lang="en">
-        <seg>StCore command buffer is now full. Future commands are rejected until the buffer opens</seg>
+        <seg>StCore command request is rejected. The pallet command buffer is full</seg>
       </tuv>
     </tu>
-    <tu tuid="-536800275">
+    <tu tuid="-1610542099">
       <note>StCore command 5101</note>
       <tuv xml:lang="en">
-        <seg>StCore command buffer is already full. The command is rejected</seg>
+        <seg>StCore pallet command buffer is now full. Future command requests will be rejected until the buffer opens</seg>
       </tuv>
     </tu>
     <tu tuid="1610683472">
       <note>StCore command 5200</note>
       <tuv xml:lang="en">
         <seg>StCore release to target command request</seg>
+      </tuv>
+    </tu>
+    <tu tuid="1610684272">
+      <note>StCore command 6000</note>
+      <tuv xml:lang="en">
+        <seg>StCore command successful</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536799375">
+      <note>StCore command 6001</note>
+      <tuv xml:lang="en">
+        <seg>StCore command failure</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536799374">
+      <note>StCore command 6002</note>
+      <tuv xml:lang="en">
+        <seg>StCore command timeout</seg>
       </tuv>
     </tu>
     <tu tuid="-1610481664">

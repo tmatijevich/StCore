@@ -40,20 +40,21 @@ extern "C"
 #define TOGGLE_BIT(x,y) ((x) ^= 1U << (y))
 
 /* Structures */
-typedef struct coreBufferControlType {
-	unsigned char read;
-	unsigned char write;
-	unsigned char full;
-	unsigned char active;
-} coreBufferControlType;
+typedef struct coreCommandBufferType {
+	unsigned char read; /* Index to execute user requests */
+	unsigned char write; /* Index to submit user requests */
+	unsigned char full; /* Flag when buffer is full (read = write) */
+	unsigned char active; /* The buffer is currently executing a command */
+	unsigned long timer; /* Count till timeout */
+	SuperTrakCommand_t command[CORE_COMMANDBUFFER_SIZE]; /* Command buffer */
+} coreCommandBufferType;
 
 /* Global variables */
 extern unsigned char *pCoreCyclicControl, *pCoreCyclicStatus;
 extern SuperTrakControlIfConfig_t coreInterfaceConfig;
 extern unsigned char coreError, coreTargetCount, corePalletCount, coreNetworkIOCount;
 extern long coreStatusID;
-extern SuperTrakCommand_t *pCoreCommandBuffer;
-extern coreBufferControlType *pCoreBufferControl;
+extern coreCommandBufferType *pCoreCommandBuffer;
 
 /* Function prototypes */
 void coreLogMessage(UserLogSeverityEnum severity, unsigned short code, char *message);
