@@ -79,3 +79,13 @@ FUNCTION StCoreReleaseToTarget : DINT (*Command target or pallet to release to t
 		DestinationTarget : USINT; (*Destination target*)
 	END_VAR
 END_FUNCTION
+
+FUNCTION StCoreReleaseToOffset : DINT (*Command target or pallet to release to offset*)
+	VAR_INPUT
+		Target : USINT; (*Target with pallet present*)
+		Pallet : USINT; (*Pallet ID*)
+		Direction : UINT; (*Direction of motion stDIRECTION_RIGHT or stDIRECTION_LEFT*)
+		DestinationTarget : USINT; (*Destination target*)
+		TargetOffset : DINT; (*[-500000,500000] um Relative offset from target position*)
+	END_VAR
+END_FUNCTION
