@@ -11,7 +11,7 @@ static void clearOutputs(StCoreSystem_typ *inst);
 enum systemStateEnum {
 	SYSTEM_STATE_DISABLED = 0,
 	SYSTEM_STATE_EXECUTING = 1,
-	SYSTEM_STATE_ERROR = 255,
+	SYSTEM_STATE_ERROR = 255
 };
 
 /* System core interface */
@@ -172,7 +172,7 @@ void StCoreSystem(StCoreSystem_typ *inst) {
 } /* Function defintion */
 
 /* Clean instance outputs */
-static void clearOutputs(StCoreSystem_typ *inst) {
+void clearOutputs(StCoreSystem_typ *inst) {
 	inst->Valid = false;
 	inst->Error = false;
 	inst->StatusID = 0;

@@ -260,6 +260,8 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	 Allocate memory
 	***************/
 	allocationSize = coreInterfaceConfig.controlSize;
+	if(pCoreCyclicControl)
+		TMP_free(allocationSize, (void**)pCoreCyclicControl);
 	status = TMP_alloc(allocationSize, (void**)&pCoreCyclicControl);
 	if(status) {
 		logMemoryManagement((unsigned short)status, allocationSize, "cyclic control data");
@@ -268,6 +270,8 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	memset(pCoreCyclicControl, 0, allocationSize); /* Initialization memory to zero */
 	
 	allocationSize = coreInterfaceConfig.statusSize;
+	if(pCoreCyclicStatus)
+		TMP_free(allocationSize, (void**)pCoreCyclicStatus);
 	status = TMP_alloc(allocationSize, (void**)&pCoreCyclicStatus);
 	if(status) {
 		logMemoryManagement((unsigned short)status, allocationSize, "cyclic status data");
@@ -277,6 +281,8 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	
 	/* Memory for command buffers */
 	allocationSize = sizeof(coreCommandManagerType) * corePalletCount;
+	if(pCoreCommandManager)
+		TMP_free(allocationSize, (void**)pCoreCommandManager);
 	status = TMP_alloc(allocationSize, (void**)&pCoreCommandManager);
 	if(status) {
 		logMemoryManagement((unsigned short)status, allocationSize, "pallet command buffers");

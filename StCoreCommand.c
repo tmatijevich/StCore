@@ -101,7 +101,7 @@ static long releaseCommand(unsigned char commandStart, unsigned char target, uns
 	/*pEntry->inst = userInst*/
 	/**pEntryRef = &pEntry*/
 	
-	coreLogFormatMessage(USERLOG_SEVERITY_DEBUG, 5200, "%s %i %s command request direction = %s destination = T%i", &args);
+	coreLogFormatMessage(USERLOG_SEVERITY_DEBUG, 5200, "%s %i %s command request (direction = %s, destination = T%i)", &args);
 	
 	pManager->write = (pManager->write + 1) % CORE_COMMANDBUFFER_SIZE;
 	pEntry = &pManager->buffer[pManager->write];

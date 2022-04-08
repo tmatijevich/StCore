@@ -11,7 +11,7 @@ static void clearOutputs(StCoreSection_typ *inst);
 enum sectionStateEnum {
 	SECTION_STATE_DISABLED = 0,
 	SECTION_STATE_EXECUTING = 1,
-	SECTION_STATE_ERROR = 255,
+	SECTION_STATE_ERROR = 255
 };
 
 /* Section core interface */
@@ -152,7 +152,7 @@ void StCoreSection(StCoreSection_typ *inst) {
 } /* Function definition */
 
 /* Clear StCoreSection() outputs */
-static void clearOutputs(StCoreSection_typ *inst) {
+void clearOutputs(StCoreSection_typ *inst) {
 	inst->Valid = false;
 	inst->Error = false;
 	inst->StatusID = 0;
