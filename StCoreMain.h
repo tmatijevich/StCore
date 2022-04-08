@@ -40,21 +40,32 @@ extern "C"
 #define TOGGLE_BIT(x,y) ((x) ^= 1U << (y))
 
 /* Structures */
-typedef struct coreCommandBufferType {
+typedef enum coreCommandStatusEnum {
+	CORE_COMMAND_PENDING = 0, /* Command states for status byte, do not exceed 0-7 */
+	CORE_COMMAND_BUSY,
+	CORE_COMMAND_DONE,
+	CORE_COMMAND_ERROR
+} coreCommandStatusEnum;
+
+typedef struct coreCommandEntryType {
+	SuperTrakCommand_t command; /* SuperTrak command bytes */
+	unsigned char status; /* Command progess status */
+	void *inst; /* Record instance if called from function block */
+} coreCommandEntryType;
+
+typedef struct coreCommandManagerType {
 	unsigned char read; /* Index to execute user requests */
 	unsigned char write; /* Index to submit user requests */
-	unsigned char full; /* Flag when buffer is full (read = write) */
-	unsigned char active; /* The buffer is currently executing a command */
-	unsigned long timer; /* Count till timeout */
-	SuperTrakCommand_t command[CORE_COMMANDBUFFER_SIZE]; /* Command buffer */
-} coreCommandBufferType;
+	unsigned long timer; /* Count until timeout */
+	coreCommandEntryType buffer[CORE_COMMANDBUFFER_SIZE]; /* Command buffer */
+} coreCommandManagerType;
 
 /* Global variables */
 extern unsigned char *pCoreCyclicControl, *pCoreCyclicStatus;
 extern SuperTrakControlIfConfig_t coreInterfaceConfig;
 extern unsigned char coreError, coreTargetCount, corePalletCount, coreNetworkIOCount;
 extern long coreStatusID;
-extern coreCommandBufferType *pCoreCommandBuffer;
+extern coreCommandManagerType *pCoreCommandManager;
 
 /* Function prototypes */
 void coreLogMessage(UserLogSeverityEnum severity, unsigned short code, char *message);

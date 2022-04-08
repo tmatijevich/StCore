@@ -25,9 +25,9 @@ long StCoreExit(void) {
 		TMP_free(allocationSize, (void**)pCoreCyclicStatus);
 	}
 	
-	if(pCoreCommandBuffer) {
+	if(pCoreCommandManager) {
 		allocationSize = sizeof(SuperTrakCommand_t) * CORE_COMMANDBUFFER_SIZE * corePalletCount;
-		TMP_free(allocationSize, (void**)pCoreCommandBuffer);
+		TMP_free(allocationSize, (void**)pCoreCommandManager);
 	}
 	
 	return 0;

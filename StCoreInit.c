@@ -23,7 +23,7 @@ unsigned char coreError = true, coreTargetCount, corePalletCount, coreNetworkIOC
 long coreStatusID = stCORE_ERROR_INIT;
 
 /* Command buffer */
-coreCommandBufferType *pCoreCommandBuffer;
+coreCommandManagerType *pCoreCommandManager;
 
 /*********************
  StCoreInit definition
@@ -276,13 +276,13 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	memset(pCoreCyclicStatus, 0, allocationSize); /* Initialization memory to zero */
 	
 	/* Memory for command buffers */
-	allocationSize = sizeof(coreCommandBufferType) * corePalletCount;
-	status = TMP_alloc(allocationSize, (void**)&pCoreCommandBuffer);
+	allocationSize = sizeof(coreCommandManagerType) * corePalletCount;
+	status = TMP_alloc(allocationSize, (void**)&pCoreCommandManager);
 	if(status) {
 		logMemoryManagement((unsigned short)status, allocationSize, "pallet command buffers");
 		return stCORE_ERROR_ALLOC;
 	}
-	memset(pCoreCommandBuffer, 0, allocationSize); /* Initialization memory to zero */
+	memset(pCoreCommandManager, 0, allocationSize); /* Initialization memory to zero */
 	
 	args.i[0] = sectionCount;
 	args.i[1] = coreTargetCount;

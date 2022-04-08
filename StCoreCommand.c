@@ -17,7 +17,8 @@ static long releaseCommand(unsigned char commandStart, unsigned char target, uns
 	 Declare local variables
 	***********************/
 	unsigned char index, commandID, context, *pPalletPresent;
-	coreCommandBufferType *pBuffer;
+	coreCommandManagerType *pManager;
+	coreCommandEntryType *pEntry;
 	FormatStringArgumentsType args;
 	
 	/*****************
@@ -67,7 +68,8 @@ static long releaseCommand(unsigned char commandStart, unsigned char target, uns
 	/*********************
 	 Access command buffer
 	*********************/
-	pBuffer = pCoreCommandBuffer + index - 1;
+	pManager = pCoreCommandManager + index - 1;
+	pEntry = &pManager->buffer[pManager->write];
 	
 	/* Prepare message */
 	setContextName(args.s[0], commandID, sizeof(args.s[0]));
@@ -77,28 +79,36 @@ static long releaseCommand(unsigned char commandStart, unsigned char target, uns
 	setDirectionName(args.s[2], commandID, sizeof(args.s[2]));
 	args.i[1] = destinationTarget;
 	
-	if(pBuffer->full) {
+	if(GET_BIT(pEntry->status, CORE_COMMAND_PENDING) || GET_BIT(pEntry->status, CORE_COMMAND_BUSY)) {
 		coreLogFormatMessage(USERLOG_SEVERITY_ERROR, coreEventCode(stCORE_ERROR_BUFFER), "%s %i %s command rejected because buffer is full", &args);
 		return stCORE_ERROR_BUFFER;
 	}
 	
-	pBuffer->command[pBuffer->write].u1[0] = commandID;
-	pBuffer->command[pBuffer->write].u1[1] = context;
+	/* Construct command */
+	pEntry->command.u1[0] = commandID;
+	pEntry->command.u1[1] = context;
 	if(commandStart != 60) /* Resume */
-		pBuffer->command[pBuffer->write].u1[2] = destinationTarget;
+		pEntry->command.u1[2] = destinationTarget;
 	if(commandStart == 24) /* Release to offset */
-		memcpy(&(pBuffer->command[pBuffer->write].u1[4]), &targetOffset, 4);
+		memcpy(&(pEntry->command.u1[4]), &targetOffset, 4);
 	else if(commandStart == 28) /* Increment offset */
-		memcpy(&(pBuffer->command[pBuffer->write].u1[4]), &incrementalOffset, 4);
+		memcpy(&(pEntry->command.u1[4]), &incrementalOffset, 4);
+	
+	/* Update status, tag instance, and share entry */
+	CLEAR_BIT(pEntry->status, CORE_COMMAND_DONE);
+	CLEAR_BIT(pEntry->status, CORE_COMMAND_ERROR);
+	SET_BIT(pEntry->status, CORE_COMMAND_PENDING);
+	/*pEntry->inst = userInst*/
+	/**pEntryRef = &pEntry*/
 	
 	coreLogFormatMessage(USERLOG_SEVERITY_DEBUG, 5200, "%s %i %s command request direction = %s destination = T%i", &args);
 	
-	pBuffer->write = (pBuffer->write + 1) % CORE_COMMANDBUFFER_SIZE;
-	if(pBuffer->write == pBuffer->read) {
-		pBuffer->full = true;
+	pManager->write = (pManager->write + 1) % CORE_COMMANDBUFFER_SIZE;
+	pEntry = &pManager->buffer[pManager->write];
+	if(GET_BIT(pEntry->status, CORE_COMMAND_PENDING) || GET_BIT(pEntry->status, CORE_COMMAND_BUSY)) {
 		args.i[0] = index;
 		args.i[1] = CORE_COMMANDBUFFER_SIZE;
-		coreLogFormatMessage(USERLOG_SEVERITY_WARNING, coreEventCode(stCORE_WARNING_BUFFER), "Pallet %i commad buffer is full (size = %i)", &args);
+		coreLogFormatMessage(USERLOG_SEVERITY_WARNING, coreEventCode(stCORE_WARNING_BUFFER), "Pallet %i command buffer is now full (size = %i)", &args);
 	}
 	
 	return 0;
@@ -121,7 +131,8 @@ void coreProcessCommand(void) {
 	 Declare local variables
 	***********************/
 	static unsigned char logAlloc = true;
-	coreCommandBufferType *pBuffer;
+	coreCommandManagerType *pManager;
+	coreCommandEntryType *pEntry;
 	SuperTrakCommand_t *pCommand;
 	long i;
 	unsigned char *pTrigger, *pComplete, *pSuccess, complete, success;
@@ -130,7 +141,7 @@ void coreProcessCommand(void) {
 	/****************
 	 Check references
 	****************/
-	if(pCoreCyclicControl == NULL || pCoreCyclicStatus == NULL || pCoreCommandBuffer == NULL) {
+	if(pCoreCyclicControl == NULL || pCoreCyclicStatus == NULL || pCoreCommandManager == NULL) {
 		if(logAlloc) {
 			logAlloc = false;
 			coreLogMessage(USERLOG_SEVERITY_ERROR, coreEventCode(stCORE_ERROR_ALLOC), "StCoreCyclic() (coreProcessCommand) is unable to reference cyclic data or command buffers");
@@ -145,7 +156,8 @@ void coreProcessCommand(void) {
 	***********************/
 	for(i = 0; i < corePalletCount; i++) {
 		/* Access data */
-		pBuffer = pCoreCommandBuffer + i;
+		pManager = pCoreCommandManager + i;
+		pEntry = &pManager->buffer[pManager->read];
 		pTrigger = pCoreCyclicControl + coreInterfaceConfig.commandTriggerOffset + i / 8; /* Trigger group */
 		pCommand = (SuperTrakCommand_t*)(pCoreCyclicControl + coreInterfaceConfig.commandDataOffset) + i;
 		pComplete = pCoreCyclicStatus + coreInterfaceConfig.commandCompleteOffset + i / 8;
@@ -153,9 +165,10 @@ void coreProcessCommand(void) {
 		complete = GET_BIT(*pComplete, i % 8);
 		success = GET_BIT(*pSuccess, i % 8);
 		
-		if(pBuffer->active) {
+		/* Monitor current entry if BUSY */
+		if(GET_BIT(pEntry->status, CORE_COMMAND_BUSY)) {
 			/* Track time */
-			pBuffer->timer += 800;
+			pManager->timer += 800;
 			
 			/* Build message */
 			setContextName(args.s[0], pCommand->u1[0], sizeof(args.s[0]));
@@ -164,34 +177,56 @@ void coreProcessCommand(void) {
 			
 			/* Wait for complete or timeout */
 			if(complete) {
+				/* Confirm success or failure */
 				if(success)
 					coreLogFormatMessage(USERLOG_SEVERITY_DEBUG, 6000, "%s %i %s command executed successfully", &args);
-				else
+				else {
 					coreLogFormatMessage(USERLOG_SEVERITY_ERROR, coreEventCode(stCORE_ERROR_CMDFAILURE), "%s %i %s command execution failed", &args);
+					SET_BIT(pEntry->status, CORE_COMMAND_ERROR);
+				}
+				
+				/* Clear cyclic data */
 				memset(pCommand, 0, sizeof(*pCommand));
 				CLEAR_BIT(*pTrigger, i % 8);
-				pBuffer->active = false;
+				
+				/* Update status */
+				CLEAR_BIT(pEntry->status, CORE_COMMAND_BUSY);
+				SET_BIT(pEntry->status, CORE_COMMAND_DONE);
+				
+				/* Move to next entry */
+				pManager->read = (pManager->read + 1) % CORE_COMMANDBUFFER_SIZE;
 			}
-			else if(pBuffer->timer >= 500000) {
+			else if(pManager->timer >= 500000) {
 				coreLogFormatMessage(USERLOG_SEVERITY_ERROR, coreEventCode(stCORE_ERROR_CMDTIMEOUT), "%s %i %s command execution timed out", &args);
+				
+				/* Clear cyclic data */
 				memset(pCommand, 0, sizeof(*pCommand));
 				CLEAR_BIT(*pTrigger, i % 8);
-				pBuffer->active = false;
+				
+				/* Update status */
+				CLEAR_BIT(pEntry->status, CORE_COMMAND_BUSY);
+				SET_BIT(pEntry->status, CORE_COMMAND_DONE);
+				SET_BIT(pEntry->status, CORE_COMMAND_ERROR);
+				
+				/* Move to next entry */
+				pManager->read = (pManager->read + 1) % CORE_COMMANDBUFFER_SIZE;
 			}
 		}
-		else if(pBuffer->read != pBuffer->write || pBuffer->full) {
+		
+		/* Execute current entry if PENDING, set BUSY */
+		else if(GET_BIT(pEntry->status, CORE_COMMAND_PENDING)) {
 			/* Read next command, iterate, and reset full */
-			memcpy(pCommand, &(pBuffer->command[pBuffer->read]), sizeof(SuperTrakCommand_t));
-			pBuffer->read = (pBuffer->read + 1) % CORE_COMMANDBUFFER_SIZE;
-			pBuffer->full = false;
+			memcpy(pCommand, &pEntry->command, sizeof(SuperTrakCommand_t));
 			
 			/* Set the trigger and activate */
 			SET_BIT(*pTrigger, i % 8);
-			pBuffer->active = true;
-		} /* Active? */
+			CLEAR_BIT(pEntry->status, CORE_COMMAND_PENDING);
+			SET_BIT(pEntry->status, CORE_COMMAND_BUSY);
+			
+		} /* BUSY or PENDING? */
 	} /* Loop pallets */
 	
-}
+} /* Function definition */
 
 /* Write lowercase command name to str */
 void setCommandName(char *str, unsigned char command, unsigned long size) {
