@@ -60,6 +60,12 @@ typedef struct coreCommandManagerType {
 	coreCommandEntryType buffer[CORE_COMMANDBUFFER_SIZE]; /* Command buffer */
 } coreCommandManagerType;
 
+typedef struct coreCommandAssignmentType {
+	unsigned char commandID; /* See TrakMaster help's PLC control interface for available IDs */
+	unsigned char context; /* Target or pallet */
+	unsigned char index; /* Manager index for allocated pallet command buffer */
+} coreCommandAssignmentType;
+
 /* Global variables */
 extern unsigned char *pCoreCyclicControl, *pCoreCyclicStatus;
 extern SuperTrakControlIfConfig_t coreInterfaceConfig;
@@ -74,6 +80,8 @@ unsigned short coreEventCode(long eventID);
 char* coreStringCopy(char *destination, const char *source, unsigned long size);
 void coreLogServiceChannel(unsigned short result, unsigned short parameter);
 void coreLogFaultWarning(unsigned char index, unsigned char section);
+long coreGetCommandAssignment(unsigned char start, unsigned char target, unsigned char pallet, unsigned short direction, coreCommandAssignmentType *assign);
+long coreCommandRequest(unsigned char index, SuperTrakCommand_t command, void *inst);
 void coreProcessCommand(void);
 
 #ifdef __cplusplus

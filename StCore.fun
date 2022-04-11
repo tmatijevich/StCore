@@ -20,7 +20,10 @@ END_FUNCTION
 
 FUNCTION StCoreExit : DINT (*Free internal memory*)
 END_FUNCTION
-(*SuperTrak control interface*)
+(*******************************************************************************
+SuperTrak control interface
+*******************************************************************************)
+(*System and sections*)
 
 FUNCTION_BLOCK StCoreSystem (*SuperTrak system interface function*)
 	VAR_INPUT
@@ -70,6 +73,7 @@ FUNCTION_BLOCK StCoreSection (*SuperTrak section interface function*)
 		Internal : StCoreSectionInternalType; (*Local internal data*)
 	END_VAR
 END_FUNCTION_BLOCK
+(*Release commands*)
 
 FUNCTION StCoreReleaseToTarget : DINT (*Release pallet to target*)
 	VAR_INPUT
@@ -102,5 +106,13 @@ FUNCTION StCoreResumeMove : DINT (*Resume pallet movement when at mandatory stop
 	VAR_INPUT
 		Target : USINT; (*Target (with pallet present)*)
 		Pallet : USINT; (*Pallet ID*)
+	END_VAR
+END_FUNCTION
+(*Configuration commands*)
+
+FUNCTION StCoreSetPalletID : DINT (*Set ID of pallet at target*)
+	VAR_INPUT
+		Target : USINT; (*Target (with pallet present)*)
+		PalletID : USINT; (*Pallet ID to assign*)
 	END_VAR
 END_FUNCTION
