@@ -24,34 +24,30 @@ void StCoreSystem(StCoreSystem_typ *inst) {
 	unsigned short *pSystemControl, *pSystemStatus;
 	unsigned long dataUInt32;
 	long i;
-	unsigned char *pSectionStatus, *pState, *pPrevErrorReset;
+	unsigned char *pSectionStatus;
 	SuperTrakPalletInfo_t palletInfo[255];
-	
-	/* Access internal data */
-	pState = &inst->Internal[0];
-	pPrevErrorReset = &inst->Internal[1];
 		
 	/************
 	 Switch state
 	************/
 	/* Interrupt if disabled */
 	if(!inst->Enable)
-		*pState = SYSTEM_STATE_DISABLED;
+		inst->Internal.State = SYSTEM_STATE_DISABLED;
 		
-	switch(*pState) {
+	switch(inst->Internal.State) {
 		case SYSTEM_STATE_DISABLED:
 			clearOutputs(inst);
 			if(inst->Enable) {
 				/* Register isntance */
 				if(usedInst == NULL) {
 					usedInst = inst;
-					*pState = SYSTEM_STATE_EXECUTING;
+					inst->Internal.State = SYSTEM_STATE_EXECUTING;
 				}
 				else {
 					coreLogMessage(USERLOG_SEVERITY_ERROR, coreEventCode(stCORE_ERROR_INST), "Multiple instances of StCoreSystem()");
 					inst->Error = true;
 					inst->StatusID = stCORE_ERROR_INST;
-					*pState = SYSTEM_STATE_ERROR;
+					inst->Internal.State = SYSTEM_STATE_ERROR;
 				}
 			}
 			/* Unregister instance */
@@ -66,7 +62,7 @@ void StCoreSystem(StCoreSystem_typ *inst) {
 				clearOutputs(inst);
 				inst->Error = true;
 				inst->StatusID = coreStatusID;
-				*pState = SYSTEM_STATE_ERROR;
+				inst->Internal.State = SYSTEM_STATE_ERROR;
 				break;
 			}
 			/* Check references */
@@ -75,7 +71,7 @@ void StCoreSystem(StCoreSystem_typ *inst) {
 				clearOutputs(inst);
 				inst->Error = true;
 				inst->StatusID = stCORE_ERROR_ALLOC;
-				*pState = SYSTEM_STATE_ERROR;
+				inst->Internal.State = SYSTEM_STATE_ERROR;
 				break;
 			}
 			/* Report valid */
@@ -156,18 +152,18 @@ void StCoreSystem(StCoreSystem_typ *inst) {
 			break;
 			
 		default:
-			if(inst->ErrorReset && !(*pPrevErrorReset)) {
+			if(inst->ErrorReset && !inst->Internal.PreviousErrorReset) {
 				clearOutputs(inst);
 				if(inst == usedInst)
-					*pState = SYSTEM_STATE_EXECUTING;
+					inst->Internal.State = SYSTEM_STATE_EXECUTING;
 				else
-					*pState = SYSTEM_STATE_DISABLED;
+					inst->Internal.State = SYSTEM_STATE_DISABLED;
 			}
 			
 			break;
 	}
 	
-	*pPrevErrorReset = inst->ErrorReset;
+	inst->Internal.PreviousErrorReset = inst->ErrorReset;
 	
 } /* Function defintion */
 

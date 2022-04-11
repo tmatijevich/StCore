@@ -11,7 +11,7 @@ static void setContextName(char *str, unsigned char command, unsigned long size)
 static void setDirectionName(char *str, unsigned char command, unsigned long size);
 
 /* Accept all public inputs for common release command */
-static long releaseCommand(unsigned char commandStart, unsigned char target, unsigned char pallet, unsigned short direction, unsigned char destinationTarget, long targetOffset, long incrementalOffset) {
+static long releaseCommand(unsigned char commandStart, unsigned char target, unsigned char pallet, unsigned short direction, unsigned char destinationTarget, long offset) {
 	
 	/***********************
 	 Declare local variables
@@ -89,10 +89,8 @@ static long releaseCommand(unsigned char commandStart, unsigned char target, uns
 	pEntry->command.u1[1] = context;
 	if(commandStart != 60) /* Resume */
 		pEntry->command.u1[2] = destinationTarget;
-	if(commandStart == 24) /* Release to offset */
-		memcpy(&(pEntry->command.u1[4]), &targetOffset, 4);
-	else if(commandStart == 28) /* Increment offset */
-		memcpy(&(pEntry->command.u1[4]), &incrementalOffset, 4);
+	if(commandStart == 24 || commandStart == 28) /* Release to offset or increment offset */
+		memcpy(&(pEntry->command.u1[4]), &offset, 4);
 	
 	/* Update status, tag instance, and share entry */
 	CLEAR_BIT(pEntry->status, CORE_COMMAND_DONE);
@@ -114,14 +112,28 @@ static long releaseCommand(unsigned char commandStart, unsigned char target, uns
 	return 0;
 }
 
-/* Command target or pallet to release to target */
+/****************
+ Release commands
+****************/
+
+/* Release pallet to target */
 long StCoreReleaseToTarget(unsigned char Target, unsigned char Pallet, unsigned short Direction, unsigned char DestinationTarget) {
-	return releaseCommand(16, Target, Pallet, Direction, DestinationTarget, 0, 0);
+	return releaseCommand(16, Target, Pallet, Direction, DestinationTarget, 0);
 }
 
-/* Command target or pallet to release to offset */
-long StCoreReleaseToOffset(unsigned char Target, unsigned char Pallet, unsigned short Direction, unsigned char DestinationTarget, long TargetOffset) {
-	return releaseCommand(24, Target, Pallet, Direction, DestinationTarget, TargetOffset, 0);
+/* Release pallet to target + offset */
+long StCoreReleaseToOffset(unsigned char Target, unsigned char Pallet, unsigned short Direction, unsigned char DestinationTarget, double TargetOffset) {
+	return releaseCommand(24, Target, Pallet, Direction, DestinationTarget, (long)(TargetOffset * 1000));
+}
+
+/* Increment pallet offset */
+long StCoreIncrementOffset(unsigned char Target, unsigned char Pallet, double IncrementalOffset) {
+	return releaseCommand(28, Target, Pallet, 0, 0, (long)(IncrementalOffset * 1000));
+}
+
+/* Resume pallet movement when at mandatory stop */
+long StCoreResumeMove(unsigned char Target, unsigned char Pallet) {
+	return releaseCommand(60, Target, Pallet, 0, 0, 0);
 }
 
 /* Execute requested user commands */

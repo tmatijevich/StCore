@@ -40,7 +40,7 @@ FUNCTION_BLOCK StCoreSystem (*SuperTrak system interface function*)
 		Info : StCoreSystemInfoType; (*Extended system information*)
 	END_VAR
 	VAR
-		Internal : ARRAY[0..1] OF USINT; (*Internal data*)
+		Internal : StCoreSystemInternalType; (*Local internal data*)
 	END_VAR
 END_FUNCTION_BLOCK
 
@@ -71,21 +71,36 @@ FUNCTION_BLOCK StCoreSection (*SuperTrak section interface function*)
 	END_VAR
 END_FUNCTION_BLOCK
 
-FUNCTION StCoreReleaseToTarget : DINT (*Command target or pallet to release to target*)
+FUNCTION StCoreReleaseToTarget : DINT (*Release pallet to target*)
 	VAR_INPUT
-		Target : USINT; (*Target with pallet present*)
+		Target : USINT; (*Target (with pallet present)*)
 		Pallet : USINT; (*Pallet ID*)
-		Direction : UINT; (*Direction of motion stDIRECTION_RIGHT or stDIRECTION_LEFT*)
+		Direction : UINT; (*Direction of motion (stDIRECTION_RIGHT or stDIRECTION_LEFT)*)
 		DestinationTarget : USINT; (*Destination target*)
 	END_VAR
 END_FUNCTION
 
-FUNCTION StCoreReleaseToOffset : DINT (*Command target or pallet to release to offset*)
+FUNCTION StCoreReleaseToOffset : DINT (*Release pallet to target + offset*)
+	VAR_INPUT
+		Target : USINT; (*Target (with pallet present)*)
+		Pallet : USINT; (*Pallet ID*)
+		Direction : UINT; (*Direction of motion (stDIRECTION_RIGHT or stDIRECTION_LEFT)*)
+		DestinationTarget : USINT; (*Destination target*)
+		TargetOffset : LREAL; (*[-500.0, 500.0] mm Absolute offset from destination target*)
+	END_VAR
+END_FUNCTION
+
+FUNCTION StCoreIncrementOffset : DINT (*Increment pallet offset*)
 	VAR_INPUT
 		Target : USINT; (*Target with pallet present*)
 		Pallet : USINT; (*Pallet ID*)
-		Direction : UINT; (*Direction of motion stDIRECTION_RIGHT or stDIRECTION_LEFT*)
-		DestinationTarget : USINT; (*Destination target*)
-		TargetOffset : DINT; (*[-500000,500000] um Relative offset from target position*)
+		IncrementalOffset : LREAL; (*[-500.0, 500.0] mm Relative offset from current destination*)
+	END_VAR
+END_FUNCTION
+
+FUNCTION StCoreResumeMove : DINT (*Resume pallet movement when at mandatory stop*)
+	VAR_INPUT
+		Target : USINT; (*Target (with pallet present)*)
+		Pallet : USINT; (*Pallet ID*)
 	END_VAR
 END_FUNCTION
