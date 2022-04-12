@@ -6,9 +6,9 @@
 
 #include "StCoreMain.h"
 
-static void setCommandName(char *str, unsigned char command, unsigned long size);
-static void setContextName(char *str, unsigned char command, unsigned long size);
-static void setDirectionName(char *str, unsigned char command, unsigned long size);
+static void setCommandName(char *str, unsigned char ID, unsigned long size);
+static void setContextName(char *str, unsigned char ID, unsigned long size);
+static void setDirectionName(char *str, unsigned char ID, unsigned long size);
 static void setDestinationTargetName(char *str, unsigned char ID, unsigned char destination, unsigned long size);
 
 /* Release pallet to target */
@@ -45,193 +45,113 @@ long StCoreReleaseToTarget(unsigned char Target, unsigned char Pallet, unsigned 
 		
 	return 0;
 	
-}
-
-/* Accept all public inputs for common release command */
-static long releaseCommand(unsigned char commandStart, unsigned char target, unsigned char pallet, unsigned short direction, unsigned char destinationTarget, long offset) {
-	
-	/***********************
-	 Declare local variables
-	***********************/
-	unsigned char index, commandID, context, *pPalletPresent;
-	coreCommandManagerType *pManager;
-	coreCommandEntryType *pEntry;
-	FormatStringArgumentsType args;
-	
-	/*****************
-	 Derive command ID
-	*****************/
-	/* Add 1 if direction is right, add 2 if pallet context */
-	commandID = commandStart + (unsigned char)(direction > 0) + 2 * (unsigned char)(target == 0);
-	setCommandName(args.s[0], commandID, sizeof(args.s[0]));
-	
-	/* Check global references */
-	if(pCoreCyclicStatus == NULL || pCoreCommandManager == NULL) {
-		coreLogFormatMessage(USERLOG_SEVERITY_ERROR, coreEventCode(stCORE_ERROR_ALLOC), "%s command request cannot reference cyclic data or command manager", &args);
-		return stCORE_ERROR_ALLOC;
-	}
-	
-	/**************
-	 Create command
-	**************/
-	if(target != 0) {
-		if(target > coreTargetCount) {
-			args.i[0] = target;
-			args.i[1] = coreTargetCount;
-			coreLogFormatMessage(USERLOG_SEVERITY_ERROR, coreEventCode(stCORE_ERROR_INPUT), "Target %i context exceeds count [1, %i] of %s command", &args);
-			return stCORE_ERROR_INPUT;
-		}
-					
-		pPalletPresent = pCoreCyclicStatus + coreInterfaceConfig.targetStatusOffset + 3 * target + 1;
-		if(*pPalletPresent < 1 || corePalletCount < *pPalletPresent) {
-			args.i[0] = *pPalletPresent;
-			args.i[1] = target;
-			args.i[2] = corePalletCount;
-			coreLogFormatMessage(USERLOG_SEVERITY_ERROR, coreEventCode(stCORE_ERROR_INPUT), "Pallet %i present at target %i exceeds count [1, %i] of %s command", &args);
-			return stCORE_ERROR_INPUT;
-		}
-		
-		index = *pPalletPresent;
-		context = target;
-	}
-	else {
-		if(pallet < 1 || corePalletCount < pallet) {
-			args.i[0] = pallet;
-			args.i[1] = corePalletCount;
-			coreLogFormatMessage(USERLOG_SEVERITY_ERROR, coreEventCode(stCORE_ERROR_INPUT), "Pallet %i context exceeds count [1, %i] of %s command", &args);
-			return stCORE_ERROR_INPUT;
-		}
-		
-		index = pallet;
-		context = pallet;
-	}
-	
-	/**********************
-	 Access command manager
-	**********************/
-	pManager = pCoreCommandManager + index - 1;
-	pEntry = &pManager->buffer[pManager->write];
-	
-	/* Prepare message */
-	setContextName(args.s[0], commandID, sizeof(args.s[0]));
-	if(target) args.i[0] = target;
-	else args.i[0] = pallet;
-	setCommandName(args.s[1], commandID, sizeof(args.s[1]));
-	setDirectionName(args.s[2], commandID, sizeof(args.s[2]));
-	args.i[1] = destinationTarget;
-	
-	if(GET_BIT(pEntry->status, CORE_COMMAND_PENDING) || GET_BIT(pEntry->status, CORE_COMMAND_BUSY)) {
-		coreLogFormatMessage(USERLOG_SEVERITY_ERROR, coreEventCode(stCORE_ERROR_BUFFER), "%s %i %s command rejected because buffer is full", &args);
-		return stCORE_ERROR_BUFFER;
-	}
-	
-	/* Construct command */
-	pEntry->command.u1[0] = commandID;
-	pEntry->command.u1[1] = context;
-	if(commandStart != 60) /* Resume */
-		pEntry->command.u1[2] = destinationTarget;
-	if(commandStart == 24 || commandStart == 28) /* Release to offset or increment offset */
-		memcpy(&(pEntry->command.u1[4]), &offset, 4);
-	
-	/* Update status, tag instance, and share entry */
-	CLEAR_BIT(pEntry->status, CORE_COMMAND_DONE);
-	CLEAR_BIT(pEntry->status, CORE_COMMAND_ERROR);
-	SET_BIT(pEntry->status, CORE_COMMAND_PENDING);
-	/*pEntry->inst = userInst*/
-	/**pEntryRef = &pEntry*/
-	
-	coreLogFormatMessage(USERLOG_SEVERITY_DEBUG, 5200, "%s %i %s command request (direction = %s, destination = T%i)", &args);
-	
-	pManager->write = (pManager->write + 1) % CORE_COMMANDBUFFER_SIZE;
-	pEntry = &pManager->buffer[pManager->write];
-	if(GET_BIT(pEntry->status, CORE_COMMAND_PENDING) || GET_BIT(pEntry->status, CORE_COMMAND_BUSY)) {
-		args.i[0] = index;
-		args.i[1] = CORE_COMMANDBUFFER_SIZE;
-		coreLogFormatMessage(USERLOG_SEVERITY_WARNING, coreEventCode(stCORE_WARNING_BUFFER), "Pallet %i command buffer is now full (size = %i)", &args);
-	}
-	
-	return 0;
-}
-
-/****************
- Release commands
-****************/
+} /* Function definition */
 
 /* Release pallet to target + offset */
 long StCoreReleaseToOffset(unsigned char Target, unsigned char Pallet, unsigned short Direction, unsigned char DestinationTarget, double TargetOffset) {
-	return releaseCommand(24, Target, Pallet, Direction, DestinationTarget, (long)(TargetOffset * 1000));
-}
-
-/* Increment pallet offset */
-long StCoreIncrementOffset(unsigned char Target, unsigned char Pallet, double IncrementalOffset) {
-	return releaseCommand(28, Target, Pallet, 0, 0, (long)(IncrementalOffset * 1000));
-}
-
-/* Resume pallet movement when at mandatory stop */
-long StCoreResumeMove(unsigned char Target, unsigned char Pallet) {
-	return releaseCommand(60, Target, Pallet, 0, 0, 0);
-}
-
-/**********************
- Configuration commands
-**********************/
-
-/* Get command ID, context, and manager index for configuration command */
-static long setConfigurationCommand(unsigned char commandStart, unsigned char target, unsigned char pallet, unsigned char *commandID, unsigned char *context, unsigned char *index) {
 	
 	/***********************
 	 Declare local variables
 	***********************/
-	unsigned char *pPalletPresent;
-	FormatStringArgumentsType args;
+	long status, offset;
+	coreCommandAssignmentType assign;
+	SuperTrakCommand_t command;
 	
-	/*****************
-	 Derive command ID
-	*****************/
-	/* Add 1 if direction is right, add 2 if pallet context */
-	*commandID = commandStart + 2 * (unsigned char)(target == 0 && commandStart != 64);
-	setCommandName(args.s[0], *commandID, sizeof(args.s[0]));
-	
-	/* Check global references */
-	if(pCoreCyclicStatus == NULL || pCoreCommandManager == NULL) {
-		coreLogFormatMessage(USERLOG_SEVERITY_ERROR, coreEventCode(stCORE_ERROR_ALLOC), "%s command request cannot reference cyclic data or command manager", &args);
-		return stCORE_ERROR_ALLOC;
-	}
+	/**********************
+	 Get command assignment
+	**********************/
+	status = coreGetCommandAssignment(24, Target, Pallet, Direction, &assign);
+	if(status)
+		return status;
 	
 	/**************
 	 Create command
 	**************/
-	if(target != 0) {
-		if(target > coreTargetCount) {
-			args.i[0] = target;
-			args.i[1] = coreTargetCount;
-			coreLogFormatMessage(USERLOG_SEVERITY_ERROR, coreEventCode(stCORE_ERROR_INPUT), "Target %i context exceeds count [1, %i] of %s command", &args);
-			return stCORE_ERROR_INPUT;
-		}
-					
-		pPalletPresent = pCoreCyclicStatus + coreInterfaceConfig.targetStatusOffset + 3 * target + 1;
-		if(*pPalletPresent < 1 || corePalletCount < *pPalletPresent) {
-			args.i[0] = *pPalletPresent;
-			args.i[1] = target;
-			args.i[2] = corePalletCount;
-			coreLogFormatMessage(USERLOG_SEVERITY_ERROR, coreEventCode(stCORE_ERROR_INPUT), "Pallet %i present at target %i exceeds count [1, %i] of %s command", &args);
-			return stCORE_ERROR_INPUT;
-		}
-		
-		*index = *pPalletPresent;
-		*context = target;
-	}
-	else {
-		if(pallet < 1 || corePalletCount < pallet) {
-			args.i[0] = pallet;
-			args.i[1] = corePalletCount;
-			coreLogFormatMessage(USERLOG_SEVERITY_ERROR, coreEventCode(stCORE_ERROR_INPUT), "Pallet %i context exceeds count [1, %i] of %s command", &args);
-			return stCORE_ERROR_INPUT;
-		}
-		
-		*index = pallet;
-		*context = pallet;
-	}
+	memset(&command, 0, sizeof(command));
+	command.u1[0] = assign.commandID;
+	command.u1[1] = assign.context;
+	command.u1[2] = DestinationTarget;
+	offset = (long)(TargetOffset * 1000.0);
+	memcpy(&command.u1[4], &offset, 4);
+	
+	/***************
+	 Request command
+	***************/
+	status = coreCommandRequest(assign.index, command, NULL);
+	if(status)
+		return status;
+	
+	return 0;
+
+} /* Function definition */
+
+/* Increment pallet offset */
+long StCoreIncrementOffset(unsigned char Target, unsigned char Pallet, double IncrementalOffset) {
+	
+	/***********************
+	 Declare local variables
+	***********************/
+	long status, offset;
+	coreCommandAssignmentType assign;
+	SuperTrakCommand_t command;
+	
+	/**********************
+	 Get command assignment
+	**********************/
+	status = coreGetCommandAssignment(28, Target, Pallet, 0, &assign);
+	if(status)
+		return status;
+	
+	/**************
+	 Create command
+	**************/
+	memset(&command, 0, sizeof(command));
+	command.u1[0] = assign.commandID;
+	command.u1[1] = assign.context;
+	offset = (long)(IncrementalOffset * 1000.0);
+	memcpy(&command.u1[4], &offset, 4);
+	
+	/***************
+	 Request command
+	***************/
+	status = coreCommandRequest(assign.index, command, NULL);
+	if(status)
+		return status;
+	
+	return 0;
+
+} /* Function definition */
+
+/* Resume pallet movement when at mandatory stop */
+long StCoreResumeMove(unsigned char Target, unsigned char Pallet) {
+	
+	/***********************
+	 Declare local variables
+	***********************/
+	long status;
+	coreCommandAssignmentType assign;
+	SuperTrakCommand_t command;
+	
+	/**********************
+	 Get command assignment
+	**********************/
+	status = coreGetCommandAssignment(60, Target, Pallet, 0, &assign);
+	if(status)
+		return status;
+	
+	/**************
+	 Create command
+	**************/
+	memset(&command, 0, sizeof(command));
+	command.u1[0] = assign.commandID;
+	command.u1[1] = assign.context;
+	
+	/***************
+	 Request command
+	***************/
+	status = coreCommandRequest(assign.index, command, NULL);
+	if(status)
+		return status;
 	
 	return 0;
 	
@@ -243,20 +163,33 @@ long StCoreSetPalletID(unsigned char Target, unsigned char PalletID) {
 	/***********************
 	 Declare local variables
 	***********************/
-	unsigned char index, commandID, context;
 	long status;
-	coreCommandManagerType *pManager;
-	coreCommandEntryType *pEntry;
-	FormatStringArgumentsType args;
+	coreCommandAssignmentType assign;
+	SuperTrakCommand_t command;
 	
-	/*******************
-	 Get command details
-	*******************/
-	status = setConfigurationCommand(64, Target, 0, &commandID, &context, &index);
+	/**********************
+	 Get command assignment
+	**********************/
+	status = coreGetCommandAssignment(64, Target, 0, 0, &assign);
 	if(status)
 		return status;
 	
-	 return 0;
+	/**************
+	 Create command
+	**************/
+	memset(&command, 0, sizeof(command));
+	command.u1[0] = assign.commandID;
+	command.u1[1] = assign.context;
+	command.u1[2] = PalletID;
+	
+	/***************
+	 Request command
+	***************/
+	status = coreCommandRequest(assign.index, command, NULL);
+	if(status)
+		return status;
+	
+	return 0;
 	
 } /* Function definition */
 
@@ -526,25 +459,27 @@ void setCommandName(char *str, unsigned char command, unsigned long size) {
 		coreStringCopy(str, "increment offset", size);
 	else if(command == 60 || command == 62)
 		coreStringCopy(str, "resume", size);
+	else if(command == 64)
+		coreStringCopy(str, "set pallet ID", size);
 	else
 		coreStringCopy(str, "unknown", size);
 }
 
 /* Write uppercase context name to str based on command */
-void setContextName(char *str, unsigned char command, unsigned long size) {
-	if(command == 16 || command == 17 || command == 24 || command == 25 || command == 28 || command == 29 || command == 60)
+void setContextName(char *str, unsigned char ID, unsigned long size) {
+	if(ID == 16 || ID == 17 || ID == 24 || ID == 25 || ID == 28 || ID == 29 || ID == 60 || ID == 64)
 		coreStringCopy(str, "Target", size);
-	else if(command == 18 || command == 19 || command == 26 || command == 27 || command == 30 || command == 31 || command == 62)
+	else if(ID == 18 || ID == 19 || ID == 26 || ID == 27 || ID == 30 || ID == 31 || ID == 62)
 		coreStringCopy(str, "Pallet", size);
 	else
 		coreStringCopy(str, "Unknown", size);
 }
 
 /* Write lowercase direction name to str based on command */
-void setDirectionName(char *str, unsigned char command, unsigned long size) {
-	if(command == 16 || command == 18 || command == 24 || command == 26 || command == 28 || command == 30) 
+void setDirectionName(char *str, unsigned char ID, unsigned long size) {
+	if(ID == 16 || ID == 18 || ID == 24 || ID == 26 || ID == 28 || ID == 30) 
 		coreStringCopy(str, "left", size);
-	else if(command == 17 || command == 19 || command == 25 || command == 27 || command == 29 || command == 31)
+	else if(ID == 17 || ID == 19 || ID == 25 || ID == 27 || ID == 29 || ID == 31)
 		coreStringCopy(str, "right", size);
 	else
 		coreStringCopy(str, "n/a", size);
@@ -553,7 +488,7 @@ void setDirectionName(char *str, unsigned char command, unsigned long size) {
 /* Write destination target in text */
 void setDestinationTargetName(char *str, unsigned char ID, unsigned char destination, unsigned long size) {
 	FormatStringArgumentsType args;
-	if(ID == 16 || ID == 17 || ID == 18 || ID == 19 || ID == 20 || ID == 21 || ID == 22 || ID == 23 || ID == 24) {
+	if(ID == 16 || ID == 17 || ID == 18 || ID == 19 || ID == 24 || ID == 25 || ID == 26 || ID == 27) {
 		args.i[0] = destination;
 		IecFormatString(str, size, "T%i", &args);
 	}
