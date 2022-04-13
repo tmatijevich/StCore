@@ -193,6 +193,124 @@ long StCoreSetPalletID(unsigned char Target, unsigned char PalletID) {
 	
 } /* Function definition */
 
+/* Set pallet velocity and/or acceleration */
+long StCoreSetMotionParameters(unsigned char Target, unsigned char Pallet, double Velocity, double Acceleration) {
+	
+	/***********************
+	 Declare local variables
+	***********************/
+	long status;
+	unsigned short value;
+	coreCommandAssignmentType assign;
+	SuperTrakCommand_t command;
+	
+	/**********************
+	 Get command assignment
+	**********************/
+	status = coreGetCommandAssignment(68, Target, Pallet, 0, &assign);
+	if(status)
+		return status;
+	
+	/**************
+	 Create command
+	**************/
+	memset(&command, 0, sizeof(command));
+	command.u1[0] = assign.commandID;
+	command.u1[1] = assign.context;
+	value = (unsigned short)Velocity;
+	memcpy(&command.u1[2], &value, 2);
+	value = (unsigned short)(Acceleration / 1000.0);
+	memcpy(&command.u1[4], &value, 2);
+	
+	/***************
+	 Request command
+	***************/
+	status = coreCommandRequest(assign.index, command, NULL);
+	if(status)
+		return status;
+	
+	return 0;
+	
+} /* Function definition */
+
+/* Set pallet shelf width and offset */
+long StCoreSetMechanicalParameters(unsigned char Target, unsigned char Pallet, double ShelfWidth, double CenterOffset) {
+	
+	/***********************
+	 Declare local variables
+	***********************/
+	long status;
+	unsigned short value;
+	coreCommandAssignmentType assign;
+	SuperTrakCommand_t command;
+	
+	/**********************
+	 Get command assignment
+	**********************/
+	status = coreGetCommandAssignment(72, Target, Pallet, 0, &assign);
+	if(status)
+		return status;
+	
+	/**************
+	 Create command
+	**************/
+	memset(&command, 0, sizeof(command));
+	command.u1[0] = assign.commandID;
+	command.u1[1] = assign.context;
+	value = (unsigned short)(ShelfWidth * 10.0); /* Units of 0.1 mm */
+	memcpy(&command.u1[2], &value, 2);
+	value = (unsigned short)(CenterOffset * 10.0); /* Units of 0.1 mm */
+	memcpy(&command.u1[4], &value, 2);
+	
+	/***************
+	 Request command
+	***************/
+	status = coreCommandRequest(assign.index, command, NULL);
+	if(status)
+		return status;
+	
+	return 0;
+	
+} /* Function definition */
+
+/* Set pallet control parameters */
+long StCoreSetControlParameters(unsigned char Target, unsigned char Pallet, unsigned char ControlGainSet, double MovingFilter, double StationaryFilter) {
+	
+	/***********************
+	 Declare local variables
+	***********************/
+	long status;
+	coreCommandAssignmentType assign;
+	SuperTrakCommand_t command;
+	
+	/**********************
+	 Get command assignment
+	**********************/
+	status = coreGetCommandAssignment(76, Target, Pallet, 0, &assign);
+	if(status)
+		return status;
+	
+	/**************
+	 Create command
+	**************/
+	memset(&command, 0, sizeof(command));
+	command.u1[0] = assign.commandID;
+	command.u1[1] = assign.context;
+	command.u1[2] = ControlGainSet;
+	command.u1[3] = (unsigned char)(fmax(0.0, fmin(99.0, MovingFilter * 100.0)));
+	command.u1[4] = (unsigned char)(fmax(0.0, fmin(99.0, StationaryFilter * 100.0)));
+	
+	/***************
+	 Request command
+	***************/
+	status = coreCommandRequest(assign.index, command, NULL);
+	if(status)
+		return status;
+	
+	return 0;
+	
+} /* Function definition */
+
 /*******************************************************************************
 ********************************************************************************
  Command assignment
@@ -394,7 +512,7 @@ void coreProcessCommand(void) {
 			if(complete) {
 				/* Confirm success or failure */
 				if(success)
-					coreLogFormatMessage(USERLOG_SEVERITY_DEBUG, 6000, "%s %i %s command executed successfully", &args);
+					coreLogFormatMessage(USERLOG_SEVERITY_DEBUG, 6000, "%s %i %s command acknowledged", &args);
 				else {
 					coreLogFormatMessage(USERLOG_SEVERITY_ERROR, coreEventCode(stCORE_ERROR_CMDFAILURE), "%s %i %s command execution failed", &args);
 					SET_BIT(pEntry->status, CORE_COMMAND_ERROR);
@@ -450,26 +568,32 @@ void coreProcessCommand(void) {
 *******************************************************************************/
 
 /* Write lowercase command name to str */
-void setCommandName(char *str, unsigned char command, unsigned long size) {
-	if(command == 16 || command == 17 || command == 18 || command == 19)
+void setCommandName(char *str, unsigned char ID, unsigned long size) {
+	if(ID == 16 || ID == 17 || ID == 18 || ID == 19)
 		coreStringCopy(str, "release to target", size);
-	else if(command == 24 || command == 25 || command == 26 || command == 27)
+	else if(ID == 24 || ID == 25 || ID == 26 || ID == 27)
 		coreStringCopy(str, "release to offset", size);
-	else if(command == 28 || command == 29 || command == 30 || command == 31)
+	else if(ID == 28 || ID == 29 || ID == 30 || ID == 31)
 		coreStringCopy(str, "increment offset", size);
-	else if(command == 60 || command == 62)
+	else if(ID == 60 || ID == 62)
 		coreStringCopy(str, "resume", size);
-	else if(command == 64)
+	else if(ID == 64)
 		coreStringCopy(str, "set pallet ID", size);
+	else if(ID == 68 || ID == 70)
+		coreStringCopy(str, "set motion parameters", size);
+	else if(ID == 72 || ID == 74)
+		coreStringCopy(str, "set mechanical parameters", size);
+	else if(ID == 76 || ID == 78)
+		coreStringCopy(str, "set control parameters", size);
 	else
 		coreStringCopy(str, "unknown", size);
 }
 
 /* Write uppercase context name to str based on command */
 void setContextName(char *str, unsigned char ID, unsigned long size) {
-	if(ID == 16 || ID == 17 || ID == 24 || ID == 25 || ID == 28 || ID == 29 || ID == 60 || ID == 64)
+	if(ID == 16 || ID == 17 || ID == 24 || ID == 25 || ID == 28 || ID == 29 || ID == 60 || ID == 64 || ID == 68 || ID == 72 || ID == 76)
 		coreStringCopy(str, "Target", size);
-	else if(ID == 18 || ID == 19 || ID == 26 || ID == 27 || ID == 30 || ID == 31 || ID == 62)
+	else if(ID == 18 || ID == 19 || ID == 26 || ID == 27 || ID == 30 || ID == 31 || ID == 62 || ID == 70 || ID == 74 || ID == 78)
 		coreStringCopy(str, "Pallet", size);
 	else
 		coreStringCopy(str, "Unknown", size);

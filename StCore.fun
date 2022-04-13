@@ -116,3 +116,31 @@ FUNCTION StCoreSetPalletID : DINT (*Set ID of pallet at target*)
 		PalletID : USINT; (*Pallet ID to assign*)
 	END_VAR
 END_FUNCTION
+
+FUNCTION StCoreSetMotionParameters : DINT (*Set pallet velocity and/or acceleration*)
+	VAR_INPUT
+		Target : USINT; (*Target (with pallet present)*)
+		Pallet : USINT; (*Pallet ID*)
+		Velocity : LREAL; (*mm/s Set velocity (0.0 for unchanged)*)
+		Acceleration : LREAL; (*mm/s^2 Set acceleration (0.0 for unchanged)*)
+	END_VAR
+END_FUNCTION
+
+FUNCTION StCoreSetMechanicalParameters : DINT (*Set pallet shelf width and offset*)
+	VAR_INPUT
+		Target : USINT; (*Target (with pallet present)*)
+		Pallet : USINT; (*Pallet ID*)
+		ShelfWidth : LREAL; (*mm*)
+		CenterOffset : LREAL;
+	END_VAR
+END_FUNCTION
+
+FUNCTION StCoreSetControlParameters : DINT (*Set pallet control parameters*)
+	VAR_INPUT
+		Target : USINT; (*Target (with pallet present)*)
+		Pallet : USINT; (*Pallet ID*)
+		ControlGainSet : USINT; (*[0, 15] Control gain set defined in TrakMaster*)
+		MovingFilter : LREAL; (*[0.0, 1.0) Moving control weight filter*)
+		StationaryFilter : LREAL; (*[0.0, 1.0) Stationary control weight filter*)
+	END_VAR
+END_FUNCTION
