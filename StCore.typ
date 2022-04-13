@@ -31,4 +31,9 @@ TYPE
 		State : USINT; (*Execution state*)
 		PreviousErrorReset : BOOL; (*Previous ErrorReset value*)
 	END_STRUCT;
+	StCoreFunctionInternalType : 	STRUCT  (*Local internal function information*)
+		State : USINT; (*Execution state*)
+		Select : USINT; (*Select index (Section, Target, or Pallet)*)
+		PreviousErrorReset : BOOL; (*Previous ErrorReset value*)
+	END_STRUCT;
 END_TYPE

@@ -47,6 +47,12 @@ typedef enum coreCommandStatusEnum {
 	CORE_COMMAND_ERROR
 } coreCommandStatusEnum;
 
+enum coreFunctionStateEnum {
+	CORE_FUNCTION_DISABLED = 0,
+	CORE_FUNCTION_EXECUTING,
+	CORE_FUNCTION_ERROR = 255
+};
+
 typedef struct coreCommandEntryType {
 	SuperTrakCommand_t command; /* SuperTrak command bytes */
 	unsigned char status; /* Command progess status */
