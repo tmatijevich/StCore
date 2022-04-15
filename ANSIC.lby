@@ -23,5 +23,6 @@
     <Dependency ObjectName="ArEventLog" />
     <Dependency ObjectName="brsystem" />
     <Dependency ObjectName="sys_lib" />
+    <Dependency ObjectName="AsIoTime" />
   </Dependencies>
 </Library>

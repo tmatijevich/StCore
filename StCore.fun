@@ -144,6 +144,16 @@ FUNCTION StCoreSetControlParameters : DINT (*Set pallet control parameters*)
 		StationaryFilter : LREAL; (*[0.0, 1.0) Stationary control weight filter*)
 	END_VAR
 END_FUNCTION
+(*Targets and pallets*)
+
+FUNCTION StCoreTargetStatus : DINT (*Get target status*)
+	VAR_INPUT
+		Target : USINT; (*Target number*)
+	END_VAR
+	VAR_IN_OUT
+		Status : StCoreTargetStatusType; (*Target status reference*)
+	END_VAR
+END_FUNCTION
 
 FUNCTION_BLOCK StCoreTarget (*Target core interface*)
 	VAR_INPUT
@@ -159,8 +169,9 @@ FUNCTION_BLOCK StCoreTarget (*Target core interface*)
 		PalletInPosition : BOOL; (*(IF) A pallet is currently within the in-position window*)
 		PalletPreArrival : BOOL; (*(IF) A pallet is expected to arrive at the stop within the configured time*)
 		PalletOverTarget : BOOL; (*(IF) A pallet's shelf is over the target (requires configuration to report status)*)
-		PalletPositionUncertain : BOOL; (*(IF) A pallet's actual position is uncertain. The pallet has arrived but is not reporting in-position*)
-		PalletID : USINT; (*(IF) ID of pallet present at the target*)
+		PalletPositionUncertain : BOOL; (*(IF) A pallet has arrived but is not reporting in-position*)
+		PalletID : USINT; (*(IF) ID of the pallet present at the target*)
+		Info : StCoreTargetInfoType; (*Extended target information*)
 	END_VAR
 	VAR
 		Internal : StCoreFunctionInternalType; (*Local internal data*)

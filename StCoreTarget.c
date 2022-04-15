@@ -10,6 +10,64 @@
 /* Function prototypes */
 static void clearInstanceOutputs(StCoreTarget_typ *inst);
 
+/* Get target status */
+long StCoreTargetStatus(unsigned char Target, StCoreTargetStatusType *Status) {
+	
+	/*********************** 
+	 Declare local variables
+	***********************/
+	unsigned char *pTargetStatus;
+	unsigned short dataUInt16;
+	long dataInt32, i;
+	static long timestamp;
+	static unsigned short palletDataUInt16[256];
+	
+	/* Clear status structure */
+	memset(Status, 0, sizeof(*Status));
+	
+	/* Check select */
+	if(Target < 1 || coreTargetCount < Target)
+		return stCORE_ERROR_INPUT;
+	
+	/* Check reference */
+	if(pCoreCyclicStatus == NULL)
+		return stCORE_ERROR_ALLOC;
+	
+	/**********
+	 Set status
+	**********/
+	pTargetStatus = pCoreCyclicStatus + coreInterfaceConfig.targetStatusOffset + 3 * Target;
+	
+	Status->PalletPresent = GET_BIT(*pTargetStatus, 0);
+	Status->PalletInPosition = GET_BIT(*pTargetStatus, 1);
+	Status->PalletPreArrival = GET_BIT(*pTargetStatus, 2);
+	Status->PalletOverTarget = GET_BIT(*pTargetStatus, 3);
+	Status->PalletPositionUncertain = GET_BIT(*pTargetStatus, 6);
+	
+	Status->PalletID = *(pCoreCyclicStatus + coreInterfaceConfig.targetStatusOffset + 3 * Target + 1);
+	
+	SuperTrakServChanRead(0, stPAR_TARGET_SECTION, Target, 1, (unsigned long)&dataUInt16, sizeof(dataUInt16));
+	Status->Info.Section = (unsigned char)dataUInt16;
+	
+	SuperTrakServChanRead(0, stPAR_TARGET_POSITION, Target, 1, (unsigned long)&dataInt32, sizeof(dataInt32));
+	Status->Info.PositionUm = dataInt32;
+	Status->Info.Position = ((double)dataInt32) / 1000.0; /* um to mm */
+	
+	/* Re-read pallet data if new scan */
+	if(timestamp != AsIOTimeCyclicStart()) {
+		timestamp = AsIOTimeCyclicStart();
+		SuperTrakServChanRead(0, 1339, 0, corePalletCount, (unsigned long)&palletDataUInt16, sizeof(palletDataUInt16));
+	}
+	
+	for(i = 0; i < corePalletCount; i++) {
+		if((unsigned char)palletDataUInt16[i] == Target) 
+			Status->Info.PalletCount++;
+	}
+	
+	return 0;
+	
+} /* End function */
+
 /* Target core interface */
 void StCoreTarget(StCoreTarget_typ *inst) {
 	
@@ -17,7 +75,7 @@ void StCoreTarget(StCoreTarget_typ *inst) {
 	 Declare local variables
 	***********************/
 	FormatStringArgumentsType args;
-	unsigned char *pTargetStatus;
+	StCoreTargetStatusType targetStatus;
 	
 	/************
 	 Switch state
@@ -60,6 +118,13 @@ void StCoreTarget(StCoreTarget_typ *inst) {
 				break;
 			}
 			
+			/* Check select changes */
+			if(inst->Target != inst->Internal.Select && inst->Target != inst->Internal.PreviousSelect) {
+				args.i[0] = inst->Internal.Select;
+				args.i[1] = inst->Target;
+				coreLogFormatMessage(USERLOG_SEVERITY_WARNING, 555, "StCoreTarget target select %i change to %i is ignored until re-enabled", &args);
+			}
+			
 			/*******
 			 Control
 			*******/
@@ -67,15 +132,18 @@ void StCoreTarget(StCoreTarget_typ *inst) {
 			/******
 			 Status
 			******/
-			pTargetStatus = pCoreCyclicStatus + coreInterfaceConfig.targetStatusOffset + 3 * inst->Internal.Select;
+			/* Call target status subroutine */
+			StCoreTargetStatus(inst->Internal.Select, &targetStatus);
 			
-			inst->PalletPresent = GET_BIT(*pTargetStatus, 0);
-			inst->PalletInPosition = GET_BIT(*pTargetStatus, 1);
-			inst->PalletPreArrival = GET_BIT(*pTargetStatus, 2);
-			inst->PalletOverTarget = GET_BIT(*pTargetStatus, 3);
-			inst->PalletPositionUncertain = GET_BIT(*pTargetStatus, 6);
+			/* Map target status data to function block */
+			inst->PalletPresent = targetStatus.PalletPresent;
+			inst->PalletInPosition = targetStatus.PalletInPosition;
+			inst->PalletPreArrival = targetStatus.PalletPreArrival;
+			inst->PalletOverTarget = targetStatus.PalletOverTarget;
+			inst->PalletPositionUncertain = targetStatus.PalletPositionUncertain;
+			inst->PalletID = targetStatus.PalletID;
 			
-			inst->PalletID = *(pCoreCyclicStatus + coreInterfaceConfig.targetStatusOffset + 3 * inst->Internal.Select + 1);
+			memcpy(&inst->Info, &targetStatus.Info, sizeof(inst->Info));
 			
 			inst->Valid = true;
 			
@@ -94,6 +162,7 @@ void StCoreTarget(StCoreTarget_typ *inst) {
 			break;
 	}
 	
+	inst->Internal.PreviousSelect = inst->Target;
 	inst->Internal.PreviousErrorReset = inst->ErrorReset;
 	
 } /* End function */
