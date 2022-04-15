@@ -36,6 +36,34 @@ TYPE
 		Select : USINT; (*Select index (Section, Target, or Pallet)*)
 		PreviousSelect : USINT; (*Previous select index value*)
 		PreviousErrorReset : BOOL; (*Previous ErrorReset value*)
+		PreviousCommand : UINT; (*Previous command input values*)
+		ActiveCommand : USINT; (*Active command index*)
+		CommandEntry : UDINT; (*Address of command entry*)
+	END_STRUCT;
+	StCoreTargetParameterType : 	STRUCT  (*Target interface parameters*)
+		Release : StCoreReleaseParameterType; (*Release command parameters*)
+		PalletID : USINT := 1; (*Pallet ID to assign*)
+		Motion : StCoreMotionParameterType; (*Motion parameters for configuration command*)
+		Mechanical : StCoreMechanicalParameterType; (*Mechanical parameters for configuration command*)
+		Control : StCoreControlParameterType; (*Control parameters for configuration command*)
+	END_STRUCT;
+	StCoreReleaseParameterType : 	STRUCT  (*Release command parameter structure*)
+		Direction : UINT := stDIRECTION_RIGHT; (*Direction of motion (stDIRECTION_RIGHT or stDIRECTION_LEFT)*)
+		DestinationTarget : USINT := 1; (*Destination target*)
+		Offset : LREAL; (*(mm) [-500, 500] Target offset or incremental offset*)
+	END_STRUCT;
+	StCoreMotionParameterType : 	STRUCT  (*Motion parameter structure*)
+		Velocity : REAL; (*(mm/s) [5, 4000] Set velocity*)
+		Acceleration : REAL; (*(mm/s/s) [500, 60000] Set acceleration and deceleration*)
+	END_STRUCT;
+	StCoreMechanicalParameterType : 	STRUCT  (*Mechanical parameter structure*)
+		ShelfWidth : LREAL; (*(mm) [152, 600] Physical pallet shelf length*)
+		CenterOffset : LREAL; (*(mm) Physical pallet shelf center offset*)
+	END_STRUCT;
+	StCoreControlParameterType : 	STRUCT  (*Control parameter structure*)
+		ControlGainSet : USINT; (*[0, 15] Select control gain set*)
+		MovingFilter : REAL := 0.5; (*[0, 1) Moving control filter weight*)
+		StationaryFilter : REAL := 0.5; (*[0, 1) Stationary control filter weight*)
 	END_STRUCT;
 	StCoreTargetInfoType : 	STRUCT  (*Extended target information*)
 		Section : USINT; (*(Par 1650) Target section number*)

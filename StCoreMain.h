@@ -86,9 +86,11 @@ unsigned short coreEventCode(long eventID);
 char* coreStringCopy(char *destination, const char *source, unsigned long size);
 void coreLogServiceChannel(unsigned short result, unsigned short parameter);
 void coreLogFaultWarning(unsigned char index, unsigned char section);
+void coreAssignBitUInt16(unsigned short *pInteger, unsigned char bit, unsigned char value);
 long coreGetCommandAssignment(unsigned char start, unsigned char target, unsigned char pallet, unsigned short direction, coreCommandAssignmentType *assign);
-long coreCommandRequest(unsigned char index, SuperTrakCommand_t command, void *inst);
+long coreCommandRequest(unsigned char index, SuperTrakCommand_t command, void *pFunctionInst, coreCommandEntryType **pFunctionEntry);
 void coreProcessCommand(void);
+long coreReleasePallet(unsigned char target, unsigned char pallet, unsigned short direction, unsigned char destinationTarget, void *pFunctionInst, coreCommandEntryType **pFunctionEntry);
 
 #ifdef __cplusplus
 };

@@ -13,6 +13,11 @@ static void setDestinationTargetName(char *str, unsigned char ID, unsigned char 
 
 /* Release pallet to target */
 long StCoreReleaseToTarget(unsigned char Target, unsigned char Pallet, unsigned short Direction, unsigned char DestinationTarget) {
+	return coreReleasePallet(Target, Pallet, Direction, DestinationTarget, NULL, NULL);
+}
+
+/* Release pallet to a target */
+long coreReleasePallet(unsigned char target, unsigned char pallet, unsigned short direction, unsigned char destinationTarget, void *pFunctionInst, coreCommandEntryType **pFunctionEntry) {
 	
 	/***********************
 	 Declare local variables
@@ -24,7 +29,7 @@ long StCoreReleaseToTarget(unsigned char Target, unsigned char Pallet, unsigned 
 	/**********************
 	 Get command assignment
 	**********************/
-	status = coreGetCommandAssignment(16, Target, Pallet, Direction, &assign);
+	status = coreGetCommandAssignment(16, target, pallet, direction, &assign);
 	if(status)
 		return status;
 	
@@ -34,18 +39,18 @@ long StCoreReleaseToTarget(unsigned char Target, unsigned char Pallet, unsigned 
 	memset(&command, 0, sizeof(command));
 	command.u1[0] = assign.commandID;
 	command.u1[1] = assign.context;
-	command.u1[2] = DestinationTarget;
+	command.u1[2] = destinationTarget;
 	
 	/***************
 	 Request command
 	***************/
-	status = coreCommandRequest(assign.index, command, NULL);
+	status = coreCommandRequest(assign.index, command, pFunctionInst, pFunctionEntry);
 	if(status)
 		return status;
 		
 	return 0;
 	
-} /* Function definition */
+} /* End function */
 
 /* Release pallet to target + offset */
 long StCoreReleaseToOffset(unsigned char Target, unsigned char Pallet, unsigned short Direction, unsigned char DestinationTarget, double TargetOffset) {
@@ -77,7 +82,7 @@ long StCoreReleaseToOffset(unsigned char Target, unsigned char Pallet, unsigned 
 	/***************
 	 Request command
 	***************/
-	status = coreCommandRequest(assign.index, command, NULL);
+	status = coreCommandRequest(assign.index, command, NULL, NULL);
 	if(status)
 		return status;
 	
@@ -114,7 +119,7 @@ long StCoreIncrementOffset(unsigned char Target, unsigned char Pallet, double In
 	/***************
 	 Request command
 	***************/
-	status = coreCommandRequest(assign.index, command, NULL);
+	status = coreCommandRequest(assign.index, command, NULL, NULL);
 	if(status)
 		return status;
 	
@@ -149,7 +154,7 @@ long StCoreResumeMove(unsigned char Target, unsigned char Pallet) {
 	/***************
 	 Request command
 	***************/
-	status = coreCommandRequest(assign.index, command, NULL);
+	status = coreCommandRequest(assign.index, command, NULL, NULL);
 	if(status)
 		return status;
 	
@@ -185,7 +190,7 @@ long StCoreSetPalletID(unsigned char Target, unsigned char PalletID) {
 	/***************
 	 Request command
 	***************/
-	status = coreCommandRequest(assign.index, command, NULL);
+	status = coreCommandRequest(assign.index, command, NULL, NULL);
 	if(status)
 		return status;
 	
@@ -225,7 +230,7 @@ long StCoreSetMotionParameters(unsigned char Target, unsigned char Pallet, doubl
 	/***************
 	 Request command
 	***************/
-	status = coreCommandRequest(assign.index, command, NULL);
+	status = coreCommandRequest(assign.index, command, NULL, NULL);
 	if(status)
 		return status;
 	
@@ -265,7 +270,7 @@ long StCoreSetMechanicalParameters(unsigned char Target, unsigned char Pallet, d
 	/***************
 	 Request command
 	***************/
-	status = coreCommandRequest(assign.index, command, NULL);
+	status = coreCommandRequest(assign.index, command, NULL, NULL);
 	if(status)
 		return status;
 	
@@ -303,7 +308,7 @@ long StCoreSetControlParameters(unsigned char Target, unsigned char Pallet, unsi
 	/***************
 	 Request command
 	***************/
-	status = coreCommandRequest(assign.index, command, NULL);
+	status = coreCommandRequest(assign.index, command, NULL, NULL);
 	if(status)
 		return status;
 	
@@ -389,7 +394,7 @@ long coreGetCommandAssignment(unsigned char start, unsigned char target, unsigne
 *******************************************************************************/
 
 /* Request command for allocated pallet command buffer */
-long coreCommandRequest(unsigned char index, SuperTrakCommand_t command, void *inst) {
+long coreCommandRequest(unsigned char index, SuperTrakCommand_t command, void *pFunctionInst, coreCommandEntryType **pFunctionEntry) {
 	
 	/***********************
 	 Declare local variables
@@ -432,8 +437,8 @@ long coreCommandRequest(unsigned char index, SuperTrakCommand_t command, void *i
 	CLEAR_BIT(pEntry->status, CORE_COMMAND_DONE);
 	CLEAR_BIT(pEntry->status, CORE_COMMAND_ERROR);
 	SET_BIT(pEntry->status, CORE_COMMAND_PENDING);
-	pEntry->inst = inst;
-	/**pEntryRef = &pEntry*/
+	pEntry->inst = pFunctionInst;
+	if(pFunctionEntry != NULL) *pFunctionEntry = pEntry;
 	
 	/* Debug comfirmation message */
 	coreLogFormatMessage(USERLOG_SEVERITY_DEBUG, 5200, "%s %i %s command request (direction = %s, destination = %s)", &args);
