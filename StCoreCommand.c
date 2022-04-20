@@ -17,19 +17,19 @@ long StCoreReleaseToTarget(unsigned char Target, unsigned char Pallet, unsigned 
 }
 
 /* Release pallet to a target */
-long coreReleasePallet(unsigned char target, unsigned char pallet, unsigned short direction, unsigned char destinationTarget, void *pFunctionInst, coreCommandEntryType **pFunctionEntry) {
+long coreReleasePallet(unsigned char target, unsigned char pallet, unsigned short direction, unsigned char destinationTarget, void *pInstance, coreCommandType **ppRequest) {
 	
 	/***********************
 	 Declare local variables
 	***********************/
 	long status;
-	coreCommandAssignmentType assign;
+	coreCommandCreateType create;
 	SuperTrakCommand_t command;
 	
 	/**********************
 	 Get command assignment
 	**********************/
-	status = coreGetCommandAssignment(16, target, pallet, direction, &assign);
+	status = coreCommandCreate(16, target, pallet, direction, &create);
 	if(status)
 		return status;
 	
@@ -37,14 +37,14 @@ long coreReleasePallet(unsigned char target, unsigned char pallet, unsigned shor
 	 Create command
 	**************/
 	memset(&command, 0, sizeof(command));
-	command.u1[0] = assign.commandID;
-	command.u1[1] = assign.context;
+	command.u1[0] = create.commandID;
+	command.u1[1] = create.context;
 	command.u1[2] = destinationTarget;
 	
 	/***************
 	 Request command
 	***************/
-	status = coreCommandRequest(assign.index, command, pFunctionInst, pFunctionEntry);
+	status = coreCommandRequest(create.index, command, pInstance, ppRequest);
 	if(status)
 		return status;
 		
@@ -59,13 +59,13 @@ long StCoreReleaseToOffset(unsigned char Target, unsigned char Pallet, unsigned 
 	 Declare local variables
 	***********************/
 	long status, offset;
-	coreCommandAssignmentType assign;
+	coreCommandCreateType assign;
 	SuperTrakCommand_t command;
 	
 	/**********************
 	 Get command assignment
 	**********************/
-	status = coreGetCommandAssignment(24, Target, Pallet, Direction, &assign);
+	status = coreCommandCreate(24, Target, Pallet, Direction, &assign);
 	if(status)
 		return status;
 	
@@ -97,13 +97,13 @@ long StCoreIncrementOffset(unsigned char Target, unsigned char Pallet, double In
 	 Declare local variables
 	***********************/
 	long status, offset;
-	coreCommandAssignmentType assign;
+	coreCommandCreateType assign;
 	SuperTrakCommand_t command;
 	
 	/**********************
 	 Get command assignment
 	**********************/
-	status = coreGetCommandAssignment(28, Target, Pallet, 0, &assign);
+	status = coreCommandCreate(28, Target, Pallet, 0, &assign);
 	if(status)
 		return status;
 	
@@ -134,13 +134,13 @@ long StCoreResumeMove(unsigned char Target, unsigned char Pallet) {
 	 Declare local variables
 	***********************/
 	long status;
-	coreCommandAssignmentType assign;
+	coreCommandCreateType assign;
 	SuperTrakCommand_t command;
 	
 	/**********************
 	 Get command assignment
 	**********************/
-	status = coreGetCommandAssignment(60, Target, Pallet, 0, &assign);
+	status = coreCommandCreate(60, Target, Pallet, 0, &assign);
 	if(status)
 		return status;
 	
@@ -169,13 +169,13 @@ long StCoreSetPalletID(unsigned char Target, unsigned char PalletID) {
 	 Declare local variables
 	***********************/
 	long status;
-	coreCommandAssignmentType assign;
+	coreCommandCreateType assign;
 	SuperTrakCommand_t command;
 	
 	/**********************
 	 Get command assignment
 	**********************/
-	status = coreGetCommandAssignment(64, Target, 0, 0, &assign);
+	status = coreCommandCreate(64, Target, 0, 0, &assign);
 	if(status)
 		return status;
 	
@@ -206,13 +206,13 @@ long StCoreSetMotionParameters(unsigned char Target, unsigned char Pallet, doubl
 	***********************/
 	long status;
 	unsigned short value;
-	coreCommandAssignmentType assign;
+	coreCommandCreateType assign;
 	SuperTrakCommand_t command;
 	
 	/**********************
 	 Get command assignment
 	**********************/
-	status = coreGetCommandAssignment(68, Target, Pallet, 0, &assign);
+	status = coreCommandCreate(68, Target, Pallet, 0, &assign);
 	if(status)
 		return status;
 	
@@ -246,13 +246,13 @@ long StCoreSetMechanicalParameters(unsigned char Target, unsigned char Pallet, d
 	***********************/
 	long status;
 	unsigned short value;
-	coreCommandAssignmentType assign;
+	coreCommandCreateType assign;
 	SuperTrakCommand_t command;
 	
 	/**********************
 	 Get command assignment
 	**********************/
-	status = coreGetCommandAssignment(72, Target, Pallet, 0, &assign);
+	status = coreCommandCreate(72, Target, Pallet, 0, &assign);
 	if(status)
 		return status;
 	
@@ -285,13 +285,13 @@ long StCoreSetControlParameters(unsigned char Target, unsigned char Pallet, unsi
 	 Declare local variables
 	***********************/
 	long status;
-	coreCommandAssignmentType assign;
+	coreCommandCreateType assign;
 	SuperTrakCommand_t command;
 	
 	/**********************
 	 Get command assignment
 	**********************/
-	status = coreGetCommandAssignment(76, Target, Pallet, 0, &assign);
+	status = coreCommandCreate(76, Target, Pallet, 0, &assign);
 	if(status)
 		return status;
 	
@@ -323,7 +323,7 @@ long StCoreSetControlParameters(unsigned char Target, unsigned char Pallet, unsi
 *******************************************************************************/
 
 /* Assign command's ID, context, and manager index */
-long coreGetCommandAssignment(unsigned char start, unsigned char target, unsigned char pallet, unsigned short direction, coreCommandAssignmentType *assign) {
+long coreCommandCreate(unsigned char start, unsigned char target, unsigned char pallet, unsigned short direction, coreCommandCreateType *create) {
 	
 	/***********************
 	 Declare local variables
@@ -337,14 +337,14 @@ long coreGetCommandAssignment(unsigned char start, unsigned char target, unsigne
 	/* Add 1 if direction is right, add 2 if pallet context */
 	/* Exception: There is no direction choice for configuration (start < 64) */
 	/* Exception: The set pallet ID command can only be in context of target (start != 64) */
-	assign->commandID = start + (unsigned char)(direction > 0 && start < 64) + 2 * (unsigned char)(target == 0 && start != 64);
+	create->commandID = start + (unsigned char)(direction > 0 && start < 64) + 2 * (unsigned char)(target == 0 && start != 64);
 	
 	/***********************
 	 Check global references
 	***********************/
-	setCommandName(args.s[0], assign->commandID, sizeof(args.s[0]));
+	setCommandName(args.s[0], create->commandID, sizeof(args.s[0]));
 	if(pCoreCyclicStatus == NULL) {
-		coreLogFormatMessage(USERLOG_SEVERITY_ERROR, coreEventCode(stCORE_ERROR_ALLOC), "%s command assignment cannot reference cyclic data", &args);
+		coreLogFormat(USERLOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_ALLOC), "%s command assignment cannot reference cyclic data", &args);
 		return stCORE_ERROR_ALLOC;
 	}
 	
@@ -355,7 +355,7 @@ long coreGetCommandAssignment(unsigned char start, unsigned char target, unsigne
 		if(target > coreTargetCount) {
 			args.i[0] = target;
 			args.i[1] = coreTargetCount;
-			coreLogFormatMessage(USERLOG_SEVERITY_ERROR, coreEventCode(stCORE_ERROR_INPUT), "Target %i context exceeds count [1, %i] of %s command", &args);
+			coreLogFormat(USERLOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_INPUT), "Target %i context exceeds count [1, %i] of %s command", &args);
 			return stCORE_ERROR_INPUT;
 		}
 					
@@ -364,23 +364,23 @@ long coreGetCommandAssignment(unsigned char start, unsigned char target, unsigne
 			args.i[0] = *pPalletPresent;
 			args.i[1] = target;
 			args.i[2] = corePalletCount;
-			coreLogFormatMessage(USERLOG_SEVERITY_ERROR, coreEventCode(stCORE_ERROR_INPUT), "Pallet %i present at target %i exceeds count [1, %i] of %s command", &args);
+			coreLogFormat(USERLOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_INPUT), "Pallet %i present at target %i exceeds count [1, %i] of %s command", &args);
 			return stCORE_ERROR_INPUT;
 		}
 		
-		assign->index = *pPalletPresent;
-		assign->context = target;
+		create->index = *pPalletPresent;
+		create->context = target;
 	}
 	else {
 		if(pallet < 1 || corePalletCount < pallet) {
 			args.i[0] = pallet;
 			args.i[1] = corePalletCount;
-			coreLogFormatMessage(USERLOG_SEVERITY_ERROR, coreEventCode(stCORE_ERROR_INPUT), "Pallet %i context exceeds count [1, %i] of %s command", &args);
+			coreLogFormat(USERLOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_INPUT), "Pallet %i context exceeds count [1, %i] of %s command", &args);
 			return stCORE_ERROR_INPUT;
 		}
 		
-		assign->index = pallet;
-		assign->context = pallet;
+		create->index = pallet;
+		create->context = pallet;
 	}
 	
 	return 0;
@@ -394,20 +394,20 @@ long coreGetCommandAssignment(unsigned char start, unsigned char target, unsigne
 *******************************************************************************/
 
 /* Request command for allocated pallet command buffer */
-long coreCommandRequest(unsigned char index, SuperTrakCommand_t command, void *pFunctionInst, coreCommandEntryType **pFunctionEntry) {
+long coreCommandRequest(unsigned char index, SuperTrakCommand_t command, void *pInstance, coreCommandType **ppRequest) {
 	
 	/***********************
 	 Declare local variables
 	***********************/
-	coreCommandManagerType *pManager;
-	coreCommandEntryType *pEntry;
+	coreCommandBufferType *pManager;
+	coreCommandType *pEntry;
 	FormatStringArgumentsType args;
 	
 	/****************
 	 Check references
 	****************/
 	if(pCoreCommandManager == NULL) {
-		coreLogFormatMessage(USERLOG_SEVERITY_ERROR, coreEventCode(stCORE_ERROR_ALLOC), "%s command request cannot reference command manager", &args);
+		coreLogFormat(USERLOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_ALLOC), "%s command request cannot reference command manager", &args);
 		return stCORE_ERROR_ALLOC;
 	}
 	
@@ -426,7 +426,7 @@ long coreCommandRequest(unsigned char index, SuperTrakCommand_t command, void *p
 	
 	/* Check if pending or busy */
 	if(GET_BIT(pEntry->status, CORE_COMMAND_PENDING) || GET_BIT(pEntry->status, CORE_COMMAND_BUSY)) {
-		coreLogFormatMessage(USERLOG_SEVERITY_ERROR, coreEventCode(stCORE_ERROR_BUFFER), "%s %i %s command rejected because buffer is full", &args);
+		coreLogFormat(USERLOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_BUFFER), "%s %i %s command rejected because buffer is full", &args);
 		return stCORE_ERROR_BUFFER;
 	}
 	
@@ -437,11 +437,11 @@ long coreCommandRequest(unsigned char index, SuperTrakCommand_t command, void *p
 	CLEAR_BIT(pEntry->status, CORE_COMMAND_DONE);
 	CLEAR_BIT(pEntry->status, CORE_COMMAND_ERROR);
 	SET_BIT(pEntry->status, CORE_COMMAND_PENDING);
-	pEntry->inst = pFunctionInst;
-	if(pFunctionEntry != NULL) *pFunctionEntry = pEntry;
+	pEntry->pInstance = pInstance;
+	if(ppRequest != NULL) *ppRequest = pEntry;
 	
 	/* Debug comfirmation message */
-	coreLogFormatMessage(USERLOG_SEVERITY_DEBUG, 5200, "%s %i %s command request (direction = %s, destination = %s)", &args);
+	coreLogFormat(USERLOG_SEVERITY_DEBUG, 5200, "%s %i %s command request (direction = %s, destination = %s)", &args);
 	
 	/* Increment write index and check if full */
 	pManager->write = (pManager->write + 1) % CORE_COMMANDBUFFER_SIZE;
@@ -449,7 +449,7 @@ long coreCommandRequest(unsigned char index, SuperTrakCommand_t command, void *p
 	if(GET_BIT(pEntry->status, CORE_COMMAND_PENDING) || GET_BIT(pEntry->status, CORE_COMMAND_BUSY)) {
 		args.i[0] = index;
 		args.i[1] = CORE_COMMANDBUFFER_SIZE;
-		coreLogFormatMessage(USERLOG_SEVERITY_WARNING, coreEventCode(stCORE_WARNING_BUFFER), "Pallet %i command buffer is now full (size = %i)", &args);
+		coreLogFormat(USERLOG_SEVERITY_WARNING, coreLogCode(stCORE_WARNING_BUFFER), "Pallet %i command buffer is now full (size = %i)", &args);
 	}
 	
 	return 0;
@@ -463,14 +463,14 @@ long coreCommandRequest(unsigned char index, SuperTrakCommand_t command, void *p
 *******************************************************************************/
 
 /* Execute requested user commands */
-void coreProcessCommand(void) {
+void coreCommandManager(void) {
 	
 	/***********************
 	 Declare local variables
 	***********************/
 	static unsigned char logAlloc = true;
-	coreCommandManagerType *pManager;
-	coreCommandEntryType *pEntry;
+	coreCommandBufferType *pManager;
+	coreCommandType *pEntry;
 	SuperTrakCommand_t *pCommand;
 	long i;
 	unsigned char *pTrigger, *pComplete, *pSuccess, complete, success;
@@ -482,7 +482,7 @@ void coreProcessCommand(void) {
 	if(pCoreCyclicControl == NULL || pCoreCyclicStatus == NULL || pCoreCommandManager == NULL) {
 		if(logAlloc) {
 			logAlloc = false;
-			coreLogMessage(USERLOG_SEVERITY_ERROR, coreEventCode(stCORE_ERROR_ALLOC), "StCoreCyclic() (coreProcessCommand) is unable to reference cyclic data or command buffers");
+			coreLogMessage(USERLOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_ALLOC), "StCoreCyclic() (coreProcessCommand) is unable to reference cyclic data or command buffers");
 		}
 		return;
 	}
@@ -517,9 +517,9 @@ void coreProcessCommand(void) {
 			if(complete) {
 				/* Confirm success or failure */
 				if(success)
-					coreLogFormatMessage(USERLOG_SEVERITY_DEBUG, 6000, "%s %i %s command acknowledged", &args);
+					coreLogFormat(USERLOG_SEVERITY_DEBUG, 6000, "%s %i %s command acknowledged", &args);
 				else {
-					coreLogFormatMessage(USERLOG_SEVERITY_ERROR, coreEventCode(stCORE_ERROR_CMDFAILURE), "%s %i %s command execution failed", &args);
+					coreLogFormat(USERLOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_CMDFAILURE), "%s %i %s command execution failed", &args);
 					SET_BIT(pEntry->status, CORE_COMMAND_ERROR);
 				}
 				
@@ -535,7 +535,7 @@ void coreProcessCommand(void) {
 				pManager->read = (pManager->read + 1) % CORE_COMMANDBUFFER_SIZE;
 			}
 			else if(pManager->timer >= 500000) {
-				coreLogFormatMessage(USERLOG_SEVERITY_ERROR, coreEventCode(stCORE_ERROR_CMDTIMEOUT), "%s %i %s command execution timed out", &args);
+				coreLogFormat(USERLOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_CMDTIMEOUT), "%s %i %s command execution timed out", &args);
 				
 				/* Clear cyclic data */
 				memset(pCommand, 0, sizeof(*pCommand));

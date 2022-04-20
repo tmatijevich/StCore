@@ -44,7 +44,7 @@ void StCoreSystem(StCoreSystem_typ *inst) {
 					inst->Internal.State = SYSTEM_STATE_EXECUTING;
 				}
 				else {
-					coreLogMessage(USERLOG_SEVERITY_ERROR, coreEventCode(stCORE_ERROR_INST), "Multiple instances of StCoreSystem()");
+					coreLogMessage(USERLOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_INST), "Multiple instances of StCoreSystem()");
 					inst->Error = true;
 					inst->StatusID = stCORE_ERROR_INST;
 					inst->Internal.State = SYSTEM_STATE_ERROR;
@@ -67,7 +67,7 @@ void StCoreSystem(StCoreSystem_typ *inst) {
 			}
 			/* Check references */
 			if(pCoreCyclicControl == NULL || pCoreCyclicStatus == NULL) {
-				coreLogMessage(USERLOG_SEVERITY_ERROR, coreEventCode(stCORE_ERROR_ALLOC), "StCoreSystem() cannot reference cyclic control or status data due to null pointer");
+				coreLogMessage(USERLOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_ALLOC), "StCoreSystem() cannot reference cyclic control or status data due to null pointer");
 				clearOutputs(inst);
 				inst->Error = true;
 				inst->StatusID = stCORE_ERROR_ALLOC;

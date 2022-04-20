@@ -42,7 +42,7 @@ void StCoreSection(StCoreSection_typ *inst) {
 				if(inst->Section < 1 || coreInterfaceConfig.sectionCount < inst->Section) {
 					args.i[0] = inst->Section;
 					args.i[1] = coreInterfaceConfig.sectionCount;
-					coreLogFormatMessage(USERLOG_SEVERITY_ERROR, coreEventCode(stCORE_ERROR_INST), "StCoreSection() called with section %i exceeds limits [1, %]", &args);
+					coreLogFormat(USERLOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_INST), "StCoreSection() called with section %i exceeds limits [1, %]", &args);
 					inst->Error = true;
 					inst->StatusID = stCORE_ERROR_INST;
 					inst->Internal.State = SECTION_STATE_ERROR;
@@ -55,7 +55,7 @@ void StCoreSection(StCoreSection_typ *inst) {
 				/* Instance multiple */
 				else {
 					args.i[0] = inst->Section;
-					coreLogFormatMessage(USERLOG_SEVERITY_ERROR, coreEventCode(stCORE_ERROR_INST), "Multiple instances of StCoreSection() with section %i", &args);
+					coreLogFormat(USERLOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_INST), "Multiple instances of StCoreSection() with section %i", &args);
 					inst->Error = true;
 					inst->StatusID = stCORE_ERROR_INST;
 					inst->Internal.State = SECTION_STATE_ERROR;

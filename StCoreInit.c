@@ -23,7 +23,7 @@ unsigned char coreError = true, coreTargetCount, corePalletCount, coreNetworkIOC
 long coreStatusID = stCORE_ERROR_INIT;
 
 /* Command buffer */
-coreCommandManagerType *pCoreCommandManager;
+coreCommandBufferType *pCoreCommandManager;
 
 /*********************
  StCoreInit definition
@@ -56,7 +56,7 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	if(status != 0 && status != arEVENTLOG_ERR_LOGBOOK_EXISTS) {
 		args.i[0] = status;
 		coreStringCopy(args.s[0], CORE_LOGBOOK_NAME, sizeof(args.s[0]));
-		LogFormatMessage(USERLOG_SEVERITY_CRITICAL, coreEventCode(stCORE_ERROR_LOGBOOK), "ArEventLog error %i. Possible naming conflict with %s or insufficient user partition size", &args);
+		LogFormatMessage(USERLOG_SEVERITY_CRITICAL, coreLogCode(stCORE_ERROR_LOGBOOK), "ArEventLog error %i. Possible naming conflict with %s or insufficient user partition size", &args);
 		return coreStatusID = stCORE_ERROR_LOGBOOK;
 	}
 	
@@ -77,7 +77,7 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 		args.i[1] = sectionCount;
 		args.i[2] = CORE_SECTION_MAX;
 		/* An invalid storage path can result in a section count of 0 */
-		coreLogFormatMessage(USERLOG_SEVERITY_CRITICAL, coreEventCode(stCORE_ERROR_LAYOUT), "Verify path \"%s\" to configuration files. Section count (Par %i):%i exceeds limits [1, %i]", &args);
+		coreLogFormat(USERLOG_SEVERITY_CRITICAL, coreLogCode(stCORE_ERROR_LAYOUT), "Verify path \"%s\" to configuration files. Section count (Par %i):%i exceeds limits [1, %i]", &args);
 		return coreStatusID = stCORE_ERROR_LAYOUT;
 	}
 	
@@ -99,7 +99,7 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	if(headSection != 1) {
 		args.i[0] = stPAR_LOGICAL_HEAD_SECTION;
 		args.i[1] = headSection;
-		coreLogFormatMessage(USERLOG_SEVERITY_CRITICAL, coreEventCode(stCORE_ERROR_LAYOUT), "Logical head section (Par %i):%i is not equal to 1", &args);
+		coreLogFormat(USERLOG_SEVERITY_CRITICAL, coreLogCode(stCORE_ERROR_LAYOUT), "Logical head section (Par %i):%i is not equal to 1", &args);
 		return coreStatusID = stCORE_ERROR_LAYOUT;
 	}
 	
@@ -127,14 +127,14 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 		}
 	}
 	if(i >= sectionCount) { /* Search incomplete */
-		coreLogMessage(USERLOG_SEVERITY_CRITICAL, coreEventCode(stCORE_ERROR_LAYOUT), "Unable to match head section with system layout");
+		coreLogMessage(USERLOG_SEVERITY_CRITICAL, coreLogCode(stCORE_ERROR_LAYOUT), "Unable to match head section with system layout");
 		return coreStatusID = stCORE_ERROR_LAYOUT;
 	}
 	
 	j = 1; k = 0;
 	while(networkOrder[i] != headSection) { /* Build flow order following network order in flow direction */
 		if(++k > sectionCount) {
-			coreLogMessage(USERLOG_SEVERITY_CRITICAL, coreEventCode(stCORE_ERROR_LAYOUT), "Unexpected system layout section order");
+			coreLogMessage(USERLOG_SEVERITY_CRITICAL, coreLogCode(stCORE_ERROR_LAYOUT), "Unexpected system layout section order");
 			return coreStatusID = stCORE_ERROR_LAYOUT;
 		}
 		flowOrder[j++] = networkOrder[i];
@@ -154,7 +154,7 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 			args.i[1] = flowOrder[i - 1];
 			if(flowDirection == stDIRECTION_LEFT) coreStringCopy(args.s[0], "left", sizeof(args.s[0]));
 			else coreStringCopy(args.s[0], "right", sizeof(args.s[0]));
-			coreLogFormatMessage(USERLOG_SEVERITY_CRITICAL, coreEventCode(stCORE_ERROR_LAYOUT), "Non-increasing numbering in flow direction. Section %i %s of section %i", &args);
+			coreLogFormat(USERLOG_SEVERITY_CRITICAL, coreLogCode(stCORE_ERROR_LAYOUT), "Non-increasing numbering in flow direction. Section %i %s of section %i", &args);
 			return coreStatusID = stCORE_ERROR_LAYOUT;
 		}
 	}
@@ -280,7 +280,7 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	memset(pCoreCyclicStatus, 0, allocationSize); /* Initialization memory to zero */
 	
 	/* Memory for command buffers */
-	allocationSize = sizeof(coreCommandManagerType) * corePalletCount;
+	allocationSize = sizeof(coreCommandBufferType) * corePalletCount;
 	if(pCoreCommandManager)
 		TMP_free(allocationSize, (void**)pCoreCommandManager);
 	status = TMP_alloc(allocationSize, (void**)&pCoreCommandManager);
@@ -292,7 +292,7 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	
 	args.i[0] = sectionCount;
 	args.i[1] = coreTargetCount;
-	coreLogFormatMessage(USERLOG_SEVERITY_SUCCESS, 1200, "%i sections and %i targets defined in TrakMaster", &args);
+	coreLogFormat(USERLOG_SEVERITY_SUCCESS, 1200, "%i sections and %i targets defined in TrakMaster", &args);
 	coreError = false;
 	return coreStatusID = 0;
 	
@@ -311,6 +311,6 @@ void logMemoryManagement(unsigned short result, unsigned long size, char *name) 
 	coreStringCopy(args.s[0], name, sizeof(args.s[0]));
 
 	/* Log message */
-	coreLogFormatMessage(USERLOG_SEVERITY_CRITICAL, coreEventCode(stCORE_ERROR_ALLOC), "TMP_alloc() error %i when allocating %i bytes for %s", &args);
+	coreLogFormat(USERLOG_SEVERITY_CRITICAL, coreLogCode(stCORE_ERROR_ALLOC), "TMP_alloc() error %i when allocating %i bytes for %s", &args);
 	
 } /* Function definition */

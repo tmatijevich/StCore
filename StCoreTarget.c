@@ -78,7 +78,7 @@ void StCoreTarget(StCoreTarget_typ *inst) {
 	FormatStringArgumentsType args;
 	StCoreTargetStatusType targetStatus;
 	unsigned short commandInput;
-	coreCommandEntryType *pCommandEntry;
+	coreCommandType *pCommandEntry;
 	
 	/************
 	 Switch state
@@ -97,7 +97,7 @@ void StCoreTarget(StCoreTarget_typ *inst) {
 				if(inst->Target < 1 || coreTargetCount < inst->Target) {
 					args.i[0] = inst->Target;
 					args.i[1] = coreTargetCount;
-					coreLogFormatMessage(USERLOG_SEVERITY_ERROR, coreEventCode(stCORE_ERROR_INST), "StCoreTarget call with target %i exceeds limits [1, %i]", &args);
+					coreLogFormat(USERLOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_INST), "StCoreTarget call with target %i exceeds limits [1, %i]", &args);
 					inst->Error = true;
 					inst->StatusID = stCORE_ERROR_INST;
 					inst->Internal.State = CORE_FUNCTION_ERROR;
@@ -125,7 +125,7 @@ void StCoreTarget(StCoreTarget_typ *inst) {
 			if(inst->Target != inst->Internal.Select && inst->Target != inst->Internal.PreviousSelect) {
 				args.i[0] = inst->Internal.Select;
 				args.i[1] = inst->Target;
-				coreLogFormatMessage(USERLOG_SEVERITY_WARNING, 555, "StCoreTarget target select %i change to %i is ignored until re-enabled", &args);
+				coreLogFormat(USERLOG_SEVERITY_WARNING, 555, "StCoreTarget target select %i change to %i is ignored until re-enabled", &args);
 			}
 			
 			/*******
@@ -134,7 +134,7 @@ void StCoreTarget(StCoreTarget_typ *inst) {
 			/* Release pallet */
 			if(inst->ReleasePallet && !GET_BIT(inst->Internal.PreviousCommand, 1)) {
 				/* Run */
-				coreReleasePallet(inst->Internal.Select, 0, inst->Parameters.Release.Direction, inst->Parameters.Release.DestinationTarget, (void*)inst, (coreCommandEntryType**)&inst->Internal.CommandEntry);
+				coreReleasePallet(inst->Internal.Select, 0, inst->Parameters.Release.Direction, inst->Parameters.Release.DestinationTarget, (void*)inst, (coreCommandType**)&inst->Internal.CommandEntry);
 				/* Activate */
 				inst->Internal.ActiveCommand = 1;
 				inst->Busy = true;
@@ -142,14 +142,14 @@ void StCoreTarget(StCoreTarget_typ *inst) {
 			}
 			
 			/* Monitor active command */
-			coreAssignBitUInt16(&commandInput, 1, inst->ReleasePallet);
-			coreAssignBitUInt16(&commandInput, 2, inst->ReleaseTargetOffset);
-			coreAssignBitUInt16(&commandInput, 3, inst->ReleaseIncrementalOffset);
-			coreAssignBitUInt16(&commandInput, 4, inst->ContinueMove);
-			coreAssignBitUInt16(&commandInput, 5, inst->SetPalletID);
-			coreAssignBitUInt16(&commandInput, 6, inst->SetMotionParameters);
-			coreAssignBitUInt16(&commandInput, 7, inst->SetMechanicalParameters);
-			coreAssignBitUInt16(&commandInput, 8, inst->SetControlParameters);
+			coreAssignUInt16(&commandInput, 1, inst->ReleasePallet);
+			coreAssignUInt16(&commandInput, 2, inst->ReleaseTargetOffset);
+			coreAssignUInt16(&commandInput, 3, inst->ReleaseIncrementalOffset);
+			coreAssignUInt16(&commandInput, 4, inst->ContinueMove);
+			coreAssignUInt16(&commandInput, 5, inst->SetPalletID);
+			coreAssignUInt16(&commandInput, 6, inst->SetMotionParameters);
+			coreAssignUInt16(&commandInput, 7, inst->SetMechanicalParameters);
+			coreAssignUInt16(&commandInput, 8, inst->SetControlParameters);
 			
 			if(inst->Busy || inst->Acknowledged) {
 				/* Check command */
@@ -159,12 +159,12 @@ void StCoreTarget(StCoreTarget_typ *inst) {
 				/* Check instance */
 				if(inst->Internal.CommandEntry != 0) { /* Command request shared command entry */
 					if(!inst->Acknowledged) {
-						pCommandEntry = (coreCommandEntryType*)inst->Internal.CommandEntry;
-						if(pCommandEntry->inst == inst) {
+						pCommandEntry = (coreCommandType*)inst->Internal.CommandEntry;
+						if(pCommandEntry->pInstance == inst) {
 							if(GET_BIT(pCommandEntry->status, CORE_COMMAND_DONE)) {
 								if(GET_BIT(pCommandEntry->status, CORE_COMMAND_ERROR)) {
 									args.i[0] = inst->Internal.Select;
-									coreLogFormatMessage(USERLOG_SEVERITY_ERROR, coreEventCode(stCORE_ERROR_CMDFAILURE), "StCoreTarget target %i command failure", &args);
+									coreLogFormat(USERLOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_CMDFAILURE), "StCoreTarget target %i command failure", &args);
 									clearInstanceOutputs(inst);
 									inst->Error = true;
 									inst->StatusID = stCORE_ERROR_CMDFAILURE;
@@ -223,14 +223,14 @@ void StCoreTarget(StCoreTarget_typ *inst) {
 	
 	inst->Internal.PreviousSelect = inst->Target;
 	inst->Internal.PreviousErrorReset = inst->ErrorReset;
-	coreAssignBitUInt16(&inst->Internal.PreviousCommand, 1, inst->ReleasePallet);
-	coreAssignBitUInt16(&inst->Internal.PreviousCommand, 2, inst->ReleaseTargetOffset);
-	coreAssignBitUInt16(&inst->Internal.PreviousCommand, 3, inst->ReleaseIncrementalOffset);
-	coreAssignBitUInt16(&inst->Internal.PreviousCommand, 4, inst->ContinueMove);
-	coreAssignBitUInt16(&inst->Internal.PreviousCommand, 5, inst->SetPalletID);
-	coreAssignBitUInt16(&inst->Internal.PreviousCommand, 6, inst->SetMotionParameters);
-	coreAssignBitUInt16(&inst->Internal.PreviousCommand, 7, inst->SetMechanicalParameters);
-	coreAssignBitUInt16(&inst->Internal.PreviousCommand, 8, inst->SetControlParameters);
+	coreAssignUInt16(&inst->Internal.PreviousCommand, 1, inst->ReleasePallet);
+	coreAssignUInt16(&inst->Internal.PreviousCommand, 2, inst->ReleaseTargetOffset);
+	coreAssignUInt16(&inst->Internal.PreviousCommand, 3, inst->ReleaseIncrementalOffset);
+	coreAssignUInt16(&inst->Internal.PreviousCommand, 4, inst->ContinueMove);
+	coreAssignUInt16(&inst->Internal.PreviousCommand, 5, inst->SetPalletID);
+	coreAssignUInt16(&inst->Internal.PreviousCommand, 6, inst->SetMotionParameters);
+	coreAssignUInt16(&inst->Internal.PreviousCommand, 7, inst->SetMechanicalParameters);
+	coreAssignUInt16(&inst->Internal.PreviousCommand, 8, inst->SetControlParameters);
 	
 } /* End function */
 
@@ -255,7 +255,7 @@ void clearInstanceOutputs(StCoreTarget_typ *inst) {
 }
 
 /* Assign bits of unsigned integer */
-void coreAssignBitUInt16(unsigned short *pInteger, unsigned char bit, unsigned char value) {
+void coreAssignUInt16(unsigned short *pInteger, unsigned char bit, unsigned char value) {
 	if(bit >= 16) return;
 	value ? SET_BIT(*pInteger, bit) : CLEAR_BIT(*pInteger, bit);
 }

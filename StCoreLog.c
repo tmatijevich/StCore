@@ -10,12 +10,12 @@ void coreLogMessage(UserLogSeverityEnum severity, unsigned short code, char *mes
 	CustomMessage(severity, code, message, CORE_LOGBOOK_NAME, CORE_LOGBOOK_FACILITY);
 }
 
-void coreLogFormatMessage(UserLogSeverityEnum severity, unsigned short code, char *message, FormatStringArgumentsType *args) {
+void coreLogFormat(UserLogSeverityEnum severity, unsigned short code, char *message, FormatStringArgumentsType *args) {
 	CustomFormatMessage(severity, code, message, args, CORE_LOGBOOK_NAME, CORE_LOGBOOK_FACILITY);
 }
 
-unsigned short coreEventCode(long eventID) {
-	return (unsigned short)eventID;
+unsigned short coreLogCode(long event) {
+	return (unsigned short)event;
 }
 
 /* Safely copy a string with a specified destination size */
@@ -88,7 +88,7 @@ void coreLogServiceChannel(unsigned short result, unsigned short parameter) {
 			break;
 	}
 	
-	coreLogFormatMessage(USERLOG_SEVERITY_CRITICAL, coreEventCode(stCORE_ERROR_SERVCHAN), "Serv. chan. error %i accessing par %i: %s", &args);
+	coreLogFormat(USERLOG_SEVERITY_CRITICAL, coreLogCode(stCORE_ERROR_SERVCHAN), "Serv. chan. error %i accessing par %i: %s", &args);
 	
 } /* Function defintion */
 
