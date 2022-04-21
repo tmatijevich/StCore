@@ -81,7 +81,7 @@ typedef struct coreCommandType {
 typedef struct coreCommandBufferType {
 	unsigned char read; /* Index to execute user requests */
 	unsigned char write; /* Index to submit user requests */
-	unsigned long timer; /* Count until timeout */
+	unsigned char channel; /* Cyclic command channel index */
 	coreCommandType buffer[CORE_COMMANDBUFFER_SIZE]; /* Command buffer */
 } coreCommandBufferType;
 

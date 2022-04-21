@@ -220,7 +220,7 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	}
 	
 	/* Command count */
-	coreInterfaceConfig.commandCount = ROUND_UP_MULTIPLE(corePalletCount + 1, 8);
+	coreInterfaceConfig.commandCount = ROUND_UP_MULTIPLE(CORE_COMMAND_COUNT, 8);
 	status = SuperTrakServChanWrite(0, stPAR_PLC_IF_COMMAND_COUNT, 0, 1, (unsigned long)&coreInterfaceConfig.commandCount, sizeof(coreInterfaceConfig.commandCount));
 	if(status != scERR_SUCCESS) {
 		coreLogServiceChannel((unsigned short)status, stPAR_PLC_IF_COMMAND_COUNT);

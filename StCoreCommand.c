@@ -468,12 +468,14 @@ void coreCommandManager(void) {
 	/***********************
 	 Declare local variables
 	***********************/
-	static unsigned char logAlloc = true;
-	coreCommandBufferType *pManager;
-	coreCommandType *pEntry;
-	SuperTrakCommand_t *pCommand;
-	long i;
-	unsigned char *pTrigger, *pComplete, *pSuccess, complete, success;
+	static unsigned char logAlloc = true, logPause = true;
+	coreCommandBufferType *pBuffer;
+	coreCommandType *pCommand;
+	SuperTrakCommand_t *pChannel;
+	long i, j;
+	unsigned char *pTrigger, *pComplete, *pSuccess, complete, success, pause;
+	static unsigned char used[CORE_COMMAND_COUNT], channel, start;
+	static unsigned long timer[CORE_COMMAND_COUNT];
 	FormatStringArgumentsType args;
 	
 	/****************
@@ -482,7 +484,7 @@ void coreCommandManager(void) {
 	if(pCoreCyclicControl == NULL || pCoreCyclicStatus == NULL || pCoreCommandManager == NULL) {
 		if(logAlloc) {
 			logAlloc = false;
-			coreLogMessage(USERLOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_ALLOC), "StCoreCyclic() (coreProcessCommand) is unable to reference cyclic data or command buffers");
+			coreLogMessage(USERLOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_ALLOC), "StCoreCyclic (coreCommandManager) is unable to reference cyclic data or command buffers");
 		}
 		return;
 	}
@@ -492,26 +494,30 @@ void coreCommandManager(void) {
 	/***********************
 	 Process command buffers
 	***********************/
-	for(i = 0; i < corePalletCount; i++) {
+	pause = false; /* Reset pause for channel availability */
+	i = start; j = 0;
+	while(j++ < corePalletCount) {
 		/* Access data */
-		pManager = pCoreCommandManager + i;
-		pEntry = &pManager->buffer[pManager->read];
-		pTrigger = pCoreCyclicControl + coreInterfaceConfig.commandTriggerOffset + i / 8; /* Trigger group */
-		pCommand = (SuperTrakCommand_t*)(pCoreCyclicControl + coreInterfaceConfig.commandDataOffset) + i;
-		pComplete = pCoreCyclicStatus + coreInterfaceConfig.commandCompleteOffset + i / 8;
-		pSuccess = pCoreCyclicStatus + coreInterfaceConfig.commandSuccessOffset + i / 8;
-		complete = GET_BIT(*pComplete, i % 8);
-		success = GET_BIT(*pSuccess, i % 8);
+		pBuffer = pCoreCommandManager + i; /* Pallet command buffer */
+		pCommand = &pBuffer->buffer[pBuffer->read]; /* Next command in pallet buffer */
 		
-		/* Monitor current entry if BUSY */
-		if(GET_BIT(pEntry->status, CORE_COMMAND_BUSY)) {
+		/* Pallet buffer busy sending command */
+		if(GET_BIT(pCommand->status, CORE_COMMAND_BUSY)) {
+			/* Access data */
+			pTrigger = pCoreCyclicControl + coreInterfaceConfig.commandTriggerOffset + pBuffer->channel / 8; /* Trigger group */
+			pChannel = (SuperTrakCommand_t*)(pCoreCyclicControl + coreInterfaceConfig.commandDataOffset) + pBuffer->channel;
+			pComplete = pCoreCyclicStatus + coreInterfaceConfig.commandCompleteOffset + pBuffer->channel / 8;
+			pSuccess = pCoreCyclicStatus + coreInterfaceConfig.commandSuccessOffset + pBuffer->channel / 8;
+			complete = GET_BIT(*pComplete, pBuffer->channel % 8);
+			success = GET_BIT(*pSuccess, pBuffer->channel % 8);
+			
 			/* Track time */
-			pManager->timer += 800;
+			timer[pBuffer->channel] += 800;
 			
 			/* Build message */
-			setContextName(args.s[0], pCommand->u1[0], sizeof(args.s[0]));
-			args.i[0] = pCommand->u1[1];
-			setCommandName(args.s[1], pCommand->u1[0], sizeof(args.s[1]));
+			setContextName(args.s[0], pChannel->u1[0], sizeof(args.s[0]));
+			args.i[0] = pChannel->u1[1];
+			setCommandName(args.s[1], pChannel->u1[0], sizeof(args.s[1]));
 			
 			/* Wait for complete or timeout */
 			if(complete) {
@@ -520,51 +526,92 @@ void coreCommandManager(void) {
 					coreLogFormat(USERLOG_SEVERITY_DEBUG, 6000, "%s %i %s command acknowledged", &args);
 				else {
 					coreLogFormat(USERLOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_CMDFAILURE), "%s %i %s command execution failed", &args);
-					SET_BIT(pEntry->status, CORE_COMMAND_ERROR);
+					SET_BIT(pCommand->status, CORE_COMMAND_ERROR);
 				}
 				
-				/* Clear cyclic data */
-				memset(pCommand, 0, sizeof(*pCommand));
-				CLEAR_BIT(*pTrigger, i % 8);
+				/* Clear cyclic data and timer */
+				memset(pChannel, 0, sizeof(*pChannel));
+				CLEAR_BIT(*pTrigger, pBuffer->channel % 8);
+				timer[pBuffer->channel] = 0;
 				
-				/* Update status */
-				CLEAR_BIT(pEntry->status, CORE_COMMAND_BUSY);
-				SET_BIT(pEntry->status, CORE_COMMAND_DONE);
+				/* Reopen channels only after all pallet buffers have been polled */
 				
-				/* Move to next entry */
-				pManager->read = (pManager->read + 1) % CORE_COMMANDBUFFER_SIZE;
+				/* Update command status */
+				CLEAR_BIT(pCommand->status, CORE_COMMAND_BUSY);
+				SET_BIT(pCommand->status, CORE_COMMAND_DONE);
+				
+				/* Move to next command in buffer */
+				pBuffer->read = (pBuffer->read + 1) % CORE_COMMANDBUFFER_SIZE;
 			}
-			else if(pManager->timer >= 500000) {
+			else if(timer[pBuffer->channel] >= 500000) {
 				coreLogFormat(USERLOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_CMDTIMEOUT), "%s %i %s command execution timed out", &args);
 				
-				/* Clear cyclic data */
+				/* Clear cyclic data and timer */
 				memset(pCommand, 0, sizeof(*pCommand));
-				CLEAR_BIT(*pTrigger, i % 8);
+				CLEAR_BIT(*pTrigger, pBuffer->channel % 8);
+				timer[pBuffer->channel] = 0;
 				
-				/* Update status */
-				CLEAR_BIT(pEntry->status, CORE_COMMAND_BUSY);
-				SET_BIT(pEntry->status, CORE_COMMAND_DONE);
-				SET_BIT(pEntry->status, CORE_COMMAND_ERROR);
+				/* Update command status */
+				CLEAR_BIT(pCommand->status, CORE_COMMAND_BUSY);
+				SET_BIT(pCommand->status, CORE_COMMAND_DONE);
+				SET_BIT(pCommand->status, CORE_COMMAND_ERROR);
 				
-				/* Move to next entry */
-				pManager->read = (pManager->read + 1) % CORE_COMMANDBUFFER_SIZE;
+				/* Move to next command in buffer */
+				pBuffer->read = (pBuffer->read + 1) % CORE_COMMANDBUFFER_SIZE;
 			}
 		}
 		
-		/* Execute current entry if PENDING, set BUSY */
-		else if(GET_BIT(pEntry->status, CORE_COMMAND_PENDING)) {
-			/* Read next command, iterate, and reset full */
-			memcpy(pCommand, &pEntry->command, sizeof(SuperTrakCommand_t));
-			
-			/* Set the trigger and activate */
-			SET_BIT(*pTrigger, i % 8);
-			CLEAR_BIT(pEntry->status, CORE_COMMAND_PENDING);
-			SET_BIT(pEntry->status, CORE_COMMAND_BUSY);
-			
-		} /* BUSY or PENDING? */
+		/* Pallet buffer has command pending */
+		else if(!pause && GET_BIT(pCommand->status, CORE_COMMAND_PENDING)) {
+			/* Is the next channel available? */
+			if(used[channel]) {
+				pause = true; /* Pause for the rest of this loop */
+				start = i; /* Remember spot where the pause started */
+				if(logPause) {
+					logPause = false;
+					coreLogMessage(USERLOG_SEVERITY_WARNING, 6001, "Pallet command buffers are paused because all channels are in use");
+				}
+			}
+			else {
+				/* Assign the command to the channel */
+				pChannel = (SuperTrakCommand_t*)(pCoreCyclicControl + coreInterfaceConfig.commandDataOffset) + channel;
+				memcpy(pChannel, &pCommand->command, sizeof(SuperTrakCommand_t));
+				
+				/* Set trigger */
+				pTrigger = pCoreCyclicControl + coreInterfaceConfig.commandTriggerOffset + channel / 8;
+				SET_BIT(*pTrigger, channel % 8);
+				
+				/* Update command channel and status */
+				pBuffer->channel = channel;
+				CLEAR_BIT(pCommand->status, CORE_COMMAND_PENDING);
+				SET_BIT(pCommand->status, CORE_COMMAND_BUSY);
+				
+				/* Mark the channel as used. Increment channel index */
+				used[channel] = true;
+				channel = (channel + 1) % CORE_COMMAND_COUNT;
+				
+				/* Re-enable pause warning log message */
+				logPause = true;
+			} /* Used? */
+		} /* Busy/Pending? */
+		
+		i = (i + 1) % corePalletCount; /* Proceed to next pallet buffer */
 	} /* Loop pallets */
 	
-} /* Function definition */
+	if(!pause)
+		start = 0; /* Reset start */
+		
+	/* Go through all channels and re-open used channels whose triggers are reset */
+	for(i = 0; i < CORE_COMMAND_COUNT; i++) {
+		if(used[i]) {
+			/* Check the trigger */
+			pTrigger = pCoreCyclicControl + coreInterfaceConfig.commandTriggerOffset + i / 8;
+			if(!GET_BIT(*pTrigger, i % 8))
+				used[i] = false; /* Open the channel */
+		}
+	}
+	
+} /* End function */
 
 /*******************************************************************************
 ********************************************************************************
