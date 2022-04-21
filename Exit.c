@@ -1,10 +1,10 @@
 /*******************************************************************************
- * File: StCoreExit.c
+ * File: StCore\Exit.c
  * Author: Tyler Matijevich
  * Date: 2022-02-25
 *******************************************************************************/
 
-#include "StCoreMain.h"
+#include "Main.h"
 
 /* Free internal memory */
 long StCoreExit(void) {

@@ -1,10 +1,10 @@
 /*******************************************************************************
- * File: StCoreInit.c
+ * File: StCore\Init.c
  * Author: Tyler Matijevich
  * Date: 2022-02-15
 *******************************************************************************/
 
-#include "StCoreMain.h"
+#include "Main.h"
 
 /* Prototypes */
 void logMemoryManagement(unsigned short result, unsigned long size, char *name);

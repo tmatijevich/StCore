@@ -1,11 +1,11 @@
 /*******************************************************************************
- * File: StCoreTarget.c
+ * File: StCore\Target.c
  * Author: Tyler Matijevich
  * Date: 2022-04-13
 *******************************************************************************/
 
 /* Headers */
-#include "StCoreMain.h"
+#include "Main.h"
 
 /* Function prototypes */
 static void clearInstanceOutputs(StCoreTarget_typ *inst);

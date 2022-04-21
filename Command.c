@@ -1,10 +1,10 @@
 /*******************************************************************************
- * File: StCoreCommand.c
+ * File: StCore\Command.c
  * Author: Tyler Matijevich
  * Date: 2022-02-28
 *******************************************************************************/
 
-#include "StCoreMain.h"
+#include "Main.h"
 
 static void setCommandName(char *str, unsigned char ID, unsigned long size);
 static void setContextName(char *str, unsigned char ID, unsigned long size);

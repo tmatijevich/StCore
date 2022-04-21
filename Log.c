@@ -1,10 +1,10 @@
 /*******************************************************************************
- * File: StCoreLog.c
+ * File: StCore\Log.c
  * Author: Tyler Matijevich
  * Date: 2022-02-17
 *******************************************************************************/
 
-#include "StCoreMain.h"
+#include "Main.h"
 
 void coreLogMessage(UserLogSeverityEnum severity, unsigned short code, char *message) {
 	CustomMessage(severity, code, message, CORE_LOGBOOK_NAME, CORE_LOGBOOK_FACILITY);

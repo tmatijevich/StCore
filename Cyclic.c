@@ -1,10 +1,10 @@
 /*******************************************************************************
- * File: StCoreCyclic.c
+ * File: StCore\Cyclic.c
  * Author: Tyler Matijevich
  * Date: 2022-02-25
 *******************************************************************************/
 
-#include "StCoreMain.h"
+#include "Main.h"
 
 /* Process SuperTrak control interface */
 long StCoreCyclic(void) {

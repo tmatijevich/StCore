@@ -1,129 +1,13 @@
 /*******************************************************************************
- * File: StCoreRelease.c
+ * File: StCore\Configuration.c
  * Author: Tyler Matijevich
  * Date: 2022-02-28
 *******************************************************************************/
 
-#include "StCoreMain.h"
+#include "Main.h"
 
-/* Release pallet to target */
-long StCoreReleaseToTarget(unsigned char Target, unsigned char Pallet, unsigned short Direction, unsigned char DestinationTarget) {
-	return coreReleasePallet(Target, Pallet, Direction, DestinationTarget, NULL, NULL);
-}
-
-/* Release pallet to a target */
-long coreReleasePallet(unsigned char target, unsigned char pallet, unsigned short direction, unsigned char destinationTarget, void *pInstance, coreCommandType **ppCommand) {
-	
-	/***********************
-	 Declare local variables
-	***********************/
-	long status;
-	coreCommandCreateType create;
-	SuperTrakCommand_t command;
-	
-	/**********************
-	 Get command assignment
-	**********************/
-	status = coreCommandCreate(16, target, pallet, direction, &create);
-	if(status)
-		return status;
-	
-	/**************
-	 Create command
-	**************/
-	memset(&command, 0, sizeof(command));
-	command.u1[0] = create.commandID;
-	command.u1[1] = create.context;
-	command.u1[2] = destinationTarget;
-	
-	/***************
-	 Request command
-	***************/
-	status = coreCommandRequest(create.index, command, pInstance, ppCommand);
-	if(status)
-		return status;
-		
-	return 0;
-	
-} /* End function */
-
-/* Release pallet to target + offset */
-long StCoreReleaseToOffset(unsigned char Target, unsigned char Pallet, unsigned short Direction, unsigned char DestinationTarget, double TargetOffset) {
-	
-	/***********************
-	 Declare local variables
-	***********************/
-	long status, offset;
-	coreCommandCreateType assign;
-	SuperTrakCommand_t command;
-	
-	/**********************
-	 Get command assignment
-	**********************/
-	status = coreCommandCreate(24, Target, Pallet, Direction, &assign);
-	if(status)
-		return status;
-	
-	/**************
-	 Create command
-	**************/
-	memset(&command, 0, sizeof(command));
-	command.u1[0] = assign.commandID;
-	command.u1[1] = assign.context;
-	command.u1[2] = DestinationTarget;
-	offset = (long)(TargetOffset * 1000.0);
-	memcpy(&command.u1[4], &offset, 4);
-	
-	/***************
-	 Request command
-	***************/
-	status = coreCommandRequest(assign.index, command, NULL, NULL);
-	if(status)
-		return status;
-	
-	return 0;
-
-} /* Function definition */
-
-/* Increment pallet offset */
-long StCoreIncrementOffset(unsigned char Target, unsigned char Pallet, double IncrementalOffset) {
-	
-	/***********************
-	 Declare local variables
-	***********************/
-	long status, offset;
-	coreCommandCreateType assign;
-	SuperTrakCommand_t command;
-	
-	/**********************
-	 Get command assignment
-	**********************/
-	status = coreCommandCreate(28, Target, Pallet, 0, &assign);
-	if(status)
-		return status;
-	
-	/**************
-	 Create command
-	**************/
-	memset(&command, 0, sizeof(command));
-	command.u1[0] = assign.commandID;
-	command.u1[1] = assign.context;
-	offset = (long)(IncrementalOffset * 1000.0);
-	memcpy(&command.u1[4], &offset, 4);
-	
-	/***************
-	 Request command
-	***************/
-	status = coreCommandRequest(assign.index, command, NULL, NULL);
-	if(status)
-		return status;
-	
-	return 0;
-
-} /* Function definition */
-
-/* Resume pallet movement when at mandatory stop */
-long StCoreResumeMove(unsigned char Target, unsigned char Pallet) {
+/* Set ID of pallet at target */
+long StCoreSetPalletID(unsigned char Target, unsigned char PalletID) {
 	
 	/***********************
 	 Declare local variables
@@ -135,7 +19,7 @@ long StCoreResumeMove(unsigned char Target, unsigned char Pallet) {
 	/**********************
 	 Get command assignment
 	**********************/
-	status = coreCommandCreate(60, Target, Pallet, 0, &assign);
+	status = coreCommandCreate(64, Target, 0, 0, &assign);
 	if(status)
 		return status;
 	
@@ -145,6 +29,125 @@ long StCoreResumeMove(unsigned char Target, unsigned char Pallet) {
 	memset(&command, 0, sizeof(command));
 	command.u1[0] = assign.commandID;
 	command.u1[1] = assign.context;
+	command.u1[2] = PalletID;
+	
+	/***************
+	 Request command
+	***************/
+	status = coreCommandRequest(assign.index, command, NULL, NULL);
+	if(status)
+		return status;
+	
+	return 0;
+	
+} /* Function definition */
+
+/* Set pallet velocity and/or acceleration */
+long StCoreSetMotionParameters(unsigned char Target, unsigned char Pallet, double Velocity, double Acceleration) {
+	
+	/***********************
+	 Declare local variables
+	***********************/
+	long status;
+	unsigned short value;
+	coreCommandCreateType assign;
+	SuperTrakCommand_t command;
+	
+	/**********************
+	 Get command assignment
+	**********************/
+	status = coreCommandCreate(68, Target, Pallet, 0, &assign);
+	if(status)
+		return status;
+	
+	/**************
+	 Create command
+	**************/
+	memset(&command, 0, sizeof(command));
+	command.u1[0] = assign.commandID;
+	command.u1[1] = assign.context;
+	value = (unsigned short)Velocity;
+	memcpy(&command.u1[2], &value, 2);
+	value = (unsigned short)(Acceleration / 1000.0);
+	memcpy(&command.u1[4], &value, 2);
+	
+	/***************
+	 Request command
+	***************/
+	status = coreCommandRequest(assign.index, command, NULL, NULL);
+	if(status)
+		return status;
+	
+	return 0;
+	
+} /* Function definition */
+
+/* Set pallet shelf width and offset */
+long StCoreSetMechanicalParameters(unsigned char Target, unsigned char Pallet, double ShelfWidth, double CenterOffset) {
+	
+	/***********************
+	 Declare local variables
+	***********************/
+	long status;
+	unsigned short value;
+	coreCommandCreateType assign;
+	SuperTrakCommand_t command;
+	
+	/**********************
+	 Get command assignment
+	**********************/
+	status = coreCommandCreate(72, Target, Pallet, 0, &assign);
+	if(status)
+		return status;
+	
+	/**************
+	 Create command
+	**************/
+	memset(&command, 0, sizeof(command));
+	command.u1[0] = assign.commandID;
+	command.u1[1] = assign.context;
+	value = (unsigned short)(ShelfWidth * 10.0); /* Units of 0.1 mm */
+	memcpy(&command.u1[2], &value, 2);
+	value = (unsigned short)(CenterOffset * 10.0); /* Units of 0.1 mm */
+	memcpy(&command.u1[4], &value, 2);
+	
+	/***************
+	 Request command
+	***************/
+	status = coreCommandRequest(assign.index, command, NULL, NULL);
+	if(status)
+		return status;
+	
+	return 0;
+	
+} /* Function definition */
+
+/* Set pallet control parameters */
+long StCoreSetControlParameters(unsigned char Target, unsigned char Pallet, unsigned char ControlGainSet, double MovingFilter, double StationaryFilter) {
+	
+	/***********************
+	 Declare local variables
+	***********************/
+	long status;
+	coreCommandCreateType assign;
+	SuperTrakCommand_t command;
+	
+	/**********************
+	 Get command assignment
+	**********************/
+	status = coreCommandCreate(76, Target, Pallet, 0, &assign);
+	if(status)
+		return status;
+	
+	/**************
+	 Create command
+	**************/
+	memset(&command, 0, sizeof(command));
+	command.u1[0] = assign.commandID;
+	command.u1[1] = assign.context;
+	command.u1[2] = ControlGainSet;
+	command.u1[3] = (unsigned char)(fmax(0.0, fmin(99.0, MovingFilter * 100.0)));
+	command.u1[4] = (unsigned char)(fmax(0.0, fmin(99.0, StationaryFilter * 100.0)));
 	
 	/***************
 	 Request command

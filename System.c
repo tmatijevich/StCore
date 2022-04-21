@@ -1,10 +1,10 @@
 /*******************************************************************************
- * File: StCoreSystem.c
+ * File: StCore\System.c
  * Author: Tyler Matijevich
  * Date: 2022-02-26
 *******************************************************************************/
 
-#include "StCoreMain.h"
+#include "Main.h"
 
 static void clearOutputs(StCoreSystem_typ *inst);
 

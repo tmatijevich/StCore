@@ -5,18 +5,18 @@
     <File Description="Function declarations">StCore.fun</File>
     <File Description="Type declarations">StCore.typ</File>
     <File Description="Constants">StCore.var</File>
-    <File Description="Common includes">StCoreMain.h</File>
-    <File Description="Initialize control interface">StCoreInit.c</File>
-    <File Description="Process communication">StCoreCyclic.c</File>
-    <File Description="Free memory">StCoreExit.c</File>
-    <File Description="System interface">StCoreSystem.c</File>
-    <File Description="Section interface">StCoreSection.c</File>
-    <File Description="Command management">StCoreCommand.c</File>
-    <File Description="Release commands">StCoreRelease.c</File>
-    <File Description="Configuration commands">StCoreConfiguration.c</File>
-    <File Description="Target interface">StCoreTarget.c</File>
-    <File Description="Additional logging">StCoreLog.c</File>
-    <File Description="User event texts">StCoreLog.tmx</File>
+    <File Description="Common includes">Main.h</File>
+    <File Description="Initialize control interface">Init.c</File>
+    <File Description="Process communication">Cyclic.c</File>
+    <File Description="Free memory">Exit.c</File>
+    <File Description="System interface">System.c</File>
+    <File Description="Section interface">Section.c</File>
+    <File Description="Command management">Command.c</File>
+    <File Description="Release commands">Release.c</File>
+    <File Description="Configuration commands">Configuration.c</File>
+    <File Description="Target interface">Target.c</File>
+    <File Description="Additional logging">Log.c</File>
+    <File Description="User event texts">Log.tmx</File>
   </Files>
   <Dependencies>
     <Dependency ObjectName="SuperTrak" />
