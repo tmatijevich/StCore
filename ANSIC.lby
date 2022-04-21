@@ -11,7 +11,9 @@
     <File Description="Free memory">StCoreExit.c</File>
     <File Description="System interface">StCoreSystem.c</File>
     <File Description="Section interface">StCoreSection.c</File>
-    <File Description="Command interface">StCoreCommand.c</File>
+    <File Description="Command management">StCoreCommand.c</File>
+    <File Description="Release commands">StCoreRelease.c</File>
+    <File Description="Configuration commands">StCoreConfiguration.c</File>
     <File Description="Target interface">StCoreTarget.c</File>
     <File Description="Additional logging">StCoreLog.c</File>
     <File Description="User event texts">StCoreLog.tmx</File>
