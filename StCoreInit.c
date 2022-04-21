@@ -9,21 +9,8 @@
 /* Prototypes */
 void logMemoryManagement(unsigned short result, unsigned long size, char *name);
 
-/****************************
- Global variable declarations
-****************************/
-/* Cyclic communication data */
-unsigned char *pCoreCyclicControl, *pCoreCyclicStatus;
-
-/* Control interface configuration */
-SuperTrakControlIfConfig_t coreInterfaceConfig;
-
-/* StCore configuration */
-unsigned char coreError = true, coreTargetCount, corePalletCount, coreNetworkIOCount;
-long coreStatusID = stCORE_ERROR_INIT;
-
-/* Command buffer */
-coreCommandBufferType *pCoreCommandManager;
+/* Global variable declaration */
+struct coreGlobalType core = {.error = true, .statusID = stCORE_ERROR_INIT};
 
 /*********************
  StCoreInit definition
@@ -46,8 +33,8 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	SuperTrakInit(StoragePath, SimIPAddress, EthernetInterfaceList);
 	
 	/* Assmume initialization error until the routine completes successfully (for transfer with init/exit routines) */
-	coreError = true;
-	coreStatusID = stCORE_ERROR_INIT;
+	core.error = true;
+	core.statusID = stCORE_ERROR_INIT;
 	
 	/**************
 	 Create logbook
@@ -57,7 +44,7 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 		args.i[0] = status;
 		coreStringCopy(args.s[0], CORE_LOGBOOK_NAME, sizeof(args.s[0]));
 		LogFormatMessage(USERLOG_SEVERITY_CRITICAL, coreLogCode(stCORE_ERROR_LOGBOOK), "ArEventLog error %i. Possible naming conflict with %s or insufficient user partition size", &args);
-		return coreStatusID = stCORE_ERROR_LOGBOOK;
+		return core.statusID = stCORE_ERROR_LOGBOOK;
 	}
 	
 	/********************
@@ -67,7 +54,7 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	status = SuperTrakServChanRead(0, stPAR_SECTION_COUNT, 0, 1, (unsigned long)&sectionCount, sizeof(sectionCount));
 	if(status != scERR_SUCCESS) {
 		coreLogServiceChannel((unsigned short)status, stPAR_SECTION_COUNT);
-		return coreStatusID = stCORE_ERROR_SERVCHAN;
+		return core.statusID = stCORE_ERROR_SERVCHAN;
 	}
 		
 	/* Verify section count */
@@ -78,21 +65,21 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 		args.i[2] = CORE_SECTION_MAX;
 		/* An invalid storage path can result in a section count of 0 */
 		coreLogFormat(USERLOG_SEVERITY_CRITICAL, coreLogCode(stCORE_ERROR_LAYOUT), "Verify path \"%s\" to configuration files. Section count (Par %i):%i exceeds limits [1, %i]", &args);
-		return coreStatusID = stCORE_ERROR_LAYOUT;
+		return core.statusID = stCORE_ERROR_LAYOUT;
 	}
 	
 	/* Read section addresses */
 	status = SuperTrakServChanRead(0, stPAR_SECTION_ADDRESS, 0, sectionCount, (unsigned long)&networkOrder, sizeof(networkOrder));
 	if(status != scERR_SUCCESS) {
 		coreLogServiceChannel((unsigned short)status, stPAR_SECTION_ADDRESS);
-		return coreStatusID = stCORE_ERROR_SERVCHAN;
+		return core.statusID = stCORE_ERROR_SERVCHAN;
 	}
 	
 	/* Read head section */
 	status = SuperTrakServChanRead(0, stPAR_LOGICAL_HEAD_SECTION, 0, 1, (unsigned long)&headSection, sizeof(headSection));
 	if(status != scERR_SUCCESS) {
 		coreLogServiceChannel((unsigned short)status, stPAR_LOGICAL_HEAD_SECTION);
-		return coreStatusID = stCORE_ERROR_SERVCHAN;
+		return core.statusID = stCORE_ERROR_SERVCHAN;
 	}
 	
 	/* Verify head section */
@@ -100,14 +87,14 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 		args.i[0] = stPAR_LOGICAL_HEAD_SECTION;
 		args.i[1] = headSection;
 		coreLogFormat(USERLOG_SEVERITY_CRITICAL, coreLogCode(stCORE_ERROR_LAYOUT), "Logical head section (Par %i):%i is not equal to 1", &args);
-		return coreStatusID = stCORE_ERROR_LAYOUT;
+		return core.statusID = stCORE_ERROR_LAYOUT;
 	}
 	
 	/* Read flow direction */
 	status = SuperTrakServChanRead(0, stPAR_FLOW_DIRECTION, 0, 1, (unsigned long)&flowDirection, sizeof(flowDirection));
 	if(status != scERR_SUCCESS) {
 		coreLogServiceChannel((unsigned short)status, stPAR_FLOW_DIRECTION);
-		return coreStatusID = stCORE_ERROR_SERVCHAN;
+		return core.statusID = stCORE_ERROR_SERVCHAN;
 	}
 	
 	/* Verify flow order */
@@ -128,14 +115,14 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	}
 	if(i >= sectionCount) { /* Search incomplete */
 		coreLogMessage(USERLOG_SEVERITY_CRITICAL, coreLogCode(stCORE_ERROR_LAYOUT), "Unable to match head section with system layout");
-		return coreStatusID = stCORE_ERROR_LAYOUT;
+		return core.statusID = stCORE_ERROR_LAYOUT;
 	}
 	
 	j = 1; k = 0;
 	while(networkOrder[i] != headSection) { /* Build flow order following network order in flow direction */
 		if(++k > sectionCount) {
 			coreLogMessage(USERLOG_SEVERITY_CRITICAL, coreLogCode(stCORE_ERROR_LAYOUT), "Unexpected system layout section order");
-			return coreStatusID = stCORE_ERROR_LAYOUT;
+			return core.statusID = stCORE_ERROR_LAYOUT;
 		}
 		flowOrder[j++] = networkOrder[i];
 		if(flowDirection == stDIRECTION_RIGHT) {
@@ -155,7 +142,7 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 			if(flowDirection == stDIRECTION_LEFT) coreStringCopy(args.s[0], "left", sizeof(args.s[0]));
 			else coreStringCopy(args.s[0], "right", sizeof(args.s[0]));
 			coreLogFormat(USERLOG_SEVERITY_CRITICAL, coreLogCode(stCORE_ERROR_LAYOUT), "Non-increasing numbering in flow direction. Section %i %s of section %i", &args);
-			return coreStatusID = stCORE_ERROR_LAYOUT;
+			return core.statusID = stCORE_ERROR_LAYOUT;
 		}
 	}
 	
@@ -166,135 +153,135 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	status = SuperTrakServChanRead(0, stPAR_TARGET_SECTION, 1, COUNT_OF(dataUInt16), (unsigned long)&dataUInt16, sizeof(dataUInt16));
 	
 	/* Find the last target to be defined (non-zero section number) */
-	for(i = 0, coreTargetCount = 0; i < COUNT_OF(dataUInt16); i++) {
+	for(i = 0, core.targetCount = 0; i < COUNT_OF(dataUInt16); i++) {
 		if(dataUInt16[i])
-			coreTargetCount = i + 1;
+			core.targetCount = i + 1;
 	}
 
 	/*******************************
 	 Configure PLC control interface
 	*******************************/
-	corePalletCount = PalletCount;
-	coreNetworkIOCount = NetworkIOCount;
+	core.palletCount = PalletCount;
+	core.networkIOCount = NetworkIOCount;
 	
 	/* Options */
 	/* Enable interface (0) and use system control & status */
-	coreInterfaceConfig.options = (1 << stCONTROL_IF_ENABLED) + (1 << stCONTROL_IF_SYSTEM_ENABLED);
+	core.interface.options = (1 << stCONTROL_IF_ENABLED) + (1 << stCONTROL_IF_SYSTEM_ENABLED);
 	/* Assign to interface 0 */
-	status = SuperTrakServChanWrite(0, stPAR_PLC_IF_OPTIONS, 0, 1, (unsigned long)&coreInterfaceConfig.options, sizeof(coreInterfaceConfig.options));
+	status = SuperTrakServChanWrite(0, stPAR_PLC_IF_OPTIONS, 0, 1, (unsigned long)&core.interface.options, sizeof(core.interface.options));
 	if(status != scERR_SUCCESS) {
 		coreLogServiceChannel((unsigned short)status, stPAR_PLC_IF_OPTIONS);
-		return coreStatusID = stCORE_ERROR_SERVCHAN;
+		return core.statusID = stCORE_ERROR_SERVCHAN;
 	}
 	
 	/* Section start */
-	coreInterfaceConfig.sectionStartIndex = 0;
-	status = SuperTrakServChanWrite(0, stPAR_PLC_IF_SECTION_START, 0, 1, (unsigned long)&coreInterfaceConfig.sectionStartIndex, sizeof(coreInterfaceConfig.sectionStartIndex));
+	core.interface.sectionStartIndex = 0;
+	status = SuperTrakServChanWrite(0, stPAR_PLC_IF_SECTION_START, 0, 1, (unsigned long)&core.interface.sectionStartIndex, sizeof(core.interface.sectionStartIndex));
 	if(status != scERR_SUCCESS) {
 		coreLogServiceChannel((unsigned short)status, stPAR_PLC_IF_SECTION_START);
-		return coreStatusID = stCORE_ERROR_SERVCHAN;
+		return core.statusID = stCORE_ERROR_SERVCHAN;
 	}
 	
 	/* Section count */
-	coreInterfaceConfig.sectionCount = sectionCount;
-	status = SuperTrakServChanWrite(0, stPAR_PLC_IF_SECTION_COUNT, 0, 1, (unsigned long)&coreInterfaceConfig.sectionCount, sizeof(coreInterfaceConfig.sectionCount));
+	core.interface.sectionCount = sectionCount;
+	status = SuperTrakServChanWrite(0, stPAR_PLC_IF_SECTION_COUNT, 0, 1, (unsigned long)&core.interface.sectionCount, sizeof(core.interface.sectionCount));
 	if(status != scERR_SUCCESS) {
 		coreLogServiceChannel((unsigned short)status, stPAR_PLC_IF_SECTION_COUNT);
-		return coreStatusID = stCORE_ERROR_SERVCHAN;
+		return core.statusID = stCORE_ERROR_SERVCHAN;
 	}
 	
 	/* Target start */
-	coreInterfaceConfig.targetStartIndex = 0;
-	status = SuperTrakServChanWrite(0, stPAR_PLC_IF_TARGET_START, 0, 1, (unsigned long)&coreInterfaceConfig.targetStartIndex, sizeof(coreInterfaceConfig.targetStartIndex));
+	core.interface.targetStartIndex = 0;
+	status = SuperTrakServChanWrite(0, stPAR_PLC_IF_TARGET_START, 0, 1, (unsigned long)&core.interface.targetStartIndex, sizeof(core.interface.targetStartIndex));
 	if(status != scERR_SUCCESS) {
 		coreLogServiceChannel((unsigned short)status, stPAR_PLC_IF_TARGET_START);
-		return coreStatusID = stCORE_ERROR_SERVCHAN;
+		return core.statusID = stCORE_ERROR_SERVCHAN;
 	}
 	
 	/* Target count */
-	coreInterfaceConfig.targetCount = ROUND_UP_MULTIPLE(coreTargetCount + 1, 4);
-	status = SuperTrakServChanWrite(0, stPAR_PLC_IF_TARGET_COUNT, 0, 1, (unsigned long)&coreInterfaceConfig.targetCount, sizeof(coreInterfaceConfig.targetCount));
+	core.interface.targetCount = ROUND_UP_MULTIPLE(core.targetCount + 1, 4);
+	status = SuperTrakServChanWrite(0, stPAR_PLC_IF_TARGET_COUNT, 0, 1, (unsigned long)&core.interface.targetCount, sizeof(core.interface.targetCount));
 	if(status != scERR_SUCCESS) {
 		coreLogServiceChannel((unsigned short)status, stPAR_PLC_IF_TARGET_COUNT);
-		return coreStatusID = stCORE_ERROR_SERVCHAN;
+		return core.statusID = stCORE_ERROR_SERVCHAN;
 	}
 	
 	/* Command count */
-	coreInterfaceConfig.commandCount = ROUND_UP_MULTIPLE(CORE_COMMAND_COUNT, 8);
-	status = SuperTrakServChanWrite(0, stPAR_PLC_IF_COMMAND_COUNT, 0, 1, (unsigned long)&coreInterfaceConfig.commandCount, sizeof(coreInterfaceConfig.commandCount));
+	core.interface.commandCount = ROUND_UP_MULTIPLE(CORE_COMMAND_COUNT, 8);
+	status = SuperTrakServChanWrite(0, stPAR_PLC_IF_COMMAND_COUNT, 0, 1, (unsigned long)&core.interface.commandCount, sizeof(core.interface.commandCount));
 	if(status != scERR_SUCCESS) {
 		coreLogServiceChannel((unsigned short)status, stPAR_PLC_IF_COMMAND_COUNT);
-		return coreStatusID = stCORE_ERROR_SERVCHAN;
+		return core.statusID = stCORE_ERROR_SERVCHAN;
 	}
 	
 	/* Network IO start */
-	coreInterfaceConfig.networkIoStartIndex = 0;
-	status = SuperTrakServChanWrite(0, stPAR_PLC_IF_NETWORK_IO_START, 0, 1, (unsigned long)&coreInterfaceConfig.networkIoStartIndex, sizeof(coreInterfaceConfig.networkIoStartIndex));
+	core.interface.networkIoStartIndex = 0;
+	status = SuperTrakServChanWrite(0, stPAR_PLC_IF_NETWORK_IO_START, 0, 1, (unsigned long)&core.interface.networkIoStartIndex, sizeof(core.interface.networkIoStartIndex));
 	if(status != scERR_SUCCESS) {
 		coreLogServiceChannel((unsigned short)status, stPAR_PLC_IF_NETWORK_IO_START);
-		return coreStatusID = stCORE_ERROR_SERVCHAN;
+		return core.statusID = stCORE_ERROR_SERVCHAN;
 	}
 	
 	/* Network IO count */
-	coreInterfaceConfig.networkIoCount = ROUND_UP_MULTIPLE(coreNetworkIOCount + 1, 8);
-	status = SuperTrakServChanWrite(0, stPAR_PLC_IF_NETWORK_IO_COUNT, 0, 1, (unsigned long)&coreInterfaceConfig.networkIoCount, sizeof(coreInterfaceConfig.networkIoCount));
+	core.interface.networkIoCount = ROUND_UP_MULTIPLE(core.networkIOCount + 1, 8);
+	status = SuperTrakServChanWrite(0, stPAR_PLC_IF_NETWORK_IO_COUNT, 0, 1, (unsigned long)&core.interface.networkIoCount, sizeof(core.interface.networkIoCount));
 	if(status != scERR_SUCCESS) {
 		coreLogServiceChannel((unsigned short)status, stPAR_PLC_IF_NETWORK_IO_COUNT);
-		return coreStatusID = stCORE_ERROR_SERVCHAN;
+		return core.statusID = stCORE_ERROR_SERVCHAN;
 	}
 	
 	/* Revision */
-	coreInterfaceConfig.revision = 0;
-	status = SuperTrakServChanWrite(0, stPAR_PLC_IF_REVISION, 0, 1, (unsigned long)&coreInterfaceConfig.revision, sizeof(coreInterfaceConfig.revision));
+	core.interface.revision = 0;
+	status = SuperTrakServChanWrite(0, stPAR_PLC_IF_REVISION, 0, 1, (unsigned long)&core.interface.revision, sizeof(core.interface.revision));
 	if(status != scERR_SUCCESS) {
 		coreLogServiceChannel((unsigned short)status, stPAR_PLC_IF_REVISION);
-		return coreStatusID = stCORE_ERROR_SERVCHAN;
+		return core.statusID = stCORE_ERROR_SERVCHAN;
 	}
 	
 	/**************************
 	 Read PLC control interface
 	**************************/
-	SuperTrakGetControlIfConfig(0, &coreInterfaceConfig);
+	SuperTrakGetControlIfConfig(0, &core.interface);
 	
 	/***************
 	 Allocate memory
 	***************/
-	allocationSize = coreInterfaceConfig.controlSize;
-	if(pCoreCyclicControl)
-		TMP_free(allocationSize, (void**)pCoreCyclicControl);
-	status = TMP_alloc(allocationSize, (void**)&pCoreCyclicControl);
+	allocationSize = core.interface.controlSize;
+	if(core.pCyclicControl)
+		TMP_free(allocationSize, (void**)core.pCyclicControl);
+	status = TMP_alloc(allocationSize, (void**)&core.pCyclicControl);
 	if(status) {
 		logMemoryManagement((unsigned short)status, allocationSize, "cyclic control data");
 		return stCORE_ERROR_ALLOC;
 	}
-	memset(pCoreCyclicControl, 0, allocationSize); /* Initialization memory to zero */
+	memset(core.pCyclicControl, 0, allocationSize); /* Initialization memory to zero */
 	
-	allocationSize = coreInterfaceConfig.statusSize;
-	if(pCoreCyclicStatus)
-		TMP_free(allocationSize, (void**)pCoreCyclicStatus);
-	status = TMP_alloc(allocationSize, (void**)&pCoreCyclicStatus);
+	allocationSize = core.interface.statusSize;
+	if(core.pCyclicStatus)
+		TMP_free(allocationSize, (void**)core.pCyclicStatus);
+	status = TMP_alloc(allocationSize, (void**)&core.pCyclicStatus);
 	if(status) {
 		logMemoryManagement((unsigned short)status, allocationSize, "cyclic status data");
 		return stCORE_ERROR_ALLOC;
 	}
-	memset(pCoreCyclicStatus, 0, allocationSize); /* Initialization memory to zero */
+	memset(core.pCyclicStatus, 0, allocationSize); /* Initialization memory to zero */
 	
 	/* Memory for command buffers */
-	allocationSize = sizeof(coreCommandBufferType) * corePalletCount;
-	if(pCoreCommandManager)
-		TMP_free(allocationSize, (void**)pCoreCommandManager);
-	status = TMP_alloc(allocationSize, (void**)&pCoreCommandManager);
+	allocationSize = sizeof(coreCommandBufferType) * core.palletCount;
+	if(core.pCommandBuffer)
+		TMP_free(allocationSize, (void**)core.pCommandBuffer);
+	status = TMP_alloc(allocationSize, (void**)&core.pCommandBuffer);
 	if(status) {
 		logMemoryManagement((unsigned short)status, allocationSize, "pallet command buffers");
 		return stCORE_ERROR_ALLOC;
 	}
-	memset(pCoreCommandManager, 0, allocationSize); /* Initialization memory to zero */
+	memset(core.pCommandBuffer, 0, allocationSize); /* Initialization memory to zero */
 	
 	args.i[0] = sectionCount;
-	args.i[1] = coreTargetCount;
+	args.i[1] = core.targetCount;
 	coreLogFormat(USERLOG_SEVERITY_SUCCESS, 1200, "%i sections and %i targets defined in TrakMaster", &args);
-	coreError = false;
-	return coreStatusID = 0;
+	core.error = false;
+	return core.statusID = 0;
 	
 } /* Function definition */
 

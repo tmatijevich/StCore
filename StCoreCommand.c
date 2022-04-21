@@ -17,7 +17,7 @@ long StCoreReleaseToTarget(unsigned char Target, unsigned char Pallet, unsigned 
 }
 
 /* Release pallet to a target */
-long coreReleasePallet(unsigned char target, unsigned char pallet, unsigned short direction, unsigned char destinationTarget, void *pInstance, coreCommandType **ppRequest) {
+long coreReleasePallet(unsigned char target, unsigned char pallet, unsigned short direction, unsigned char destinationTarget, void *pInstance, coreCommandType **ppCommand) {
 	
 	/***********************
 	 Declare local variables
@@ -44,7 +44,7 @@ long coreReleasePallet(unsigned char target, unsigned char pallet, unsigned shor
 	/***************
 	 Request command
 	***************/
-	status = coreCommandRequest(create.index, command, pInstance, ppRequest);
+	status = coreCommandRequest(create.index, command, pInstance, ppCommand);
 	if(status)
 		return status;
 		
@@ -343,7 +343,7 @@ long coreCommandCreate(unsigned char start, unsigned char target, unsigned char 
 	 Check global references
 	***********************/
 	setCommandName(args.s[0], create->commandID, sizeof(args.s[0]));
-	if(pCoreCyclicStatus == NULL) {
+	if(core.pCyclicStatus == NULL) {
 		coreLogFormat(USERLOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_ALLOC), "%s command assignment cannot reference cyclic data", &args);
 		return stCORE_ERROR_ALLOC;
 	}
@@ -352,18 +352,18 @@ long coreCommandCreate(unsigned char start, unsigned char target, unsigned char 
 	 Assign context and manager index
 	********************************/
 	if(target != 0) {
-		if(target > coreTargetCount) {
+		if(target > core.targetCount) {
 			args.i[0] = target;
-			args.i[1] = coreTargetCount;
+			args.i[1] = core.targetCount;
 			coreLogFormat(USERLOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_INPUT), "Target %i context exceeds count [1, %i] of %s command", &args);
 			return stCORE_ERROR_INPUT;
 		}
 					
-		pPalletPresent = pCoreCyclicStatus + coreInterfaceConfig.targetStatusOffset + 3 * target + 1;
-		if(*pPalletPresent < 1 || corePalletCount < *pPalletPresent) {
+		pPalletPresent = core.pCyclicStatus + core.interface.targetStatusOffset + 3 * target + 1;
+		if(*pPalletPresent < 1 || core.palletCount < *pPalletPresent) {
 			args.i[0] = *pPalletPresent;
 			args.i[1] = target;
-			args.i[2] = corePalletCount;
+			args.i[2] = core.palletCount;
 			coreLogFormat(USERLOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_INPUT), "Pallet %i present at target %i exceeds count [1, %i] of %s command", &args);
 			return stCORE_ERROR_INPUT;
 		}
@@ -372,9 +372,9 @@ long coreCommandCreate(unsigned char start, unsigned char target, unsigned char 
 		create->context = target;
 	}
 	else {
-		if(pallet < 1 || corePalletCount < pallet) {
+		if(pallet < 1 || core.palletCount < pallet) {
 			args.i[0] = pallet;
-			args.i[1] = corePalletCount;
+			args.i[1] = core.palletCount;
 			coreLogFormat(USERLOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_INPUT), "Pallet %i context exceeds count [1, %i] of %s command", &args);
 			return stCORE_ERROR_INPUT;
 		}
@@ -394,7 +394,7 @@ long coreCommandCreate(unsigned char start, unsigned char target, unsigned char 
 *******************************************************************************/
 
 /* Request command for allocated pallet command buffer */
-long coreCommandRequest(unsigned char index, SuperTrakCommand_t command, void *pInstance, coreCommandType **ppRequest) {
+long coreCommandRequest(unsigned char index, SuperTrakCommand_t command, void *pInstance, coreCommandType **ppCommand) {
 	
 	/***********************
 	 Declare local variables
@@ -406,7 +406,7 @@ long coreCommandRequest(unsigned char index, SuperTrakCommand_t command, void *p
 	/****************
 	 Check references
 	****************/
-	if(pCoreCommandManager == NULL) {
+	if(core.pCommandBuffer == NULL) {
 		coreLogFormat(USERLOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_ALLOC), "%s command request cannot reference command manager", &args);
 		return stCORE_ERROR_ALLOC;
 	}
@@ -414,7 +414,7 @@ long coreCommandRequest(unsigned char index, SuperTrakCommand_t command, void *p
 	/**********************
 	 Access command manager
 	**********************/
-	pManager = pCoreCommandManager + index - 1;
+	pManager = core.pCommandBuffer + index - 1;
 	pEntry = &pManager->buffer[pManager->write];
 	
 	/* Prepare message */
@@ -438,7 +438,7 @@ long coreCommandRequest(unsigned char index, SuperTrakCommand_t command, void *p
 	CLEAR_BIT(pEntry->status, CORE_COMMAND_ERROR);
 	SET_BIT(pEntry->status, CORE_COMMAND_PENDING);
 	pEntry->pInstance = pInstance;
-	if(ppRequest != NULL) *ppRequest = pEntry;
+	if(ppCommand != NULL) *ppCommand = pEntry;
 	
 	/* Debug comfirmation message */
 	coreLogFormat(USERLOG_SEVERITY_DEBUG, 5200, "%s %i %s command request (direction = %s, destination = %s)", &args);
@@ -481,7 +481,7 @@ void coreCommandManager(void) {
 	/****************
 	 Check references
 	****************/
-	if(pCoreCyclicControl == NULL || pCoreCyclicStatus == NULL || pCoreCommandManager == NULL) {
+	if(core.pCyclicControl == NULL || core.pCyclicStatus == NULL || core.pCommandBuffer == NULL) {
 		if(logAlloc) {
 			logAlloc = false;
 			coreLogMessage(USERLOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_ALLOC), "StCoreCyclic (coreCommandManager) is unable to reference cyclic data or command buffers");
@@ -496,18 +496,18 @@ void coreCommandManager(void) {
 	***********************/
 	pause = false; /* Reset pause for channel availability */
 	i = start; j = 0;
-	while(j++ < corePalletCount) {
+	while(j++ < core.palletCount) {
 		/* Access data */
-		pBuffer = pCoreCommandManager + i; /* Pallet command buffer */
+		pBuffer = core.pCommandBuffer + i; /* Pallet command buffer */
 		pCommand = &pBuffer->buffer[pBuffer->read]; /* Next command in pallet buffer */
 		
 		/* Pallet buffer busy sending command */
 		if(GET_BIT(pCommand->status, CORE_COMMAND_BUSY)) {
 			/* Access data */
-			pTrigger = pCoreCyclicControl + coreInterfaceConfig.commandTriggerOffset + pBuffer->channel / 8; /* Trigger group */
-			pChannel = (SuperTrakCommand_t*)(pCoreCyclicControl + coreInterfaceConfig.commandDataOffset) + pBuffer->channel;
-			pComplete = pCoreCyclicStatus + coreInterfaceConfig.commandCompleteOffset + pBuffer->channel / 8;
-			pSuccess = pCoreCyclicStatus + coreInterfaceConfig.commandSuccessOffset + pBuffer->channel / 8;
+			pTrigger = core.pCyclicControl + core.interface.commandTriggerOffset + pBuffer->channel / 8; /* Trigger group */
+			pChannel = (SuperTrakCommand_t*)(core.pCyclicControl + core.interface.commandDataOffset) + pBuffer->channel;
+			pComplete = core.pCyclicStatus + core.interface.commandCompleteOffset + pBuffer->channel / 8;
+			pSuccess = core.pCyclicStatus + core.interface.commandSuccessOffset + pBuffer->channel / 8;
 			complete = GET_BIT(*pComplete, pBuffer->channel % 8);
 			success = GET_BIT(*pSuccess, pBuffer->channel % 8);
 			
@@ -574,11 +574,11 @@ void coreCommandManager(void) {
 			}
 			else {
 				/* Assign the command to the channel */
-				pChannel = (SuperTrakCommand_t*)(pCoreCyclicControl + coreInterfaceConfig.commandDataOffset) + channel;
+				pChannel = (SuperTrakCommand_t*)(core.pCyclicControl + core.interface.commandDataOffset) + channel;
 				memcpy(pChannel, &pCommand->command, sizeof(SuperTrakCommand_t));
 				
 				/* Set trigger */
-				pTrigger = pCoreCyclicControl + coreInterfaceConfig.commandTriggerOffset + channel / 8;
+				pTrigger = core.pCyclicControl + core.interface.commandTriggerOffset + channel / 8;
 				SET_BIT(*pTrigger, channel % 8);
 				
 				/* Update command channel and status */
@@ -595,7 +595,7 @@ void coreCommandManager(void) {
 			} /* Used? */
 		} /* Busy/Pending? */
 		
-		i = (i + 1) % corePalletCount; /* Proceed to next pallet buffer */
+		i = (i + 1) % core.palletCount; /* Proceed to next pallet buffer */
 	} /* Loop pallets */
 	
 	if(!pause)
@@ -605,7 +605,7 @@ void coreCommandManager(void) {
 	for(i = 0; i < CORE_COMMAND_COUNT; i++) {
 		if(used[i]) {
 			/* Check the trigger */
-			pTrigger = pCoreCyclicControl + coreInterfaceConfig.commandTriggerOffset + i / 8;
+			pTrigger = core.pCyclicControl + core.interface.commandTriggerOffset + i / 8;
 			if(!GET_BIT(*pTrigger, i % 8))
 				used[i] = false; /* Open the channel */
 		}

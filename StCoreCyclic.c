@@ -26,7 +26,7 @@ long StCoreCyclic(void) {
 	SuperTrakGetControlIfConfig(0, &currentInterfaceConfig); /* Get current control interface configuration */
 	
 	/* 1. Existing error */
-	if(coreError) {
+	if(core.error) {
 		/* Do not proceed with further checks */
 	}
 		
@@ -39,8 +39,8 @@ long StCoreCyclic(void) {
 			args.i[0] = fbRTInfo.task_class;
 			args.i[1] = fbRTInfo.cycle_time;
 			coreLogFormat(USERLOG_SEVERITY_CRITICAL, coreLogCode(stCORE_ERROR_TASK), "Invalid task class %i or cycle time %i us", &args);
-			coreError = true;
-			coreStatusID = stCORE_ERROR_TASK;
+			core.error = true;
+			core.statusID = stCORE_ERROR_TASK;
 		}
 		else 
 			taskVerified = true;
@@ -53,8 +53,8 @@ long StCoreCyclic(void) {
 			status = SuperTrakServChanWrite(0, stPAR_SAVE_PARAMETERS, 0, 1, (unsigned long)&saveParameters, sizeof(saveParameters));
 			if(status != scERR_SUCCESS) {
 				coreLogServiceChannel((unsigned short)status, stPAR_SAVE_PARAMETERS);
-				coreError = true;
-				coreStatusID = stCORE_ERROR_SERVCHAN;
+				core.error = true;
+				core.statusID = stCORE_ERROR_SERVCHAN;
 			}
 		}
 		else
@@ -62,10 +62,10 @@ long StCoreCyclic(void) {
 	}
 		
 	/* 4. Monitor changes to control interface configuration */
-	else if(memcmp(&currentInterfaceConfig, &coreInterfaceConfig, sizeof(currentInterfaceConfig)) != 0) {
+	else if(memcmp(&currentInterfaceConfig, &core.interface, sizeof(currentInterfaceConfig)) != 0) {
 		coreLogMessage(USERLOG_SEVERITY_CRITICAL, coreLogCode(stCORE_ERROR_INTERFACE), "Please restart controller and do not modify control interface configuration");
-		coreError = true;
-		coreStatusID = stCORE_ERROR_INTERFACE;
+		core.error = true;
+		core.statusID = stCORE_ERROR_INTERFACE;
 	}
 	
 	/*****************************
@@ -75,20 +75,20 @@ long StCoreCyclic(void) {
 	coreCommandManager();
 	
 	/* Reference control interface */
-	controlInterface.pControl = (unsigned long)pCoreCyclicControl;
-	controlInterface.controlSize = coreInterfaceConfig.controlSize;
-	controlInterface.pStatus = (unsigned long)pCoreCyclicStatus;
-	controlInterface.statusSize = coreInterfaceConfig.statusSize;
+	controlInterface.pControl = (unsigned long)core.pCyclicControl;
+	controlInterface.controlSize = core.interface.controlSize;
+	controlInterface.pStatus = (unsigned long)core.pCyclicStatus;
+	controlInterface.statusSize = core.interface.statusSize;
 	controlInterface.connectionType = stCONNECTION_LOCAL;
 	
 	/* Process SuperTrak control */
-	if(coreError || saveParameters == 0) {
+	if(core.error || saveParameters == 0) {
 		/* Do nothing */
 	}
-	else if(pCoreCyclicControl == NULL || pCoreCyclicStatus == NULL) {
+	else if(core.pCyclicControl == NULL || core.pCyclicStatus == NULL) {
 		coreLogMessage(USERLOG_SEVERITY_CRITICAL, coreLogCode(stCORE_ERROR_ALLOC), "StCoreCyclic() cannot reference cyclic control or status data due to null pointer");
-		coreError = true;
-		coreStatusID = stCORE_ERROR_ALLOC;
+		core.error = true;
+		core.statusID = stCORE_ERROR_ALLOC;
 	}
 	else {
 		/* Only call if there is no error and valid references */
@@ -99,9 +99,9 @@ long StCoreCyclic(void) {
 	SuperTrakCyclic1();
 	
 	/* Process SuperTrak status */
-	if(!coreError && saveParameters) 
+	if(!core.error && saveParameters) 
 		SuperTrakProcessStatus(0, &controlInterface);
 	
-	return coreStatusID;
+	return core.statusID;
 	
 } /* Function definition */

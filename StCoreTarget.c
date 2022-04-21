@@ -27,17 +27,17 @@ long StCoreTargetStatus(unsigned char Target, StCoreTargetStatusType *Status) {
 	memset(Status, 0, sizeof(*Status));
 	
 	/* Check select */
-	if(Target < 1 || coreTargetCount < Target)
+	if(Target < 1 || core.targetCount < Target)
 		return stCORE_ERROR_INPUT;
 	
 	/* Check reference */
-	if(pCoreCyclicStatus == NULL)
+	if(core.pCyclicStatus == NULL)
 		return stCORE_ERROR_ALLOC;
 	
 	/**********
 	 Set status
 	**********/
-	pTargetStatus = pCoreCyclicStatus + coreInterfaceConfig.targetStatusOffset + 3 * Target;
+	pTargetStatus = core.pCyclicStatus + core.interface.targetStatusOffset + 3 * Target;
 	
 	Status->PalletPresent = GET_BIT(*pTargetStatus, 0);
 	Status->PalletInPosition = GET_BIT(*pTargetStatus, 1);
@@ -45,7 +45,7 @@ long StCoreTargetStatus(unsigned char Target, StCoreTargetStatusType *Status) {
 	Status->PalletOverTarget = GET_BIT(*pTargetStatus, 3);
 	Status->PalletPositionUncertain = GET_BIT(*pTargetStatus, 6);
 	
-	Status->PalletID = *(pCoreCyclicStatus + coreInterfaceConfig.targetStatusOffset + 3 * Target + 1);
+	Status->PalletID = *(core.pCyclicStatus + core.interface.targetStatusOffset + 3 * Target + 1);
 	
 	SuperTrakServChanRead(0, stPAR_TARGET_SECTION, Target, 1, (unsigned long)&dataUInt16, sizeof(dataUInt16));
 	Status->Info.Section = (unsigned char)dataUInt16;
@@ -57,10 +57,10 @@ long StCoreTargetStatus(unsigned char Target, StCoreTargetStatusType *Status) {
 	/* Re-read pallet data if new scan */
 	if(timestamp != AsIOTimeCyclicStart()) {
 		timestamp = AsIOTimeCyclicStart();
-		SuperTrakServChanRead(0, 1339, 0, corePalletCount, (unsigned long)&palletDataUInt16, sizeof(palletDataUInt16));
+		SuperTrakServChanRead(0, 1339, 0, core.palletCount, (unsigned long)&palletDataUInt16, sizeof(palletDataUInt16));
 	}
 	
-	for(i = 0; i < corePalletCount; i++) {
+	for(i = 0; i < core.palletCount; i++) {
 		if((unsigned char)palletDataUInt16[i] == Target) 
 			Status->Info.PalletCount++;
 	}
@@ -94,9 +94,9 @@ void StCoreTarget(StCoreTarget_typ *inst) {
 			/* Wait for enable */
 			if(inst->Enable) {
 				/* Check select */
-				if(inst->Target < 1 || coreTargetCount < inst->Target) {
+				if(inst->Target < 1 || core.targetCount < inst->Target) {
 					args.i[0] = inst->Target;
-					args.i[1] = coreTargetCount;
+					args.i[1] = core.targetCount;
 					coreLogFormat(USERLOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_INST), "StCoreTarget call with target %i exceeds limits [1, %i]", &args);
 					inst->Error = true;
 					inst->StatusID = stCORE_ERROR_INST;
@@ -112,7 +112,7 @@ void StCoreTarget(StCoreTarget_typ *inst) {
 			
 		case CORE_FUNCTION_EXECUTING:
 			/* Check references */
-			if(pCoreCyclicControl == NULL || pCoreCyclicStatus == NULL) {
+			if(core.pCyclicControl == NULL || core.pCyclicStatus == NULL) {
 				/* Do not spam the logger, StCoreSystem logs this */
 				clearInstanceOutputs(inst);
 				inst->Error = true;

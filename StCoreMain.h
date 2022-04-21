@@ -101,11 +101,7 @@ struct coreGlobalType {
 /****************
  Global variables
 ****************/
-extern unsigned char *pCoreCyclicControl, *pCoreCyclicStatus;
-extern SuperTrakControlIfConfig_t coreInterfaceConfig;
-extern unsigned char coreError, coreTargetCount, corePalletCount, coreNetworkIOCount;
-extern long coreStatusID;
-extern coreCommandBufferType *pCoreCommandManager;
+extern struct coreGlobalType core;
 
 /******************* 
  Function prototypes 
@@ -119,11 +115,11 @@ void coreLogServiceChannel(unsigned short result, unsigned short parameter);
 void coreLogFaultWarning(unsigned char index, unsigned char section);
 
 /* Commands */
-long coreReleasePallet(unsigned char target, unsigned char pallet, unsigned short direction, unsigned char destinationTarget, void *pInstance, coreCommandType **ppRequest);
+long coreReleasePallet(unsigned char target, unsigned char pallet, unsigned short direction, unsigned char destinationTarget, void *pInstance, coreCommandType **ppCommand);
 
 /* Command management */
 long coreCommandCreate(unsigned char start, unsigned char target, unsigned char pallet, unsigned short direction, coreCommandCreateType *create);
-long coreCommandRequest(unsigned char index, SuperTrakCommand_t command, void *pInstance, coreCommandType **ppRequest);
+long coreCommandRequest(unsigned char index, SuperTrakCommand_t command, void *pInstance, coreCommandType **ppCommand);
 void coreCommandManager(void);
 
 /* Miscellaneous */

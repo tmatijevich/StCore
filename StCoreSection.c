@@ -39,9 +39,9 @@ void StCoreSection(StCoreSection_typ *inst) {
 			clearOutputs(inst);
 			if(inst->Enable) {
 				/* Check select */
-				if(inst->Section < 1 || coreInterfaceConfig.sectionCount < inst->Section) {
+				if(inst->Section < 1 || core.interface.sectionCount < inst->Section) {
 					args.i[0] = inst->Section;
-					args.i[1] = coreInterfaceConfig.sectionCount;
+					args.i[1] = core.interface.sectionCount;
 					coreLogFormat(USERLOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_INST), "StCoreSection() called with section %i exceeds limits [1, %]", &args);
 					inst->Error = true;
 					inst->StatusID = stCORE_ERROR_INST;
@@ -62,7 +62,7 @@ void StCoreSection(StCoreSection_typ *inst) {
 				}
 			}
 			/* Unregister instance */
-			else if(1 <= inst->Section && inst->Section <= coreInterfaceConfig.sectionCount) {
+			else if(1 <= inst->Section && inst->Section <= core.interface.sectionCount) {
 				if(usedInst[inst->Section - 1] == inst)
 					usedInst[inst->Section - 1] = NULL;
 			}
@@ -70,7 +70,7 @@ void StCoreSection(StCoreSection_typ *inst) {
 			
 		case SECTION_STATE_EXECUTING:
 			/* Check references */
-			if(pCoreCyclicControl == NULL || pCoreCyclicStatus == NULL) {
+			if(core.pCyclicControl == NULL || core.pCyclicStatus == NULL) {
 				/* Do not spam the logger, StCoreSystem() logs this */
 				clearOutputs(inst);
 				inst->Error = true;
@@ -84,7 +84,7 @@ void StCoreSection(StCoreSection_typ *inst) {
 			/*******
 			 Control
 			*******/
-			pSectionControl = pCoreCyclicControl + coreInterfaceConfig.sectionControlOffset + inst->Section - 1;
+			pSectionControl = core.pCyclicControl + core.interface.sectionControlOffset + inst->Section - 1;
 			
 			/* Enable */
 			if(inst->EnableSection) SET_BIT(*pSectionControl, 0);
@@ -97,7 +97,7 @@ void StCoreSection(StCoreSection_typ *inst) {
 			/******
 			 Status
 			******/
-			pSectionStatus = pCoreCyclicStatus + coreInterfaceConfig.sectionStatusOffset + inst->Section - 1;
+			pSectionStatus = core.pCyclicStatus + core.interface.sectionStatusOffset + inst->Section - 1;
 			
 			inst->Enabled = GET_BIT(*pSectionStatus, 0);
 			inst->UnrecognizedPallets = GET_BIT(*pSectionStatus, 1);
@@ -135,7 +135,7 @@ void StCoreSection(StCoreSection_typ *inst) {
 			if(inst->ErrorReset && !inst->Internal.PreviousErrorReset) {
 				clearOutputs(inst); /* Clear error */
 				/* Check if used instance (valid select) and go to EXECUTING otherwise DISABLED */
-				if(1 <= inst->Section && inst->Section <= coreInterfaceConfig.sectionCount) {
+				if(1 <= inst->Section && inst->Section <= core.interface.sectionCount) {
 					if(usedInst[inst->Section - 1] == inst)
 						inst->Internal.State = SECTION_STATE_EXECUTING;
 					else
