@@ -75,7 +75,7 @@ FUNCTION_BLOCK StCoreSection (*SuperTrak section interface function*)
 END_FUNCTION_BLOCK
 (*Release commands*)
 
-FUNCTION StCoreReleaseToTarget : DINT (*Release pallet to target*)
+FUNCTION StCoreReleasePallet : DINT (*Release pallet to target*)
 	VAR_INPUT
 		Target : USINT; (*Target (with pallet present)*)
 		Pallet : USINT; (*Pallet ID*)
@@ -84,7 +84,7 @@ FUNCTION StCoreReleaseToTarget : DINT (*Release pallet to target*)
 	END_VAR
 END_FUNCTION
 
-FUNCTION StCoreReleaseToOffset : DINT (*Release pallet to target + offset*)
+FUNCTION StCoreReleaseTargetOffset : DINT (*Release pallet to target + offset*)
 	VAR_INPUT
 		Target : USINT; (*Target (with pallet present)*)
 		Pallet : USINT; (*Pallet ID*)
@@ -94,7 +94,7 @@ FUNCTION StCoreReleaseToOffset : DINT (*Release pallet to target + offset*)
 	END_VAR
 END_FUNCTION
 
-FUNCTION StCoreIncrementOffset : DINT (*Increment pallet offset*)
+FUNCTION StCoreReleaseIncrementalOffset : DINT (*Increment pallet offset*)
 	VAR_INPUT
 		Target : USINT; (*Target with pallet present*)
 		Pallet : USINT; (*Pallet ID*)
@@ -102,7 +102,7 @@ FUNCTION StCoreIncrementOffset : DINT (*Increment pallet offset*)
 	END_VAR
 END_FUNCTION
 
-FUNCTION StCoreResumeMove : DINT (*Resume pallet movement when at mandatory stop*)
+FUNCTION StCoreContinueMove : DINT (*Resume pallet movement when at mandatory stop*)
 	VAR_INPUT
 		Target : USINT; (*Target (with pallet present)*)
 		Pallet : USINT; (*Pallet ID*)

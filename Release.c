@@ -7,11 +7,11 @@
 #include "Main.h"
 
 /* Release pallet to target */
-long StCoreReleaseToTarget(unsigned char Target, unsigned char Pallet, unsigned short Direction, unsigned char DestinationTarget) {
+long StCoreReleasePallet(unsigned char Target, unsigned char Pallet, unsigned short Direction, unsigned char DestinationTarget) {
 	return coreReleasePallet(Target, Pallet, Direction, DestinationTarget, NULL, NULL);
 }
 
-/* Release pallet to a target */
+/* (Internal) release pallet to target */
 long coreReleasePallet(unsigned char target, unsigned char pallet, unsigned short direction, unsigned char destinationTarget, void *pInstance, coreCommandType **ppCommand) {
 	
 	/***********************
@@ -48,19 +48,24 @@ long coreReleasePallet(unsigned char target, unsigned char pallet, unsigned shor
 } /* End function */
 
 /* Release pallet to target + offset */
-long StCoreReleaseToOffset(unsigned char Target, unsigned char Pallet, unsigned short Direction, unsigned char DestinationTarget, double TargetOffset) {
+long StCoreReleaseTargetOffset(unsigned char Target, unsigned char Pallet, unsigned short Direction, unsigned char DestinationTarget, double TargetOffset) {
+	return coreReleaseTargetOffset(Target, Pallet, Direction, DestinationTarget, TargetOffset, NULL, NULL);
+}
+
+/* (Internal) Release pallet to target + offset */
+long coreReleaseTargetOffset(unsigned char target, unsigned char pallet, unsigned short direction, unsigned char destinationTarget, double targetOffset, void *pInstance, coreCommandType **ppCommand) {
 	
 	/***********************
 	 Declare local variables
 	***********************/
 	long status, offset;
-	coreCommandCreateType assign;
+	coreCommandCreateType create;
 	SuperTrakCommand_t command;
 	
 	/**********************
 	 Get command assignment
 	**********************/
-	status = coreCommandCreate(24, Target, Pallet, Direction, &assign);
+	status = coreCommandCreate(24, target, pallet, direction, &create);
 	if(status)
 		return status;
 	
@@ -68,37 +73,42 @@ long StCoreReleaseToOffset(unsigned char Target, unsigned char Pallet, unsigned 
 	 Create command
 	**************/
 	memset(&command, 0, sizeof(command));
-	command.u1[0] = assign.commandID;
-	command.u1[1] = assign.context;
-	command.u1[2] = DestinationTarget;
-	offset = (long)(TargetOffset * 1000.0);
+	command.u1[0] = create.commandID;
+	command.u1[1] = create.context;
+	command.u1[2] = destinationTarget;
+	offset = (long)(targetOffset * 1000.0);
 	memcpy(&command.u1[4], &offset, 4);
 	
 	/***************
 	 Request command
 	***************/
-	status = coreCommandRequest(assign.index, command, NULL, NULL);
+	status = coreCommandRequest(create.index, command, pInstance, ppCommand);
 	if(status)
 		return status;
 	
 	return 0;
 
-} /* Function definition */
+} /* End function */
 
 /* Increment pallet offset */
-long StCoreIncrementOffset(unsigned char Target, unsigned char Pallet, double IncrementalOffset) {
+long StCoreReleaseIncrementalOffset(unsigned char Target, unsigned char Pallet, double IncrementalOffset) {
+	return coreReleaseIncrementalOffset(Target, Pallet, IncrementalOffset, NULL, NULL);
+}
+
+/* (Internal) Increment pallet offset */
+long coreReleaseIncrementalOffset(unsigned char target, unsigned char pallet, double incrementalOffset, void *pInstance, coreCommandType **ppCommand) {
 	
 	/***********************
 	 Declare local variables
 	***********************/
 	long status, offset;
-	coreCommandCreateType assign;
+	coreCommandCreateType create;
 	SuperTrakCommand_t command;
 	
 	/**********************
 	 Get command assignment
 	**********************/
-	status = coreCommandCreate(28, Target, Pallet, 0, &assign);
+	status = coreCommandCreate(28, target, pallet, 0, &create);
 	if(status)
 		return status;
 	
@@ -106,36 +116,41 @@ long StCoreIncrementOffset(unsigned char Target, unsigned char Pallet, double In
 	 Create command
 	**************/
 	memset(&command, 0, sizeof(command));
-	command.u1[0] = assign.commandID;
-	command.u1[1] = assign.context;
-	offset = (long)(IncrementalOffset * 1000.0);
+	command.u1[0] = create.commandID;
+	command.u1[1] = create.context;
+	offset = (long)(incrementalOffset * 1000.0);
 	memcpy(&command.u1[4], &offset, 4);
 	
 	/***************
 	 Request command
 	***************/
-	status = coreCommandRequest(assign.index, command, NULL, NULL);
+	status = coreCommandRequest(create.index, command, pInstance, ppCommand);
 	if(status)
 		return status;
 	
 	return 0;
 
-} /* Function definition */
+} /* End function */
 
 /* Resume pallet movement when at mandatory stop */
-long StCoreResumeMove(unsigned char Target, unsigned char Pallet) {
+long StCoreContinueMove(unsigned char Target, unsigned char Pallet) {
+	return coreContinueMove(Target, Pallet, NULL, NULL);
+}
+
+/* (Internal) Resume pallet movement when at mandatory stop */
+long coreContinueMove(unsigned char target, unsigned char pallet, void *pInstance, coreCommandType **ppCommand) {
 	
 	/***********************
 	 Declare local variables
 	***********************/
 	long status;
-	coreCommandCreateType assign;
+	coreCommandCreateType create;
 	SuperTrakCommand_t command;
 	
 	/**********************
 	 Get command assignment
 	**********************/
-	status = coreCommandCreate(60, Target, Pallet, 0, &assign);
+	status = coreCommandCreate(60, target, pallet, 0, &create);
 	if(status)
 		return status;
 	
@@ -143,16 +158,16 @@ long StCoreResumeMove(unsigned char Target, unsigned char Pallet) {
 	 Create command
 	**************/
 	memset(&command, 0, sizeof(command));
-	command.u1[0] = assign.commandID;
-	command.u1[1] = assign.context;
+	command.u1[0] = create.commandID;
+	command.u1[1] = create.context;
 	
 	/***************
 	 Request command
 	***************/
-	status = coreCommandRequest(assign.index, command, NULL, NULL);
+	status = coreCommandRequest(create.index, command, pInstance, ppCommand);
 	if(status)
 		return status;
 	
 	return 0;
 	
-} /* Function definition */
+} /* End function */
