@@ -119,6 +119,10 @@ long coreReleasePallet(unsigned char target, unsigned char pallet, unsigned shor
 long coreReleaseTargetOffset(unsigned char target, unsigned char pallet, unsigned short direction, unsigned char destinationTarget, double targetOffset, void *pInstance, coreCommandType **ppCommand);
 long coreReleaseIncrementalOffset(unsigned char target, unsigned char pallet, double incrementalOffset, void *pInstance, coreCommandType **ppCommand);
 long coreContinueMove(unsigned char target, unsigned char pallet, void *pInstance, coreCommandType **ppCommand);
+long coreSetPalletID(unsigned char target, unsigned char palletID, void *pInstance, coreCommandType **ppCommand);
+long coreSetMotionParameters(unsigned char target, unsigned char pallet, double velocity, double acceleration, void *pInstance, coreCommandType **ppCommand);
+long coreSetMechanicalParameters(unsigned char target, unsigned char pallet, double shelfWidth, double centerOffset, void *pInstance, coreCommandType **ppCommand);
+long coreSetControlParameters(unsigned char target, unsigned char pallet, unsigned char controlGainSet, double movingFilter, double stationaryFilter, void *pInstance, coreCommandType **ppCommand);
 
 /* Command management */
 long coreCommandCreate(unsigned char start, unsigned char target, unsigned char pallet, unsigned short direction, coreCommandCreateType *create);

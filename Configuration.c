@@ -8,6 +8,11 @@
 
 /* Set ID of pallet at target */
 long StCoreSetPalletID(unsigned char Target, unsigned char PalletID) {
+	return coreSetPalletID(Target, PalletID, NULL, NULL);
+}
+
+/* (Internal) Set ID of pallet at target */
+long coreSetPalletID(unsigned char target, unsigned char palletID, void *pInstance, coreCommandType **ppCommand) {
 	
 	/***********************
 	 Declare local variables
@@ -19,7 +24,7 @@ long StCoreSetPalletID(unsigned char Target, unsigned char PalletID) {
 	/**********************
 	 Get command assignment
 	**********************/
-	status = coreCommandCreate(64, Target, 0, 0, &assign);
+	status = coreCommandCreate(64, target, 0, 0, &assign);
 	if(status)
 		return status;
 	
@@ -29,7 +34,7 @@ long StCoreSetPalletID(unsigned char Target, unsigned char PalletID) {
 	memset(&command, 0, sizeof(command));
 	command.u1[0] = assign.commandID;
 	command.u1[1] = assign.context;
-	command.u1[2] = PalletID;
+	command.u1[2] = palletID;
 	
 	/***************
 	 Request command
@@ -40,10 +45,15 @@ long StCoreSetPalletID(unsigned char Target, unsigned char PalletID) {
 	
 	return 0;
 	
-} /* Function definition */
+} /* End function */
 
 /* Set pallet velocity and/or acceleration */
 long StCoreSetMotionParameters(unsigned char Target, unsigned char Pallet, double Velocity, double Acceleration) {
+	return coreSetMotionParameters(Target, Pallet, Velocity, Acceleration, NULL, NULL);
+}
+
+/* (Internal) Set pallet velocity and/or acceleration */
+long coreSetMotionParameters(unsigned char target, unsigned char pallet, double velocity, double acceleration, void *pInstance, coreCommandType **ppCommand) {
 	
 	/***********************
 	 Declare local variables
@@ -56,7 +66,7 @@ long StCoreSetMotionParameters(unsigned char Target, unsigned char Pallet, doubl
 	/**********************
 	 Get command assignment
 	**********************/
-	status = coreCommandCreate(68, Target, Pallet, 0, &assign);
+	status = coreCommandCreate(68, target, pallet, 0, &assign);
 	if(status)
 		return status;
 	
@@ -66,9 +76,9 @@ long StCoreSetMotionParameters(unsigned char Target, unsigned char Pallet, doubl
 	memset(&command, 0, sizeof(command));
 	command.u1[0] = assign.commandID;
 	command.u1[1] = assign.context;
-	value = (unsigned short)Velocity;
+	value = (unsigned short)velocity;
 	memcpy(&command.u1[2], &value, 2);
-	value = (unsigned short)(Acceleration / 1000.0);
+	value = (unsigned short)(acceleration / 1000.0);
 	memcpy(&command.u1[4], &value, 2);
 	
 	/***************
@@ -80,10 +90,15 @@ long StCoreSetMotionParameters(unsigned char Target, unsigned char Pallet, doubl
 	
 	return 0;
 	
-} /* Function definition */
+} /* End function */
 
 /* Set pallet shelf width and offset */
 long StCoreSetMechanicalParameters(unsigned char Target, unsigned char Pallet, double ShelfWidth, double CenterOffset) {
+	return coreSetMechanicalParameters(Target, Pallet, ShelfWidth, CenterOffset, NULL, NULL);
+}
+
+/* (Internal) Set pallet shelf width and offset */
+long coreSetMechanicalParameters(unsigned char target, unsigned char pallet, double shelfWidth, double centerOffset, void *pInstance, coreCommandType **ppCommand) {
 	
 	/***********************
 	 Declare local variables
@@ -96,7 +111,7 @@ long StCoreSetMechanicalParameters(unsigned char Target, unsigned char Pallet, d
 	/**********************
 	 Get command assignment
 	**********************/
-	status = coreCommandCreate(72, Target, Pallet, 0, &assign);
+	status = coreCommandCreate(72, target, pallet, 0, &assign);
 	if(status)
 		return status;
 	
@@ -106,9 +121,9 @@ long StCoreSetMechanicalParameters(unsigned char Target, unsigned char Pallet, d
 	memset(&command, 0, sizeof(command));
 	command.u1[0] = assign.commandID;
 	command.u1[1] = assign.context;
-	value = (unsigned short)(ShelfWidth * 10.0); /* Units of 0.1 mm */
+	value = (unsigned short)(shelfWidth * 10.0); /* Units of 0.1 mm */
 	memcpy(&command.u1[2], &value, 2);
-	value = (unsigned short)(CenterOffset * 10.0); /* Units of 0.1 mm */
+	value = (unsigned short)(centerOffset * 10.0); /* Units of 0.1 mm */
 	memcpy(&command.u1[4], &value, 2);
 	
 	/***************
@@ -120,10 +135,15 @@ long StCoreSetMechanicalParameters(unsigned char Target, unsigned char Pallet, d
 	
 	return 0;
 	
-} /* Function definition */
+} /* End function */
 
 /* Set pallet control parameters */
 long StCoreSetControlParameters(unsigned char Target, unsigned char Pallet, unsigned char ControlGainSet, double MovingFilter, double StationaryFilter) {
+	return coreSetControlParameters(Target, Pallet, ControlGainSet, MovingFilter, StationaryFilter, NULL, NULL);
+}
+
+/* (Internal) Set pallet control parameters */
+long coreSetControlParameters(unsigned char target, unsigned char pallet, unsigned char controlGainSet, double movingFilter, double stationaryFilter, void *pInstance, coreCommandType **ppCommand) {
 	
 	/***********************
 	 Declare local variables
@@ -135,7 +155,7 @@ long StCoreSetControlParameters(unsigned char Target, unsigned char Pallet, unsi
 	/**********************
 	 Get command assignment
 	**********************/
-	status = coreCommandCreate(76, Target, Pallet, 0, &assign);
+	status = coreCommandCreate(76, target, pallet, 0, &assign);
 	if(status)
 		return status;
 	
@@ -145,9 +165,9 @@ long StCoreSetControlParameters(unsigned char Target, unsigned char Pallet, unsi
 	memset(&command, 0, sizeof(command));
 	command.u1[0] = assign.commandID;
 	command.u1[1] = assign.context;
-	command.u1[2] = ControlGainSet;
-	command.u1[3] = (unsigned char)(fmax(0.0, fmin(99.0, MovingFilter * 100.0)));
-	command.u1[4] = (unsigned char)(fmax(0.0, fmin(99.0, StationaryFilter * 100.0)));
+	command.u1[2] = controlGainSet;
+	command.u1[3] = (unsigned char)(fmax(0.0, fmin(99.0, movingFilter * 100.0)));
+	command.u1[4] = (unsigned char)(fmax(0.0, fmin(99.0, stationaryFilter * 100.0)));
 	
 	/***************
 	 Request command
@@ -158,4 +178,4 @@ long StCoreSetControlParameters(unsigned char Target, unsigned char Pallet, unsi
 	
 	return 0;
 	
-} /* Function definition */
+} /* End function */
