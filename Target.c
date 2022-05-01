@@ -8,8 +8,10 @@
 #include "Main.h"
 
 /* Function prototypes */
-static void clearInstanceOutputs(StCoreTarget_typ *inst);
-static void clearCommandOutputs(StCoreTarget_typ *inst);
+static void resetOutput(StCoreTarget_typ *inst);
+static void activateCommand(StCoreTarget_typ *inst, unsigned char select);
+static void resetCommand(StCoreTarget_typ *inst);
+static void recordInput(StCoreTarget_typ *inst, unsigned short *pData);
 
 /* Get target status */
 long StCoreTargetStatus(unsigned char Target, StCoreTargetStatusType *Status) {
@@ -76,9 +78,9 @@ void StCoreTarget(StCoreTarget_typ *inst) {
 	 Declare local variables
 	***********************/
 	FormatStringArgumentsType args;
-	StCoreTargetStatusType targetStatus;
-	unsigned short commandInput;
-	coreCommandType *pCommandEntry;
+	StCoreTargetStatusType status;
+	unsigned short input;
+	coreCommandType *pCommand;
 	
 	/************
 	 Switch state
@@ -89,7 +91,7 @@ void StCoreTarget(StCoreTarget_typ *inst) {
 	
 	switch(inst->Internal.State) {
 		case CORE_FUNCTION_DISABLED:
-			clearInstanceOutputs(inst);
+			resetOutput(inst);
 			
 			/* Wait for enable */
 			if(inst->Enable) {
@@ -114,7 +116,7 @@ void StCoreTarget(StCoreTarget_typ *inst) {
 			/* Check references */
 			if(core.pCyclicControl == NULL || core.pCyclicStatus == NULL) {
 				/* Do not spam the logger, StCoreSystem logs this */
-				clearInstanceOutputs(inst);
+				resetOutput(inst);
 				inst->Error = true;
 				inst->StatusID = stCORE_ERROR_ALLOC;
 				inst->Internal.State = CORE_FUNCTION_ERROR;
@@ -131,78 +133,126 @@ void StCoreTarget(StCoreTarget_typ *inst) {
 			/*******
 			 Control
 			*******/
-			/* Release pallet */
-			if(inst->ReleasePallet && !GET_BIT(inst->Internal.PreviousCommand, 1)) {
-				/* Run */
-				coreReleasePallet(inst->Internal.Select, 0, inst->Parameters.Release.Direction, inst->Parameters.Release.DestinationTarget, (void*)inst, (coreCommandType**)&inst->Internal.CommandEntry);
-				/* Activate */
-				inst->Internal.ActiveCommand = 1;
-				inst->Busy = true;
-				inst->Acknowledged = false;
+			/* Run configuration commands before release commands */
+			/* Set pallet ID */
+			if(inst->SetPalletID && !GET_BIT(inst->Internal.PreviousCommand, CORE_COMMAND_ID)) {
+				/* Run and activate */
+				coreSetPalletID(inst->Internal.Select, inst->Parameters.PalletID, (void*)inst, (coreCommandType**)&inst->Internal.pCommand);
+				activateCommand(inst, CORE_COMMAND_ID);
 			}
 			
-			/* Monitor active command */
-			coreAssignUInt16(&commandInput, 1, inst->ReleasePallet);
-			coreAssignUInt16(&commandInput, 2, inst->ReleaseTargetOffset);
-			coreAssignUInt16(&commandInput, 3, inst->ReleaseIncrementalOffset);
-			coreAssignUInt16(&commandInput, 4, inst->ContinueMove);
-			coreAssignUInt16(&commandInput, 5, inst->SetPalletID);
-			coreAssignUInt16(&commandInput, 6, inst->SetMotionParameters);
-			coreAssignUInt16(&commandInput, 7, inst->SetMechanicalParameters);
-			coreAssignUInt16(&commandInput, 8, inst->SetControlParameters);
+			/* Set motion parameters */
+			if(inst->SetMotionParameters && !GET_BIT(inst->Internal.PreviousCommand, CORE_COMMAND_MOTION)) {
+				/* Run and activate */
+				coreSetMotionParameters(inst->Internal.Select, 0, inst->Parameters.Motion.Velocity, inst->Parameters.Motion.Acceleration, (void*)inst, (coreCommandType**)&inst->Internal.pCommand);
+				activateCommand(inst, CORE_COMMAND_MOTION);
+			}
 			
+			/* Set mechanical parameters */
+			if(inst->SetMechanicalParameters && !GET_BIT(inst->Internal.PreviousCommand, CORE_COMMAND_MECHANICAL)) {
+				/* Run and activate */
+				coreSetMechanicalParameters(inst->Internal.Select, 0, inst->Parameters.Mechanical.ShelfWidth, inst->Parameters.Mechanical.CenterOffset, (void*)inst, (coreCommandType**)&inst->Internal.pCommand);
+				activateCommand(inst, CORE_COMMAND_MECHANICAL);
+			}
+			
+			/* Set mechanical parameters */
+			if(inst->SetControlParameters && !GET_BIT(inst->Internal.PreviousCommand, CORE_COMMAND_CONTROL)) {
+				/* Run and activate */
+				coreSetControlParameters(inst->Internal.Select, 0, inst->Parameters.Control.ControlGainSet, inst->Parameters.Control.MovingFilter, inst->Parameters.Control.StationaryFilter, (void*)inst, (coreCommandType**)&inst->Internal.pCommand);
+				activateCommand(inst, CORE_COMMAND_CONTROL);
+			}
+			
+			/* Release pallet */
+			if(inst->ReleasePallet && !GET_BIT(inst->Internal.PreviousCommand, CORE_COMMAND_RELEASE)) {
+				/* Run and activate */
+				coreReleasePallet(inst->Internal.Select, 0, inst->Parameters.Release.Direction, inst->Parameters.Release.DestinationTarget, (void*)inst, (coreCommandType**)&inst->Internal.pCommand);
+				activateCommand(inst, CORE_COMMAND_RELEASE);
+			}
+			
+			/* Release target offset */
+			if(inst->ReleaseTargetOffset && !GET_BIT(inst->Internal.PreviousCommand, CORE_COMMAND_OFFSET)) {
+				/* Run and activate */
+				coreReleaseTargetOffset(inst->Internal.Select, 0, inst->Parameters.Release.Direction, inst->Parameters.Release.DestinationTarget, inst->Parameters.Release.Offset, (void*)inst, (coreCommandType**)&inst->Internal.pCommand);
+				activateCommand(inst, CORE_COMMAND_OFFSET);
+			}
+			
+			/* Release incremental offset */
+			if(inst->ReleaseIncrementalOffset && !GET_BIT(inst->Internal.PreviousCommand, CORE_COMMAND_INCREMENT)) {
+				/* Run and activate */
+				coreReleaseIncrementalOffset(inst->Internal.Select, 0, inst->Parameters.Release.Offset, (void*)inst, (coreCommandType**)&inst->Internal.pCommand);
+				activateCommand(inst, CORE_COMMAND_INCREMENT);
+			}
+			
+			/* Continue move */
+			if(inst->ContinueMove && !GET_BIT(inst->Internal.PreviousCommand, CORE_COMMAND_CONTINUE)) {
+				/* Run and activate */
+				coreContinueMove(inst->Internal.Select, 0, (void*)inst, (coreCommandType**)&inst->Internal.pCommand);
+				activateCommand(inst, CORE_COMMAND_CONTINUE);
+			}
+			
+			/* Record command inputs */
+			recordInput(inst, &input);
+			
+			/* Monitor active command */
 			if(inst->Busy || inst->Acknowledged) {
-				/* Check command */
-				if(!GET_BIT(commandInput, inst->Internal.ActiveCommand))
-					clearCommandOutputs(inst);
+				/* Clear if user resets input */
+				if(!GET_BIT(input, inst->Internal.CommandSelect))
+					resetCommand(inst);
 				
-				/* Check instance */
-				if(inst->Internal.CommandEntry != 0) { /* Command request shared command entry */
-					if(!inst->Acknowledged) {
-						pCommandEntry = (coreCommandType*)inst->Internal.CommandEntry;
-						if(pCommandEntry->pInstance == inst) {
-							if(GET_BIT(pCommandEntry->status, CORE_COMMAND_DONE)) {
-								if(GET_BIT(pCommandEntry->status, CORE_COMMAND_ERROR)) {
+				/* Monitor buffered command address */
+				if(inst->Internal.pCommand != 0) { 
+					if(!inst->Acknowledged) { /* Command request acknowledged */
+						pCommand = (coreCommandType*)inst->Internal.pCommand;
+						if(pCommand->pInstance == inst) { /* Buffered command matches this instance */
+							if(GET_BIT(pCommand->status, CORE_COMMAND_DONE)) {
+								if(GET_BIT(pCommand->status, CORE_COMMAND_ERROR)) {
 									args.i[0] = inst->Internal.Select;
-									coreLogFormat(USERLOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_CMDFAILURE), "StCoreTarget target %i command failure", &args);
-									clearInstanceOutputs(inst);
+									coreLogFormat(USERLOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_CMDFAILURE), "StCoreTarget target %i command error", &args);
+									resetOutput(inst);
 									inst->Error = true;
 									inst->StatusID = stCORE_ERROR_CMDFAILURE;
 									inst->Internal.State = CORE_FUNCTION_ERROR;
 									break;
 								}
 								else {
+									/* Report acknowledged to user */
 									inst->Busy = false;
 									inst->Acknowledged = true;
+									inst->Internal.pCommand = 0; /* No further need to monitor buffered command address */
 								}
 							}
 						}
-						else { /* Function block instance does not match command entry */
-							clearCommandOutputs(inst);
-						}
-					}
-				}
+						else { 
+							/* Function block instance does not match buffered command */
+							resetCommand(inst);
+							
+						} /* Instance matches buffered command? */
+					} /* Command request acknowledged? */
+					
+					/* Wait here for acknowledgement */
+					
+				} /* Non-zero buffered command address? */
 				
-				/* De-activate */
+				/* Clear if buffered command address was not shared */
 				else if(!inst->Acknowledged)
-					clearCommandOutputs(inst);
+					resetCommand(inst);
 			}
 			
 			/******
 			 Status
 			******/
 			/* Call target status subroutine */
-			StCoreTargetStatus(inst->Internal.Select, &targetStatus);
+			StCoreTargetStatus(inst->Internal.Select, &status);
 			
 			/* Map target status data to function block */
-			inst->PalletPresent = targetStatus.PalletPresent;
-			inst->PalletInPosition = targetStatus.PalletInPosition;
-			inst->PalletPreArrival = targetStatus.PalletPreArrival;
-			inst->PalletOverTarget = targetStatus.PalletOverTarget;
-			inst->PalletPositionUncertain = targetStatus.PalletPositionUncertain;
-			inst->PalletID = targetStatus.PalletID;
+			inst->PalletPresent = status.PalletPresent;
+			inst->PalletInPosition = status.PalletInPosition;
+			inst->PalletPreArrival = status.PalletPreArrival;
+			inst->PalletOverTarget = status.PalletOverTarget;
+			inst->PalletPositionUncertain = status.PalletPositionUncertain;
+			inst->PalletID = status.PalletID;
 			
-			memcpy(&inst->Info, &targetStatus.Info, sizeof(inst->Info));
+			memcpy(&inst->Info, &status.Info, sizeof(inst->Info));
 			
 			inst->Valid = true;
 			
@@ -214,7 +264,7 @@ void StCoreTarget(StCoreTarget_typ *inst) {
 			
 			/* Wait for error reset */
 			if(inst->ErrorReset && !inst->Internal.PreviousErrorReset) {
-				clearInstanceOutputs(inst);
+				resetOutput(inst);
 				inst->Internal.State = CORE_FUNCTION_EXECUTING;
 			}
 			
@@ -223,19 +273,12 @@ void StCoreTarget(StCoreTarget_typ *inst) {
 	
 	inst->Internal.PreviousSelect = inst->Target;
 	inst->Internal.PreviousErrorReset = inst->ErrorReset;
-	coreAssignUInt16(&inst->Internal.PreviousCommand, 1, inst->ReleasePallet);
-	coreAssignUInt16(&inst->Internal.PreviousCommand, 2, inst->ReleaseTargetOffset);
-	coreAssignUInt16(&inst->Internal.PreviousCommand, 3, inst->ReleaseIncrementalOffset);
-	coreAssignUInt16(&inst->Internal.PreviousCommand, 4, inst->ContinueMove);
-	coreAssignUInt16(&inst->Internal.PreviousCommand, 5, inst->SetPalletID);
-	coreAssignUInt16(&inst->Internal.PreviousCommand, 6, inst->SetMotionParameters);
-	coreAssignUInt16(&inst->Internal.PreviousCommand, 7, inst->SetMechanicalParameters);
-	coreAssignUInt16(&inst->Internal.PreviousCommand, 8, inst->SetControlParameters);
+	recordInput(inst, &inst->Internal.PreviousCommand);
 	
 } /* End function */
 
 /* Clear all function block outputs */
-void clearInstanceOutputs(StCoreTarget_typ *inst) {
+void resetOutput(StCoreTarget_typ *inst) {
 	inst->Valid = false;
 	inst->Error = false;
 	inst->StatusID = 0;
@@ -249,21 +292,40 @@ void clearInstanceOutputs(StCoreTarget_typ *inst) {
 	inst->Busy = false;
 	inst->Acknowledged = false;
 	inst->Internal.Select = 0;
-	inst->Internal.ActiveCommand = 0;
-	inst->Internal.CommandEntry = 0;
+	inst->Internal.CommandSelect = 0;
+	inst->Internal.pCommand = 0;
 	/* Do not clear state or previous value storage */
 }
 
 /* Assign bits of unsigned integer */
-void coreAssignUInt16(unsigned short *pInteger, unsigned char bit, unsigned char value) {
+void coreAssign16(unsigned short *pInteger, unsigned char bit, unsigned char value) {
 	if(bit >= 16) return;
 	value ? SET_BIT(*pInteger, bit) : CLEAR_BIT(*pInteger, bit);
 }
 
 /* Clear function block command data */
-void clearCommandOutputs(StCoreTarget_typ *inst) {
+void resetCommand(StCoreTarget_typ *inst) {
 	inst->Busy = false;
 	inst->Acknowledged = false;
-	inst->Internal.ActiveCommand = 0;
-	inst->Internal.CommandEntry = 0;
+	inst->Internal.CommandSelect = 0;
+	inst->Internal.pCommand = 0;
+}
+
+/* Set command selection and statuses when activated */
+void activateCommand(StCoreTarget_typ *inst, unsigned char select) {
+	inst->Internal.CommandSelect = select;
+	inst->Busy = true;
+	inst->Acknowledged = false;
+}
+
+/* Record bits from user inputs */
+void recordInput(StCoreTarget_typ *inst, unsigned short *pData) {
+	coreAssign16(pData, CORE_COMMAND_RELEASE, inst->ReleasePallet);
+	coreAssign16(pData, CORE_COMMAND_OFFSET, inst->ReleaseTargetOffset);
+	coreAssign16(pData, CORE_COMMAND_INCREMENT, inst->ReleaseIncrementalOffset);
+	coreAssign16(pData, CORE_COMMAND_CONTINUE, inst->ContinueMove);
+	coreAssign16(pData, CORE_COMMAND_ID, inst->SetPalletID);
+	coreAssign16(pData, CORE_COMMAND_MOTION, inst->SetMotionParameters);
+	coreAssign16(pData, CORE_COMMAND_MECHANICAL, inst->SetMechanicalParameters);
+	coreAssign16(pData, CORE_COMMAND_CONTROL, inst->SetControlParameters);
 }

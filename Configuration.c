@@ -39,7 +39,7 @@ long coreSetPalletID(unsigned char target, unsigned char palletID, void *pInstan
 	/***************
 	 Request command
 	***************/
-	status = coreCommandRequest(assign.index, command, NULL, NULL);
+	status = coreCommandRequest(assign.index, command, pInstance, ppCommand);
 	if(status)
 		return status;
 	
@@ -84,7 +84,7 @@ long coreSetMotionParameters(unsigned char target, unsigned char pallet, double 
 	/***************
 	 Request command
 	***************/
-	status = coreCommandRequest(assign.index, command, NULL, NULL);
+	status = coreCommandRequest(assign.index, command, pInstance, ppCommand);
 	if(status)
 		return status;
 	
@@ -129,7 +129,7 @@ long coreSetMechanicalParameters(unsigned char target, unsigned char pallet, dou
 	/***************
 	 Request command
 	***************/
-	status = coreCommandRequest(assign.index, command, NULL, NULL);
+	status = coreCommandRequest(assign.index, command, pInstance, ppCommand);
 	if(status)
 		return status;
 	
@@ -172,7 +172,7 @@ long coreSetControlParameters(unsigned char target, unsigned char pallet, unsign
 	/***************
 	 Request command
 	***************/
-	status = coreCommandRequest(assign.index, command, NULL, NULL);
+	status = coreCommandRequest(assign.index, command, pInstance, ppCommand);
 	if(status)
 		return status;
 	

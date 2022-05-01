@@ -36,9 +36,9 @@ TYPE
 		Select : USINT; (*Select index (Section, Target, or Pallet)*)
 		PreviousSelect : USINT; (*Previous select index value*)
 		PreviousErrorReset : BOOL; (*Previous ErrorReset value*)
-		PreviousCommand : UINT; (*Previous command input values*)
-		ActiveCommand : USINT; (*Active command index*)
-		CommandEntry : UDINT; (*Address of command entry*)
+		PreviousCommand : UINT; (*Previous command inputs bitwise*)
+		CommandSelect : USINT; (*Active command index*)
+		pCommand : UDINT; (*Address of buffered core command*)
 	END_STRUCT;
 	StCoreTargetParameterType : 	STRUCT  (*Target interface parameters*)
 		Release : StCoreReleaseParameterType; (*Release command parameters*)

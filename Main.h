@@ -62,6 +62,18 @@ typedef enum coreFunctionStateEnum {
 	CORE_FUNCTION_ERROR = 255 /* The function block is enabled but in error */
 } coreFunctionStateEnum;
 
+typedef enum coreCommandSelectEnum { /* List of commands, do not exceed 0-15 */
+	CORE_COMMAND_SIMPLE = 0,
+	CORE_COMMAND_RELEASE,
+	CORE_COMMAND_OFFSET,
+	CORE_COMMAND_INCREMENT,
+	CORE_COMMAND_CONTINUE,
+	CORE_COMMAND_ID,
+	CORE_COMMAND_MOTION,
+	CORE_COMMAND_MECHANICAL,
+	CORE_COMMAND_CONTROL
+} coreCommandSelectEnum;
+
 /**********
  Structures
 **********/
@@ -125,6 +137,7 @@ long coreSetMechanicalParameters(unsigned char target, unsigned char pallet, dou
 long coreSetControlParameters(unsigned char target, unsigned char pallet, unsigned char controlGainSet, double movingFilter, double stationaryFilter, void *pInstance, coreCommandType **ppCommand);
 
 /* Command management */
+void coreAssign16(unsigned short *pInteger, unsigned char bit, unsigned char value);
 long coreCommandCreate(unsigned char start, unsigned char target, unsigned char pallet, unsigned short direction, coreCommandCreateType *create);
 long coreCommandRequest(unsigned char index, SuperTrakCommand_t command, void *pInstance, coreCommandType **ppCommand);
 void coreCommandManager(void);
