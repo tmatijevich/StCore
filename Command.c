@@ -156,13 +156,13 @@ void coreCommandManager(void) {
 	static unsigned char used[CHANNEL_BYTE_MAX], reset[CHANNEL_BYTE_MAX], channel, start;
 	static unsigned long timer[CORE_COMMAND_COUNT];
 	coreSimpleTargetReleaseType *pSimpleCommand; /* Simple target release command storage */
-	unsigned char *pTargetRelease, *pTargetStatus; /* Simple target release and target status cyclic bits */
+	unsigned char *pTargetRelease, *pTargetStatus, lowerBit, upperBit; /* Simple target release and target status cyclic bits */
 	FormatStringArgumentsType args;
 	
 	/****************
 	 Check references
 	****************/
-	if(core.pCyclicControl == NULL || core.pCyclicStatus == NULL || core.pCommandBuffer == NULL) {
+	if(core.pCyclicControl == NULL || core.pCyclicStatus == NULL || core.pCommandBuffer == NULL || core.pSimpleRelease == NULL) {
 		if(logAlloc) {
 			logAlloc = false;
 			coreLogMessage(USERLOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_ALLOC), "StCoreCyclic (coreCommandManager) is unable to reference cyclic data or command buffers");
@@ -304,6 +304,8 @@ void coreCommandManager(void) {
 		pSimpleCommand = core.pSimpleRelease + i;
 		pTargetRelease = core.pCyclicControl + core.interface.targetControlOffset + (i + 1) / CORE_TARGET_RELEASE_PER_BYTE; /* Cyclic data starts with Target 0 */
 		pTargetStatus = core.pCyclicStatus + core.interface.targetStatusOffset + CORE_TARGET_STATUS_BYTE_COUNT * (i + 1);
+		lowerBit = ((i + 1) % CORE_TARGET_RELEASE_PER_BYTE) * CORE_TARGET_RELEASE_BIT_COUNT;
+		upperBit = lowerBit + 1;
 		
 		/* This target's simple release command is in progress */
 		if(GET_BIT(pSimpleCommand->status, CORE_COMMAND_BUSY)) {
@@ -312,8 +314,8 @@ void coreCommandManager(void) {
 			/* 1. First check for an error */
 			if(GET_BIT(*pTargetStatus, stTARGET_RELEASE_ERROR)) {
 				/* Clear release bits */
-				CLEAR_BIT(*pTargetRelease, (i + 1) % CORE_TARGET_RELEASE_PER_BYTE); /* Clear lower bit */
-				CLEAR_BIT(*pTargetRelease, (i + 1) % CORE_TARGET_RELEASE_PER_BYTE + 1); /* Clear upper bit */
+				CLEAR_BIT(*pTargetRelease, lowerBit);
+				CLEAR_BIT(*pTargetRelease, upperBit);
 				
 				/* Update status */
 				CLEAR_BIT(pSimpleCommand->status, CORE_COMMAND_BUSY);
@@ -325,8 +327,8 @@ void coreCommandManager(void) {
 			/* Need to check for error first in case pallet was never present */
 			else if(!GET_BIT(*pTargetStatus, stTARGET_PALLET_PRESENT)) {
 				/* Clear release bits */
-				CLEAR_BIT(*pTargetRelease, (i + 1) % CORE_TARGET_RELEASE_PER_BYTE); /* Clear lower bit */
-				CLEAR_BIT(*pTargetRelease, (i + 1) % CORE_TARGET_RELEASE_PER_BYTE + 1); /* Clear upper bit */
+				CLEAR_BIT(*pTargetRelease, lowerBit);
+				CLEAR_BIT(*pTargetRelease, upperBit);
 				
 				/* Update status */
 				CLEAR_BIT(pSimpleCommand->status, CORE_COMMAND_BUSY);
@@ -336,8 +338,8 @@ void coreCommandManager(void) {
 			/* 3. Check for timeout */
 			else if(pSimpleCommand->timer > CORE_COMMAND_TIMEOUT) {
 				/* Clear release bits */
-				CLEAR_BIT(*pTargetRelease, (i + 1) % CORE_TARGET_RELEASE_PER_BYTE); /* Clear lower bit */
-				CLEAR_BIT(*pTargetRelease, (i + 1) % CORE_TARGET_RELEASE_PER_BYTE + 1); /* Clear upper bit */
+				CLEAR_BIT(*pTargetRelease, lowerBit);
+				CLEAR_BIT(*pTargetRelease, upperBit);
 				
 				/* Update status */
 				CLEAR_BIT(pSimpleCommand->status, CORE_COMMAND_BUSY);
@@ -350,14 +352,15 @@ void coreCommandManager(void) {
 			/* Write command in cyclic control */
 			switch(pSimpleCommand->move) {
 				case 1:
-					SET_BIT(*pTargetRelease, (i + 1) % CORE_TARGET_RELEASE_PER_BYTE); /* Set lower bit */
+					SET_BIT(*pTargetRelease, lowerBit);
 					break;
 				case 2:
-					SET_BIT(*pTargetRelease, (i + 1) % CORE_TARGET_RELEASE_PER_BYTE + 1); /* Set upper bit */
+					SET_BIT(*pTargetRelease, upperBit);
 					break;
 				default:
-					SET_BIT(*pTargetRelease, (i + 1) % CORE_TARGET_RELEASE_PER_BYTE); /* Set lower bit */
-					SET_BIT(*pTargetRelease, (i + 1) % CORE_TARGET_RELEASE_PER_BYTE + 1); /* Set upper bit */
+					/* Assume that coreSimpleTargetReleaseType structure is only populated with values 1, 2, or 3 */
+					SET_BIT(*pTargetRelease, lowerBit);
+					SET_BIT(*pTargetRelease, upperBit);
 			}
 			
 			/* Update status */

@@ -36,6 +36,7 @@ extern "C"
 #define CORE_CYCLE_TIME 					800U 	/* 800 us cycle time */
 #define CORE_COMMAND_TIMEOUT 				250000U /* 250 ms command request timeout */
 #define CORE_TARGET_RELEASE_PER_BYTE 		4U
+#define CORE_TARGET_RELEASE_BIT_COUNT 		2U
 #define CORE_COMMAND_TRIGGER_PER_BYTE 		8U
 #define CORE_COMMAND_DATA_BYTE_COUNT 		8U
 #define CORE_TARGET_STATUS_BYTE_COUNT 		3U
@@ -153,6 +154,7 @@ void coreLogServiceChannel(unsigned short result, unsigned short parameter);
 void coreLogFaultWarning(unsigned char index, unsigned char section);
 
 /* Commands */
+long coreSimpleRelease(unsigned char target, unsigned char localMove, void *pInstance, coreSimpleTargetReleaseType **ppCommand);
 long coreReleasePallet(unsigned char target, unsigned char pallet, unsigned short direction, unsigned char destinationTarget, void *pInstance, coreCommandType **ppCommand);
 long coreReleaseTargetOffset(unsigned char target, unsigned char pallet, unsigned short direction, unsigned char destinationTarget, double targetOffset, void *pInstance, coreCommandType **ppCommand);
 long coreReleaseIncrementalOffset(unsigned char target, unsigned char pallet, double incrementalOffset, void *pInstance, coreCommandType **ppCommand);

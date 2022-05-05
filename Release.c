@@ -6,6 +6,61 @@
 
 #include "Main.h"
 
+/* Release with local move configuration */
+long StCoreSimpleRelease(unsigned char Target, unsigned char LocalMove) {
+	return coreSimpleRelease(Target, LocalMove, NULL, NULL);
+}
+
+/* (Internal) Release with local move configuration */
+long coreSimpleRelease(unsigned char target, unsigned char localMove, void *pInstance, coreSimpleTargetReleaseType **ppCommand) {
+	
+	/***********************
+	 Declare Local Variables
+	***********************/
+	FormatStringArgumentsType args;
+	coreSimpleTargetReleaseType *pSimpleCommand;
+	
+	if(core.pSimpleRelease == NULL) {
+		coreLogMessage(USERLOG_SEVERITY_ERROR, 55555, "Target simple release unable to reference command buffers");
+		return stCORE_ERROR_ALLOC;
+	}
+	
+	if(target < 1 || core.targetCount < target) {
+		args.i[0] = target;
+		args.i[1] = core.targetCount;
+		coreLogFormat(USERLOG_SEVERITY_ERROR, 55555, "Target simple release target %i exceeds initial target count [1, %i]", &args);
+		return stCORE_ERROR_INPUT;
+	}
+	
+	if(localMove < 1 || 3 < localMove) {
+		args.i[0] = localMove;
+		coreLogFormat(USERLOG_SEVERITY_ERROR, 55555, "Target simple release local move index %i exceeds limits [1, 3]", &args);
+		return stCORE_ERROR_INPUT;
+	}
+	
+	pSimpleCommand = core.pSimpleRelease + target - 1;
+	
+	if(GET_BIT(pSimpleCommand->status, CORE_COMMAND_BUSY) || GET_BIT(pSimpleCommand->status, CORE_COMMAND_PENDING)) {
+		args.i[0] = target;
+		args.i[1] = localMove;
+		coreLogFormat(USERLOG_SEVERITY_ERROR, 55555, "Target simple release target %i local move %i rejected due to command in progress", &args);
+		return stCORE_ERROR_BUFFER;
+	}
+	
+	/* Share the command and assign the instance */
+	pSimpleCommand->pInstance = pInstance;
+	if(ppCommand != NULL) *ppCommand = pSimpleCommand;
+	
+	/* Write local move configuration index and set status */
+	pSimpleCommand->move = localMove;
+	CLEAR_BIT(pSimpleCommand->status, CORE_COMMAND_DONE);
+	CLEAR_BIT(pSimpleCommand->status, CORE_COMMAND_ERROR);
+	SET_BIT(pSimpleCommand->status, CORE_COMMAND_PENDING);
+	
+	return 0;
+	
+}
+
 /* Release pallet to target */
 long StCoreReleasePallet(unsigned char Target, unsigned char Pallet, unsigned short Direction, unsigned char DestinationTarget) {
 	return coreReleasePallet(Target, Pallet, Direction, DestinationTarget, NULL, NULL);

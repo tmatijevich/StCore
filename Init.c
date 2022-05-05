@@ -266,7 +266,18 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	}
 	memset(core.pCyclicStatus, 0, allocationSize); /* Initialization memory to zero */
 	
-	/* Memory for command buffers */
+	/* Memory for simple target release */
+	allocationSize = sizeof(coreSimpleTargetReleaseType) * core.targetCount;
+	if(core.pSimpleRelease)
+		TMP_free(allocationSize, (void**)core.pSimpleRelease);
+	status = TMP_alloc(allocationSize, (void**)&core.pSimpleRelease);
+	if(status) {
+		logMemoryManagement((unsigned short)status, allocationSize, "simple target release");
+		return stCORE_ERROR_ALLOC;
+	}
+	memset(core.pSimpleRelease, 0, allocationSize); /* Initialization memory to zero */
+	
+	/* Memory for pallet command buffers */
 	allocationSize = sizeof(coreCommandBufferType) * core.palletCount;
 	if(core.pCommandBuffer)
 		TMP_free(allocationSize, (void**)core.pCommandBuffer);
@@ -283,7 +294,7 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	core.error = false;
 	return core.statusID = 0;
 	
-} /* Function definition */
+} /* End function */
 
 
 /* Log error from memory management (TMP_alloc) calls */
@@ -300,4 +311,4 @@ void logMemoryManagement(unsigned short result, unsigned long size, char *name) 
 	/* Log message */
 	coreLogFormat(USERLOG_SEVERITY_CRITICAL, coreLogCode(stCORE_ERROR_ALLOC), "TMP_alloc() error %i when allocating %i bytes for %s", &args);
 	
-} /* Function definition */
+} /* End function */

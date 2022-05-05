@@ -73,6 +73,14 @@ FUNCTION_BLOCK StCoreSection (*SuperTrak section interface function*)
 		Internal : StCoreSectionInternalType; (*Local internal data*)
 	END_VAR
 END_FUNCTION_BLOCK
+(*Simple target release*)
+
+FUNCTION StCoreSimpleRelease : DINT (*Release with local move configuration*)
+	VAR_INPUT
+		Target : USINT; (*Target (with pallet present)*)
+		LocalMove : USINT; (*Local move configuration 1, 2, or 3*)
+	END_VAR
+END_FUNCTION
 (*Release commands*)
 
 FUNCTION StCoreReleasePallet : DINT (*Release pallet to target*)
