@@ -26,7 +26,7 @@ long StCoreExit(void) {
 	}
 	
 	if(core.pCommandBuffer) {
-		allocationSize = sizeof(SuperTrakCommand_t) * CORE_COMMANDBUFFER_SIZE * core.palletCount;
+		allocationSize = sizeof(SuperTrakCommand_t) * CORE_COMMAND_BUFFER_SIZE * core.palletCount;
 		TMP_free(allocationSize, (void**)core.pCommandBuffer);
 	}
 	

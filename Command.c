@@ -6,12 +6,13 @@
 
 #include "Main.h"
 
-#define CHANNEL_BYTE_COUNT 8 /* 8 bytes (64 bits) for a maximum of 64 command channels */
+#define CHANNEL_BYTE_MAX 8 /* 8 bytes (64 bits) for a maximum of 64 command channels */
 
 static void setCommandName(char *str, unsigned char ID, unsigned long size);
 static void setContextName(char *str, unsigned char ID, unsigned long size);
 static void setDirectionName(char *str, unsigned char ID, unsigned long size);
 static void setDestinationName(char *str, unsigned char ID, unsigned char destination, unsigned long size);
+void getParameterString(char *str, unsigned long size, SuperTrakCommand_t data);
 
 /* Create command ID, context, and buffer assignment */
 long coreCommandCreate(unsigned char start, unsigned char target, unsigned char pallet, unsigned short direction, coreCommandCreateType *create) {
@@ -106,8 +107,6 @@ long coreCommandRequest(unsigned char index, SuperTrakCommand_t command, void *p
 	setContextName(args.s[0], command.u1[0], sizeof(args.s[0]));
 	args.i[0] = command.u1[1];
 	setCommandName(args.s[1], command.u1[0], sizeof(args.s[1]));
-	setDirectionName(args.s[2], command.u1[0], sizeof(args.s[2]));
-	setDestinationName(args.s[3], command.u1[0], command.u1[2], sizeof(args.s[3]));
 	
 	/* Check if pending or busy */
 	if(GET_BIT(pCommand->status, CORE_COMMAND_PENDING) || GET_BIT(pCommand->status, CORE_COMMAND_BUSY)) {
@@ -126,14 +125,15 @@ long coreCommandRequest(unsigned char index, SuperTrakCommand_t command, void *p
 	if(ppCommand != NULL) *ppCommand = pCommand;
 	
 	/* Debug comfirmation message */
-	coreLogFormat(USERLOG_SEVERITY_DEBUG, 5200, "%s %i %s command request (direction = %s, destination = %s)", &args);
+	getParameterString(args.s[2], sizeof(args.s[2]), command);
+	coreLogFormat(USERLOG_SEVERITY_DEBUG, 5200, "%s %i %s command request (%s)", &args);
 	
 	/* Increment write index and check if full */
-	pBuffer->write = (pBuffer->write + 1) % CORE_COMMANDBUFFER_SIZE;
+	pBuffer->write = (pBuffer->write + 1) % CORE_COMMAND_BUFFER_SIZE;
 	pCommand = &pBuffer->buffer[pBuffer->write];
 	if(GET_BIT(pCommand->status, CORE_COMMAND_PENDING) || GET_BIT(pCommand->status, CORE_COMMAND_BUSY)) {
 		args.i[0] = index;
-		args.i[1] = CORE_COMMANDBUFFER_SIZE;
+		args.i[1] = CORE_COMMAND_BUFFER_SIZE;
 		coreLogFormat(USERLOG_SEVERITY_WARNING, coreLogCode(stCORE_WARNING_BUFFER), "Pallet %i command buffer is now full (size = %i)", &args);
 	}
 	
@@ -153,8 +153,10 @@ void coreCommandManager(void) {
 	SuperTrakCommand_t *pChannel;
 	long i, j;
 	unsigned char *pTrigger, *pComplete, *pSuccess, complete, success, pause;
-	static unsigned char used[CHANNEL_BYTE_COUNT], reset[CHANNEL_BYTE_COUNT], channel, start;
+	static unsigned char used[CHANNEL_BYTE_MAX], reset[CHANNEL_BYTE_MAX], channel, start;
 	static unsigned long timer[CORE_COMMAND_COUNT];
+	coreSimpleTargetReleaseType *pSimpleCommand; /* Simple target release command storage */
+	unsigned char *pTargetRelease, *pTargetStatus; /* Simple target release and target status cyclic bits */
 	FormatStringArgumentsType args;
 	
 	/****************
@@ -213,7 +215,7 @@ void coreCommandManager(void) {
 				CLEAR_BIT(*pTrigger, pBuffer->channel % 8);
 				timer[pBuffer->channel] = 0;
 				
-				/* Reopen channels only after all pallet buffers have been polled */
+				/* Reopen channels only after all pallet buffers have all been polled */
 				SET_BIT(reset[channel / 8], channel % 8);
 				
 				/* Update command status */
@@ -221,7 +223,7 @@ void coreCommandManager(void) {
 				SET_BIT(pCommand->status, CORE_COMMAND_DONE);
 				
 				/* Move to next command in buffer */
-				pBuffer->read = (pBuffer->read + 1) % CORE_COMMANDBUFFER_SIZE;
+				pBuffer->read = (pBuffer->read + 1) % CORE_COMMAND_BUFFER_SIZE;
 			}
 			else if(timer[pBuffer->channel] >= 500000) {
 				coreLogFormat(USERLOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_CMDTIMEOUT), "%s %i %s command execution timed out", &args);
@@ -237,7 +239,7 @@ void coreCommandManager(void) {
 				SET_BIT(pCommand->status, CORE_COMMAND_ERROR);
 				
 				/* Move to next command in buffer */
-				pBuffer->read = (pBuffer->read + 1) % CORE_COMMANDBUFFER_SIZE;
+				pBuffer->read = (pBuffer->read + 1) % CORE_COMMAND_BUFFER_SIZE;
 			}
 		}
 		
@@ -289,6 +291,85 @@ void coreCommandManager(void) {
 		}
 	}
 	
+	/*********************
+	 Simple Target Release
+	*********************/
+	/* 
+	   1. Loop through core.targetCount targets
+	   2. Access target release commands in cyclic control data
+	   3. Write new command 1-3 when pending, switch to busy
+	   4. Ackowledge commands when done (!present or error), pass error  
+	*/
+	for(i = 0; i < core.targetCount; i++) { /* i = 0 is Target 1 */
+		pSimpleCommand = core.pSimpleRelease + i;
+		pTargetRelease = core.pCyclicControl + core.interface.targetControlOffset + (i + 1) / CORE_TARGET_RELEASE_PER_BYTE; /* Cyclic data starts with Target 0 */
+		pTargetStatus = core.pCyclicStatus + core.interface.targetStatusOffset + CORE_TARGET_STATUS_BYTE_COUNT * (i + 1);
+		
+		/* This target's simple release command is in progress */
+		if(GET_BIT(pSimpleCommand->status, CORE_COMMAND_BUSY)) {
+			pSimpleCommand->timer += CORE_CYCLE_TIME;
+			
+			/* 1. First check for an error */
+			if(GET_BIT(*pTargetStatus, stTARGET_RELEASE_ERROR)) {
+				/* Clear release bits */
+				CLEAR_BIT(*pTargetRelease, (i + 1) % CORE_TARGET_RELEASE_PER_BYTE); /* Clear lower bit */
+				CLEAR_BIT(*pTargetRelease, (i + 1) % CORE_TARGET_RELEASE_PER_BYTE + 1); /* Clear upper bit */
+				
+				/* Update status */
+				CLEAR_BIT(pSimpleCommand->status, CORE_COMMAND_BUSY);
+				SET_BIT(pSimpleCommand->status, CORE_COMMAND_DONE);
+				SET_BIT(pSimpleCommand->status, CORE_COMMAND_ERROR);
+			}
+			
+			/* 2. Next check for not present */
+			/* Need to check for error first in case pallet was never present */
+			else if(!GET_BIT(*pTargetStatus, stTARGET_PALLET_PRESENT)) {
+				/* Clear release bits */
+				CLEAR_BIT(*pTargetRelease, (i + 1) % CORE_TARGET_RELEASE_PER_BYTE); /* Clear lower bit */
+				CLEAR_BIT(*pTargetRelease, (i + 1) % CORE_TARGET_RELEASE_PER_BYTE + 1); /* Clear upper bit */
+				
+				/* Update status */
+				CLEAR_BIT(pSimpleCommand->status, CORE_COMMAND_BUSY);
+				SET_BIT(pSimpleCommand->status, CORE_COMMAND_DONE);
+			}
+			
+			/* 3. Check for timeout */
+			else if(pSimpleCommand->timer > CORE_COMMAND_TIMEOUT) {
+				/* Clear release bits */
+				CLEAR_BIT(*pTargetRelease, (i + 1) % CORE_TARGET_RELEASE_PER_BYTE); /* Clear lower bit */
+				CLEAR_BIT(*pTargetRelease, (i + 1) % CORE_TARGET_RELEASE_PER_BYTE + 1); /* Clear upper bit */
+				
+				/* Update status */
+				CLEAR_BIT(pSimpleCommand->status, CORE_COMMAND_BUSY);
+				SET_BIT(pSimpleCommand->status, CORE_COMMAND_DONE);
+				SET_BIT(pSimpleCommand->status, CORE_COMMAND_ERROR);
+			}
+		}
+		/* This target has a simple release request pending */
+		else if(GET_BIT(pSimpleCommand->status, CORE_COMMAND_PENDING)) {
+			/* Write command in cyclic control */
+			switch(pSimpleCommand->move) {
+				case 1:
+					SET_BIT(*pTargetRelease, (i + 1) % CORE_TARGET_RELEASE_PER_BYTE); /* Set lower bit */
+					break;
+				case 2:
+					SET_BIT(*pTargetRelease, (i + 1) % CORE_TARGET_RELEASE_PER_BYTE + 1); /* Set upper bit */
+					break;
+				default:
+					SET_BIT(*pTargetRelease, (i + 1) % CORE_TARGET_RELEASE_PER_BYTE); /* Set lower bit */
+					SET_BIT(*pTargetRelease, (i + 1) % CORE_TARGET_RELEASE_PER_BYTE + 1); /* Set upper bit */
+			}
+			
+			/* Update status */
+			CLEAR_BIT(pSimpleCommand->status, CORE_COMMAND_PENDING);
+			SET_BIT(pSimpleCommand->status, CORE_COMMAND_BUSY);
+			
+			/* Reset request timer */
+			pSimpleCommand->timer = 0;
+			
+		} /* Busy?, pending? */
+	} /* Loop targets */
+	
 } /* End function */
 
 /* Write lowercase command name to str */
@@ -339,6 +420,20 @@ void setDestinationName(char *str, unsigned char ID, unsigned char destination, 
 	if(ID == 16 || ID == 17 || ID == 18 || ID == 19 || ID == 24 || ID == 25 || ID == 26 || ID == 27) {
 		args.i[0] = destination;
 		IecFormatString(str, size, "T%i", &args);
+	}
+	else
+		coreStringCopy(str, "n/a", size);
+}
+
+/* Write command parameters */
+void getParameterString(char *str, unsigned long size, SuperTrakCommand_t data) {
+	/* Declare local variables */
+	FormatStringArgumentsType args;
+	
+	if(data.u1[0] == 16 || data.u1[0] == 17 || data.u1[0] == 18 || data.u1[0] == 19) {
+		setDirectionName(args.s[0], data.u1[0], sizeof(args.s[0]));
+		args.i[0] = data.u1[2];
+		IecFormatString(str, size, "direction: %s, destination: T%i", &args);
 	}
 	else
 		coreStringCopy(str, "n/a", size);
