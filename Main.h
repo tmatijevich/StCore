@@ -103,15 +103,8 @@ typedef struct coreCommandCreateType {
 	unsigned char index; /* Manager index for allocated pallet command buffer */
 } coreCommandCreateType;
 
-typedef struct coreSimpleTargetReleaseType { 
-	unsigned char move; /* Local move configuration index 1-3 */
-	unsigned char status; /* Command progress status */
-	StCoreTarget_typ *pInstance; /* Record instance if called from function block */
-	unsigned long timer; /* Command request timeout counter */
-} coreSimpleTargetReleaseType;
-
 typedef struct coreCommandType {
-	SuperTrakCommand_t command; /* SuperTrak command bytes */
+	SuperTrakCommand_t command; /* SuperTrak command data */
 	unsigned char status; /* Command progess status */
 	void *pInstance; /* Record instance if called from function block */
 } coreCommandType;
@@ -127,7 +120,7 @@ typedef struct coreCommandBufferType {
 struct coreGlobalType {
 	unsigned char *pCyclicControl;
 	unsigned char *pCyclicStatus;
-	coreSimpleTargetReleaseType *pSimpleRelease;
+	coreCommandType *pSimpleRelease;
 	coreCommandBufferType *pCommandBuffer;
 	SuperTrakControlIfConfig_t interface;
 	unsigned char targetCount;
@@ -154,7 +147,7 @@ void coreLogServiceChannel(unsigned short result, unsigned short parameter);
 void coreLogFaultWarning(unsigned char index, unsigned char section);
 
 /* Commands */
-long coreSimpleRelease(unsigned char target, unsigned char localMove, void *pInstance, coreSimpleTargetReleaseType **ppCommand);
+long coreSimpleRelease(unsigned char target, unsigned char localMove, void *pInstance, coreCommandType **ppCommand);
 long coreReleasePallet(unsigned char target, unsigned char pallet, unsigned short direction, unsigned char destinationTarget, void *pInstance, coreCommandType **ppCommand);
 long coreReleaseTargetOffset(unsigned char target, unsigned char pallet, unsigned short direction, unsigned char destinationTarget, double targetOffset, void *pInstance, coreCommandType **ppCommand);
 long coreReleaseIncrementalOffset(unsigned char target, unsigned char pallet, double incrementalOffset, void *pInstance, coreCommandType **ppCommand);

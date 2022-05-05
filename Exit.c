@@ -26,7 +26,7 @@ long StCoreExit(void) {
 	}
 	
 	if(core.pSimpleRelease) {
-		allocationSize = sizeof(coreSimpleTargetReleaseType) * core.targetCount;
+		allocationSize = sizeof(coreCommandType) * core.targetCount;
 		TMP_free(allocationSize, (void**)core.pSimpleRelease);
 	}
 	

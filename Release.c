@@ -12,13 +12,13 @@ long StCoreSimpleRelease(unsigned char Target, unsigned char LocalMove) {
 }
 
 /* (Internal) Release with local move configuration */
-long coreSimpleRelease(unsigned char target, unsigned char localMove, void *pInstance, coreSimpleTargetReleaseType **ppCommand) {
+long coreSimpleRelease(unsigned char target, unsigned char localMove, void *pInstance, coreCommandType **ppCommand) {
 	
 	/***********************
 	 Declare Local Variables
 	***********************/
 	FormatStringArgumentsType args;
-	coreSimpleTargetReleaseType *pSimpleCommand;
+	coreCommandType *pSimpleCommand;
 	
 	if(core.pSimpleRelease == NULL) {
 		coreLogMessage(USERLOG_SEVERITY_ERROR, 55555, "Target simple release unable to reference command buffers");
@@ -52,7 +52,7 @@ long coreSimpleRelease(unsigned char target, unsigned char localMove, void *pIns
 	if(ppCommand != NULL) *ppCommand = pSimpleCommand;
 	
 	/* Write local move configuration index and set status */
-	pSimpleCommand->move = localMove;
+	pSimpleCommand->command.u1[0] = localMove; /* Store local move in first command byte */
 	CLEAR_BIT(pSimpleCommand->status, CORE_COMMAND_DONE);
 	CLEAR_BIT(pSimpleCommand->status, CORE_COMMAND_ERROR);
 	SET_BIT(pSimpleCommand->status, CORE_COMMAND_PENDING);

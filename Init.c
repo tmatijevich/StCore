@@ -267,7 +267,7 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	memset(core.pCyclicStatus, 0, allocationSize); /* Initialization memory to zero */
 	
 	/* Memory for simple target release */
-	allocationSize = sizeof(coreSimpleTargetReleaseType) * core.targetCount;
+	allocationSize = sizeof(coreCommandType) * core.targetCount;
 	if(core.pSimpleRelease)
 		TMP_free(allocationSize, (void**)core.pSimpleRelease);
 	status = TMP_alloc(allocationSize, (void**)&core.pSimpleRelease);

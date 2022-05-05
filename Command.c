@@ -155,8 +155,9 @@ void coreCommandManager(void) {
 	unsigned char *pTrigger, *pComplete, *pSuccess, complete, success, pause;
 	static unsigned char used[CHANNEL_BYTE_MAX], reset[CHANNEL_BYTE_MAX], channel, start;
 	static unsigned long timer[CORE_COMMAND_COUNT];
-	coreSimpleTargetReleaseType *pSimpleCommand; /* Simple target release command storage */
+	coreCommandType *pSimpleCommand; /* Simple target release command storage */
 	unsigned char *pTargetRelease, *pTargetStatus, lowerBit, upperBit; /* Simple target release and target status cyclic bits */
+	unsigned long *pSimpleReleaseTimer;
 	FormatStringArgumentsType args;
 	
 	/****************
@@ -304,12 +305,13 @@ void coreCommandManager(void) {
 		pSimpleCommand = core.pSimpleRelease + i;
 		pTargetRelease = core.pCyclicControl + core.interface.targetControlOffset + (i + 1) / CORE_TARGET_RELEASE_PER_BYTE; /* Cyclic data starts with Target 0 */
 		pTargetStatus = core.pCyclicStatus + core.interface.targetStatusOffset + CORE_TARGET_STATUS_BYTE_COUNT * (i + 1);
+		pSimpleReleaseTimer = (unsigned long*)&pSimpleCommand->command.u1[4]; /* Use upper four bytes for timeout monitoring */
 		lowerBit = ((i + 1) % CORE_TARGET_RELEASE_PER_BYTE) * CORE_TARGET_RELEASE_BIT_COUNT;
 		upperBit = lowerBit + 1;
 		
 		/* This target's simple release command is in progress */
 		if(GET_BIT(pSimpleCommand->status, CORE_COMMAND_BUSY)) {
-			pSimpleCommand->timer += CORE_CYCLE_TIME;
+			*pSimpleReleaseTimer += CORE_CYCLE_TIME;
 			
 			/* 1. First check for an error */
 			if(GET_BIT(*pTargetStatus, stTARGET_RELEASE_ERROR)) {
@@ -336,7 +338,7 @@ void coreCommandManager(void) {
 			}
 			
 			/* 3. Check for timeout */
-			else if(pSimpleCommand->timer > CORE_COMMAND_TIMEOUT) {
+			else if(*pSimpleReleaseTimer > CORE_COMMAND_TIMEOUT) {
 				/* Clear release bits */
 				CLEAR_BIT(*pTargetRelease, lowerBit);
 				CLEAR_BIT(*pTargetRelease, upperBit);
@@ -350,7 +352,7 @@ void coreCommandManager(void) {
 		/* This target has a simple release request pending */
 		else if(GET_BIT(pSimpleCommand->status, CORE_COMMAND_PENDING)) {
 			/* Write command in cyclic control */
-			switch(pSimpleCommand->move) {
+			switch(pSimpleCommand->command.u1[0]) {
 				case 1:
 					SET_BIT(*pTargetRelease, lowerBit);
 					break;
@@ -368,7 +370,7 @@ void coreCommandManager(void) {
 			SET_BIT(pSimpleCommand->status, CORE_COMMAND_BUSY);
 			
 			/* Reset request timer */
-			pSimpleCommand->timer = 0;
+			*pSimpleReleaseTimer = 0;
 			
 		} /* Busy?, pending? */
 	} /* Loop targets */
