@@ -30,6 +30,8 @@ extern "C"
 #define CORE_LOGBOOK_NAME 					"StCoreLog"
 #define CORE_LOGBOOK_FACILITY 				1
 #define CORE_FORMAT_SIZE 					125
+#define CORE_FORMAT_ARGUMENT_COUNT 			5
+#define CORE_FORMAT_ARGUMENT_SIZE 			81
 #define CORE_COMMAND_COUNT 					48
 #define CORE_COMMAND_BUFFER_SIZE 			4U
 #define CORE_SECTION_MAX 					64 		/* SuperTrak is allowed up to 64 gateway communication boards */
@@ -68,6 +70,14 @@ extern "C"
 /************
  Enumerations
 ************/
+typedef enum coreLogSeverityEnum {
+	CORE_LOG_SEVERITY_ERROR = 0,
+	CORE_LOG_SEVERITY_WARNING,
+	CORE_LOG_SEVERITY_INFO,
+	CORE_LOG_SEVERITY_SUCCESS,
+	CORE_LOG_SEVERITY_DEBUG
+} coreLogSeverityEnum;
+
 typedef enum coreCommandStatusEnum { /* Command states for status byte, do not exceed 0-7 */
 	CORE_COMMAND_PENDING = 0, /* The command request is pending */
 	CORE_COMMAND_BUSY, /* The command request is executing */
@@ -96,6 +106,14 @@ typedef enum coreCommandSelectEnum { /* List of commands, do not exceed 0-15 */
 /**********
  Structures
 **********/
+/* String format type */
+typedef struct coreFormatArgumentType {
+	unsigned char b[CORE_FORMAT_ARGUMENT_COUNT]; /* Boolean */
+	signed long i[CORE_FORMAT_ARGUMENT_COUNT]; /* Integer */
+	double f[CORE_FORMAT_ARGUMENT_COUNT]; /* Floating point */
+	char s[CORE_FORMAT_ARGUMENT_COUNT][CORE_FORMAT_ARGUMENT_SIZE]; /* Strings */
+} coreFormatArgumentType;
+
 /* Command management */
 typedef struct coreCommandCreateType {
 	unsigned char commandID; /* See TrakMaster help's PLC control interface for available IDs */
@@ -139,6 +157,7 @@ extern struct coreGlobalType core;
  Function prototypes 
 *******************/
 /* Logging and string handling */
+long coreLog(ArEventLogIdentType ident, coreLogSeverityEnum severity, unsigned char facility, unsigned short code, char *object, char *message, coreFormatArgumentType *args);
 void coreLogMessage(UserLogSeverityEnum severity, unsigned short code, char *message);
 void coreLogFormat(UserLogSeverityEnum severity, unsigned short code, char *message, FormatStringArgumentsType *args);
 unsigned short coreLogCode(long event);

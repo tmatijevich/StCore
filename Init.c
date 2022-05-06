@@ -19,8 +19,10 @@ struct coreGlobalType core = {.error = true, .statusID = stCORE_ERROR_INIT};
 long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceList, unsigned char PalletCount, unsigned char NetworkIOCount) {
 	
 	/***********************
-	 Declare local variables 
+	 Declare Local Variables 
 	***********************/
+	ArEventLogCreate_typ fbCreate;
+	ArEventLogGetIdent_typ fbGetIdent;
 	long status, i, j, k;
 	FormatStringArgumentsType args;
 	unsigned short sectionCount, networkOrder[CORE_SECTION_MAX], headSection, flowDirection, flowOrder[CORE_SECTION_MAX];
@@ -37,9 +39,33 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	core.statusID = stCORE_ERROR_INIT;
 	
 	/**************
-	 Create logbook
+	 Create Logbook
 	**************/
-	status = CreateCustomLogbook(CORE_LOGBOOK_NAME, 200000);
+	/* Set inputs */
+	memset(&fbCreate, 0, sizeof(fbCreate));
+	coreStringCopy(fbCreate.Name, CORE_LOGBOOK_NAME, sizeof(fbCreate.Name));
+	fbCreate.Size = 200000;
+	fbCreate.Persistence = arEVENTLOG_PERSISTENCE_PERSIST;
+	fbCreate.Execute = true;
+	
+	/* Run until finished */
+	ArEventLogCreate(&fbCreate);
+	while(fbCreate.Busy)
+		ArEventLogCreate(&fbCreate);
+	
+	/* Verify results */
+	status = fbCreate.StatusID;
+	
+	memset(&fbGetIdent, 0, sizeof(fbGetIdent));
+	coreStringCopy(fbGetIdent.Name, "$arlogusr", sizeof(fbGetIdent.Name));
+	fbGetIdent.Execute = true;
+	ArEventLogGetIdent(&fbGetIdent);
+	
+	coreLog(fbGetIdent.Ident, CORE_LOG_SEVERITY_DEBUG, CORE_LOGBOOK_FACILITY, 1234, "Init", "This is a test", NULL);
+	
+	fbGetIdent.Execute = false;
+	ArEventLogGetIdent(&fbGetIdent);
+	
 	if(status != 0 && status != arEVENTLOG_ERR_LOGBOOK_EXISTS) {
 		args.i[0] = status;
 		coreStringCopy(args.s[0], CORE_LOGBOOK_NAME, sizeof(args.s[0]));
