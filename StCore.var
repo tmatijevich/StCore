@@ -6,27 +6,27 @@
 (*Critical configuration errors:*)
 (*Initialization*)
 VAR CONSTANT
-	stCORE_ERROR_LOGBOOK : DINT := -536805912; (*StCoreInit() is unable to create a logbook. Possible naming conflict with StCoreLog or insufficient user partition size*)
-	stCORE_ERROR_INIT : DINT := -536804376; (*StCoreInit() has not been called. Call StCoreInit() once during _INIT*)
+	stCORE_ERROR_LOGBOOK : DINT := -536805912; (*StCoreInit is unable to create a logbook. Possible naming conflict with StCoreLog or insufficient user partition size*)
+	stCORE_ERROR_INIT : DINT := -536804376; (*StCoreInit has not been called. Call StCoreInit once during _INIT*)
 	stCORE_ERROR_LAYOUT : DINT := -536804276; (*Invalid SuperTrak system layout. Use TrakMaster's easy setup of the system layout*)
 END_VAR
 (*Cyclic*)
 VAR CONSTANT
-	stCORE_ERROR_TASK : DINT := -536803376; (*StCoreCyclic() is not called from task class #1 or does not match cyclic timing of 800 us*)
+	stCORE_ERROR_CYCLE : DINT := -536803376; (*StCoreCyclic is not called from task class #1 or does not match cyclic timing of 800 us*)
 	stCORE_ERROR_INTERFACE : DINT := -536803276; (*Control interface configuration has been modified from initialization*)
-	stCORE_ERROR_MAXPALLET : DINT := -536803176; (*A pallet ID exceeds the configured pallet count*)
+	stCORE_ERROR_PALLET : DINT := -536803176; (*A pallet ID exceeds the configured pallet count*)
 END_VAR
 (*Common*)
 VAR CONSTANT
-	stCORE_ERROR_SERVCHAN : DINT := -536802376; (*SuperTrak service channel error. See logger for more details*)
-	stCORE_ERROR_ALLOC : DINT := -536802276; (*Unable to allocate memory or invalid reference for cyclic data and command buffers*)
+	stCORE_ERROR_COMM : DINT := -536802376; (*SuperTrak service channel error. See logger for more details*)
+	stCORE_ERROR_ALLOC : DINT := -536802276; (*Unable to allocate or reference cyclic and command memory storage*)
 END_VAR
 (*Function errors:*)
 VAR CONSTANT
 	stCORE_ERROR_INST : DINT := -536801376; (*Multiple instances of a function block are used in the same context*)
 	stCORE_ERROR_INPUT : DINT := -536800376; (*StCore command function input out of range*)
-	stCORE_ERROR_BUFFER : DINT := -536800276; (*StCore command buffer is already full. The command is rejected*)
-	stCORE_WARNING_BUFFER : DINT := -1610542099; (*StCore command buffer is now full. Future commands are rejected until the buffer opens*)
-	stCORE_ERROR_CMDFAILURE : DINT := -536799375; (*StCore command execution failued. See SuperTrak system fault for more details*)
-	stCORE_ERROR_CMDTIMEOUT : DINT := -536799374; (*StCore command execution timeout (500 ms)*)
+	stCORE_ERROR_BUFFER : DINT := -536800276; (*StCore command buffer is already full and the command is rejected*)
+	stCORE_WARNING_BUFFER : DINT := -1610542099; (*StCore pallet command buffer is now full and will reject commands until cleared*)
+	stCORE_ERROR_COMMAND : DINT := -536799176; (*StCore command execution failed. See SuperTrak system fault for more details*)
+	stCORE_ERROR_TIMEOUT : DINT := -536799076; (*StCore command execution timeout*)
 END_VAR

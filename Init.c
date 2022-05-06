@@ -25,6 +25,7 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	ArEventLogGetIdent_typ fbGetIdent;
 	long status, i, j, k;
 	FormatStringArgumentsType args;
+	coreFormatArgumentType arg;
 	unsigned short sectionCount, networkOrder[CORE_SECTION_MAX], headSection, flowDirection, flowOrder[CORE_SECTION_MAX];
 	unsigned short dataUInt16[255];
 	unsigned long allocationSize;
@@ -55,23 +56,37 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	
 	/* Verify results */
 	status = fbCreate.StatusID;
-	
-	memset(&fbGetIdent, 0, sizeof(fbGetIdent));
-	coreStringCopy(fbGetIdent.Name, "$arlogusr", sizeof(fbGetIdent.Name));
-	fbGetIdent.Execute = true;
-	ArEventLogGetIdent(&fbGetIdent);
-	
-	coreLog(fbGetIdent.Ident, CORE_LOG_SEVERITY_DEBUG, CORE_LOGBOOK_FACILITY, 1234, "Init", "This is a test", NULL);
-	
-	fbGetIdent.Execute = false;
-	ArEventLogGetIdent(&fbGetIdent);
-	
 	if(status != 0 && status != arEVENTLOG_ERR_LOGBOOK_EXISTS) {
-		args.i[0] = status;
-		coreStringCopy(args.s[0], CORE_LOGBOOK_NAME, sizeof(args.s[0]));
-		LogFormatMessage(USERLOG_SEVERITY_CRITICAL, coreLogCode(stCORE_ERROR_LOGBOOK), "ArEventLog error %i. Possible naming conflict with %s or insufficient user partition size", &args);
+		memset(&fbGetIdent, 0, sizeof(fbGetIdent));
+		coreStringCopy(fbGetIdent.Name, "$arlogusr", sizeof(fbGetIdent.Name));
+		fbGetIdent.Execute = true;
+		ArEventLogGetIdent(&fbGetIdent);
+		
+		arg.i[0] = status;
+		coreStringCopy(arg.s[0], CORE_LOGBOOK_NAME, sizeof(arg.s[0]));
+		coreLog(fbGetIdent.Ident, CORE_LOG_SEVERITY_ERROR, 0, coreLogCode(stCORE_ERROR_LOGBOOK), "Init", "ArEventLog error %i due to possible naming conflict with %s or insufficient user partition size", &arg);
+		
+		fbGetIdent.Execute = false;
+		ArEventLogGetIdent(&fbGetIdent);
+		
 		return core.statusID = stCORE_ERROR_LOGBOOK;
 	}
+	else if(status == arEVENTLOG_ERR_LOGBOOK_EXISTS) {
+		memset(&fbGetIdent, 0, sizeof(fbGetIdent));
+		coreStringCopy(fbGetIdent.Name, CORE_LOGBOOK_NAME, sizeof(fbGetIdent.Name));
+		fbGetIdent.Execute = true;
+		ArEventLogGetIdent(&fbGetIdent);
+		
+		core.ident = fbGetIdent.Ident;
+		
+		fbGetIdent.Execute = false;
+		ArEventLogGetIdent(&fbGetIdent);
+	}
+	else {
+		core.ident = fbCreate.Ident;
+	}
+	fbCreate.Execute = false;
+	ArEventLogCreate(&fbCreate);
 	
 	/********************
 	 Verify system layout
@@ -80,7 +95,7 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	status = SuperTrakServChanRead(0, stPAR_SECTION_COUNT, 0, 1, (unsigned long)&sectionCount, sizeof(sectionCount));
 	if(status != scERR_SUCCESS) {
 		coreLogServiceChannel((unsigned short)status, stPAR_SECTION_COUNT);
-		return core.statusID = stCORE_ERROR_SERVCHAN;
+		return core.statusID = stCORE_ERROR_COMM;
 	}
 		
 	/* Verify section count */
@@ -98,14 +113,14 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	status = SuperTrakServChanRead(0, stPAR_SECTION_ADDRESS, 0, sectionCount, (unsigned long)&networkOrder, sizeof(networkOrder));
 	if(status != scERR_SUCCESS) {
 		coreLogServiceChannel((unsigned short)status, stPAR_SECTION_ADDRESS);
-		return core.statusID = stCORE_ERROR_SERVCHAN;
+		return core.statusID = stCORE_ERROR_COMM;
 	}
 	
 	/* Read head section */
 	status = SuperTrakServChanRead(0, stPAR_LOGICAL_HEAD_SECTION, 0, 1, (unsigned long)&headSection, sizeof(headSection));
 	if(status != scERR_SUCCESS) {
 		coreLogServiceChannel((unsigned short)status, stPAR_LOGICAL_HEAD_SECTION);
-		return core.statusID = stCORE_ERROR_SERVCHAN;
+		return core.statusID = stCORE_ERROR_COMM;
 	}
 	
 	/* Verify head section */
@@ -120,7 +135,7 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	status = SuperTrakServChanRead(0, stPAR_FLOW_DIRECTION, 0, 1, (unsigned long)&flowDirection, sizeof(flowDirection));
 	if(status != scERR_SUCCESS) {
 		coreLogServiceChannel((unsigned short)status, stPAR_FLOW_DIRECTION);
-		return core.statusID = stCORE_ERROR_SERVCHAN;
+		return core.statusID = stCORE_ERROR_COMM;
 	}
 	
 	/* Verify flow order */
@@ -197,7 +212,7 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	status = SuperTrakServChanWrite(0, stPAR_PLC_IF_OPTIONS, 0, 1, (unsigned long)&core.interface.options, sizeof(core.interface.options));
 	if(status != scERR_SUCCESS) {
 		coreLogServiceChannel((unsigned short)status, stPAR_PLC_IF_OPTIONS);
-		return core.statusID = stCORE_ERROR_SERVCHAN;
+		return core.statusID = stCORE_ERROR_COMM;
 	}
 	
 	/* Section start */
@@ -205,7 +220,7 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	status = SuperTrakServChanWrite(0, stPAR_PLC_IF_SECTION_START, 0, 1, (unsigned long)&core.interface.sectionStartIndex, sizeof(core.interface.sectionStartIndex));
 	if(status != scERR_SUCCESS) {
 		coreLogServiceChannel((unsigned short)status, stPAR_PLC_IF_SECTION_START);
-		return core.statusID = stCORE_ERROR_SERVCHAN;
+		return core.statusID = stCORE_ERROR_COMM;
 	}
 	
 	/* Section count */
@@ -213,7 +228,7 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	status = SuperTrakServChanWrite(0, stPAR_PLC_IF_SECTION_COUNT, 0, 1, (unsigned long)&core.interface.sectionCount, sizeof(core.interface.sectionCount));
 	if(status != scERR_SUCCESS) {
 		coreLogServiceChannel((unsigned short)status, stPAR_PLC_IF_SECTION_COUNT);
-		return core.statusID = stCORE_ERROR_SERVCHAN;
+		return core.statusID = stCORE_ERROR_COMM;
 	}
 	
 	/* Target start */
@@ -221,7 +236,7 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	status = SuperTrakServChanWrite(0, stPAR_PLC_IF_TARGET_START, 0, 1, (unsigned long)&core.interface.targetStartIndex, sizeof(core.interface.targetStartIndex));
 	if(status != scERR_SUCCESS) {
 		coreLogServiceChannel((unsigned short)status, stPAR_PLC_IF_TARGET_START);
-		return core.statusID = stCORE_ERROR_SERVCHAN;
+		return core.statusID = stCORE_ERROR_COMM;
 	}
 	
 	/* Target count */
@@ -229,7 +244,7 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	status = SuperTrakServChanWrite(0, stPAR_PLC_IF_TARGET_COUNT, 0, 1, (unsigned long)&core.interface.targetCount, sizeof(core.interface.targetCount));
 	if(status != scERR_SUCCESS) {
 		coreLogServiceChannel((unsigned short)status, stPAR_PLC_IF_TARGET_COUNT);
-		return core.statusID = stCORE_ERROR_SERVCHAN;
+		return core.statusID = stCORE_ERROR_COMM;
 	}
 	
 	/* Command count */
@@ -237,7 +252,7 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	status = SuperTrakServChanWrite(0, stPAR_PLC_IF_COMMAND_COUNT, 0, 1, (unsigned long)&core.interface.commandCount, sizeof(core.interface.commandCount));
 	if(status != scERR_SUCCESS) {
 		coreLogServiceChannel((unsigned short)status, stPAR_PLC_IF_COMMAND_COUNT);
-		return core.statusID = stCORE_ERROR_SERVCHAN;
+		return core.statusID = stCORE_ERROR_COMM;
 	}
 	
 	/* Network IO start */
@@ -245,7 +260,7 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	status = SuperTrakServChanWrite(0, stPAR_PLC_IF_NETWORK_IO_START, 0, 1, (unsigned long)&core.interface.networkIoStartIndex, sizeof(core.interface.networkIoStartIndex));
 	if(status != scERR_SUCCESS) {
 		coreLogServiceChannel((unsigned short)status, stPAR_PLC_IF_NETWORK_IO_START);
-		return core.statusID = stCORE_ERROR_SERVCHAN;
+		return core.statusID = stCORE_ERROR_COMM;
 	}
 	
 	/* Network IO count */
@@ -253,7 +268,7 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	status = SuperTrakServChanWrite(0, stPAR_PLC_IF_NETWORK_IO_COUNT, 0, 1, (unsigned long)&core.interface.networkIoCount, sizeof(core.interface.networkIoCount));
 	if(status != scERR_SUCCESS) {
 		coreLogServiceChannel((unsigned short)status, stPAR_PLC_IF_NETWORK_IO_COUNT);
-		return core.statusID = stCORE_ERROR_SERVCHAN;
+		return core.statusID = stCORE_ERROR_COMM;
 	}
 	
 	/* Revision */
@@ -261,7 +276,7 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	status = SuperTrakServChanWrite(0, stPAR_PLC_IF_REVISION, 0, 1, (unsigned long)&core.interface.revision, sizeof(core.interface.revision));
 	if(status != scERR_SUCCESS) {
 		coreLogServiceChannel((unsigned short)status, stPAR_PLC_IF_REVISION);
-		return core.statusID = stCORE_ERROR_SERVCHAN;
+		return core.statusID = stCORE_ERROR_COMM;
 	}
 	
 	/**************************

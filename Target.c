@@ -207,10 +207,10 @@ void StCoreTarget(StCoreTarget_typ *inst) {
 							if(GET_BIT(pCommand->status, CORE_COMMAND_DONE)) {
 								if(GET_BIT(pCommand->status, CORE_COMMAND_ERROR)) {
 									args.i[0] = inst->Internal.Select;
-									coreLogFormat(USERLOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_CMDFAILURE), "StCoreTarget target %i command error", &args);
+									coreLogFormat(USERLOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_COMMAND), "StCoreTarget target %i command error", &args);
 									resetOutput(inst);
 									inst->Error = true;
-									inst->StatusID = stCORE_ERROR_CMDFAILURE;
+									inst->StatusID = stCORE_ERROR_COMMAND;
 									inst->Internal.State = CORE_FUNCTION_ERROR;
 									break;
 								}

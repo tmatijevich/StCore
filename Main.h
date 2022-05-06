@@ -146,6 +146,7 @@ struct coreGlobalType {
 	unsigned char networkIOCount;
 	unsigned char error;
 	long statusID;
+	ArEventLogIdentType ident;
 };
 
 /****************

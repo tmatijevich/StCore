@@ -38,9 +38,9 @@ long StCoreCyclic(void) {
 		if(fbRTInfo.task_class != 1 || fbRTInfo.cycle_time != 800) {
 			args.i[0] = fbRTInfo.task_class;
 			args.i[1] = fbRTInfo.cycle_time;
-			coreLogFormat(USERLOG_SEVERITY_CRITICAL, coreLogCode(stCORE_ERROR_TASK), "Invalid task class %i or cycle time %i us", &args);
+			coreLogFormat(USERLOG_SEVERITY_CRITICAL, coreLogCode(stCORE_ERROR_CYCLE), "Invalid task class %i or cycle time %i us", &args);
 			core.error = true;
-			core.statusID = stCORE_ERROR_TASK;
+			core.statusID = stCORE_ERROR_CYCLE;
 		}
 		else 
 			taskVerified = true;
@@ -54,7 +54,7 @@ long StCoreCyclic(void) {
 			if(status != scERR_SUCCESS) {
 				coreLogServiceChannel((unsigned short)status, stPAR_SAVE_PARAMETERS);
 				core.error = true;
-				core.statusID = stCORE_ERROR_SERVCHAN;
+				core.statusID = stCORE_ERROR_COMM;
 			}
 		}
 		else

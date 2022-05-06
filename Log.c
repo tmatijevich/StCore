@@ -200,7 +200,7 @@ void coreLogServiceChannel(unsigned short result, unsigned short parameter) {
 			break;
 	}
 	
-	coreLogFormat(USERLOG_SEVERITY_CRITICAL, coreLogCode(stCORE_ERROR_SERVCHAN), "Serv. chan. error %i accessing par %i: %s", &args);
+	coreLogFormat(USERLOG_SEVERITY_CRITICAL, coreLogCode(stCORE_ERROR_COMM), "Serv. chan. error %i accessing par %i: %s", &args);
 	
 } /* Function defintion */
 

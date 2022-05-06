@@ -207,7 +207,7 @@ void coreCommandManager(void) {
 				if(success)
 					coreLogFormat(USERLOG_SEVERITY_DEBUG, 6000, "%s %i %s command acknowledged", &args);
 				else {
-					coreLogFormat(USERLOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_CMDFAILURE), "%s %i %s command execution failed", &args);
+					coreLogFormat(USERLOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_COMMAND), "%s %i %s command execution failed", &args);
 					SET_BIT(pCommand->status, CORE_COMMAND_ERROR);
 				}
 				
@@ -227,7 +227,7 @@ void coreCommandManager(void) {
 				pBuffer->read = (pBuffer->read + 1) % CORE_COMMAND_BUFFER_SIZE;
 			}
 			else if(timer[pBuffer->channel] >= 500000) {
-				coreLogFormat(USERLOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_CMDTIMEOUT), "%s %i %s command execution timed out", &args);
+				coreLogFormat(USERLOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_TIMEOUT), "%s %i %s command execution timed out", &args);
 				
 				/* Clear cyclic data and timer */
 				memset(pCommand, 0, sizeof(*pCommand));

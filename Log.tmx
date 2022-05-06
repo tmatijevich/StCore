@@ -5,103 +5,103 @@
   </header>
   <body>
     <tu tuid="-536805912">
-      <note>StCoreInit() 65000</note>
+      <note>Init 65000</note>
       <tuv xml:lang="en">
-        <seg>StCoreInit() is unable to create a logbook</seg>
+        <seg>StCoreInit is unable to create the logbook</seg>
       </tuv>
     </tu>
     <tu tuid="-536804376">
-      <note>StCoreInit() 1000</note>
+      <note>Init 1000</note>
       <tuv xml:lang="en">
-        <seg>StCoreInit() has not been called</seg>
+        <seg>StCoreInit has not been called</seg>
       </tuv>
     </tu>
     <tu tuid="-536804276">
-      <note>StCoreInit() 1100</note>
+      <note>Init 1100</note>
       <tuv xml:lang="en">
-        <seg>Invalid SuperTrak system layout. Use TrakMaster's easy setup of the system layout</seg>
+        <seg>Invalid SuperTrak system layout. Use TrakMaster's easy setup for the system layout</seg>
       </tuv>
     </tu>
     <tu tuid="536937648">
-      <note>StCoreInit() 1200</note>
+      <note>Init 1200</note>
       <tuv xml:lang="en">
         <seg>SuperTrak and StCore initialization complete</seg>
       </tuv>
     </tu>
     <tu tuid="-536803376">
-      <note>StCoreCyclic() 2000</note>
+      <note>Cyclic 2000</note>
       <tuv xml:lang="en">
-        <seg>StCoreCyclic() is not called from task class #1 or does not match cycle time of 800 us</seg>
+        <seg>StCoreCyclic is not called from task class #1 or does not match cycle time of 800 us</seg>
       </tuv>
     </tu>
     <tu tuid="-536803276">
-      <note>StCoreCyclic() 2100</note>
+      <note>Cyclic 2100</note>
       <tuv xml:lang="en">
         <seg>SuperTrak control interface configuration modified from initialization</seg>
       </tuv>
     </tu>
     <tu tuid="-536803176">
-      <note>StCoreCyclic() 2200</note>
+      <note>Cyclic 2200</note>
       <tuv xml:lang="en">
-        <seg>A SuperTrak pallet ID exceeds the configured count</seg>
+        <seg>A pallet ID exceeds the configured pallet count</seg>
       </tuv>
     </tu>
     <tu tuid="-536802376">
-      <note>StCore Init/Cyclic/Exit 3000</note>
+      <note>Any 3000</note>
       <tuv xml:lang="en">
         <seg>SuperTrak service channel error</seg>
       </tuv>
     </tu>
     <tu tuid="-536802276">
-      <note>StCore Init/Cyclic/Exit 3100</note>
+      <note>Any 3100</note>
       <tuv xml:lang="en">
-        <seg>Unable to allocate memory of reference cyclic data and command buffers</seg>
+        <seg>Unable to allocate or reference cyclic and command memory storage</seg>
       </tuv>
     </tu>
     <tu tuid="-536801376">
-      <note>StCoreSystem/StCoreSection 4000</note>
+      <note>System, Section 4000</note>
       <tuv xml:lang="en">
         <seg>Multiple instances of the function block are used in the same context</seg>
       </tuv>
     </tu>
     <tu tuid="-536800376">
-      <note>StCore command 5000</note>
+      <note>Any 5000</note>
       <tuv xml:lang="en">
-        <seg>StCore command function input out of range</seg>
+        <seg>StCore function input out of range</seg>
       </tuv>
     </tu>
     <tu tuid="-536800276">
-      <note>StCore command 5100</note>
+      <note>Any 5100</note>
       <tuv xml:lang="en">
-        <seg>StCore command request is rejected. The pallet command buffer is full</seg>
+        <seg>StCore command request is rejected</seg>
       </tuv>
     </tu>
     <tu tuid="-1610542099">
-      <note>StCore command 5101</note>
+      <note>Any 5101</note>
       <tuv xml:lang="en">
-        <seg>StCore pallet command buffer is now full. Future command requests will be rejected until the buffer opens</seg>
+        <seg>StCore pallet command buffer is now full and will reject commands until cleared</seg>
       </tuv>
     </tu>
-    <tu tuid="1610683472">
-      <note>StCore command 5200</note>
+    <tu tuid="1610684272">
+      <note>Any 6000</note>
       <tuv xml:lang="en">
         <seg>StCore command request</seg>
       </tuv>
     </tu>
-    <tu tuid="1610684272">
-      <note>StCore command 6000</note>
+    <tu tuid="1610684372">
+      <note>Any 6100</note>
       <tuv xml:lang="en">
         <seg>StCore command successful</seg>
       </tuv>
     </tu>
-    <tu tuid="-536799375">
-      <note>StCore command 6001</note>
+    <tu tuid="-536799176">
+      <note>Any 6200</note>
       <tuv xml:lang="en">
         <seg>StCore command failure</seg>
       </tuv>
     </tu>
-    <tu tuid="-536799374">
-      <note>StCore command 6002</note>
+    <tu tuid="-536799076">
+      <note>Any 6300</note>
       <tuv xml:lang="en">
         <seg>StCore command timeout</seg>
       </tuv>
