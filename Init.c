@@ -27,7 +27,7 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	ArEventLogGetIdent_typ fbGetIdent;
 	long status, i, j, k;
 	coreFormatArgumentType args;
-	unsigned short sectionCount, networkOrder[CORE_SECTION_MAX], headSection, flowDirection, flowOrder[CORE_SECTION_MAX];
+	unsigned short sectionCount, networkOrder[CORE_SECTION_MAX], headSection, flowDirection;
 	unsigned short dataUInt16[255];
 	unsigned long allocationSize;
 	
@@ -127,13 +127,6 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 		return core.statusID = stCORE_ERROR_COMM;
 	}
 	
-	/* Verify head section */
-	if(headSection != 1) {
-		args.i[0] = headSection;
-		logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_LAYOUT), "Logical head section %i does not equal to 1", &args);
-		return core.statusID = stCORE_ERROR_LAYOUT;
-	}
-	
 	/* Read flow direction */
 	status = SuperTrakServChanRead(0, stPAR_FLOW_DIRECTION, 0, 1, (unsigned long)&flowDirection, sizeof(flowDirection));
 	if(status != scERR_SUCCESS) {
@@ -141,11 +134,25 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 		return core.statusID = stCORE_ERROR_COMM;
 	}
 	
-	/* Verify flow order */
-	memset(&flowOrder, 0, sizeof(flowOrder));
-	for(i = 0; i < sectionCount; i++) { /* Find the head section in the network order */
+	/* Clear mapping table */
+	memset(&core.sectionMap, -1, sizeof(core.sectionMap));
+	
+	/* Find the head in user addresses */
+	for(i = 0; i < sectionCount; i++) {
+		/* Match head */
 		if(networkOrder[i] == headSection) {
-			flowOrder[0] = networkOrder[i];
+			/* Check address */
+			if(networkOrder[i] < 1 || CORE_SECTION_ADDRESS_MAX < networkOrder[i]) {
+				args.i[0] = networkOrder[i];
+				args.i[1] = CORE_SECTION_ADDRESS_MAX;
+				logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_LAYOUT), "Section address %i exceeds limits [1, %i]", &args);
+				return core.statusID = stCORE_ERROR_LAYOUT;
+			}
+			
+			/* Register in mapping table */
+			core.sectionMap[networkOrder[i]] = 0;
+			
+			/* Adjust index in flow direction */
 			if(flowDirection == stDIRECTION_RIGHT) {
 				if(i == sectionCount - 1) i = 0;
 				else i += 1;
@@ -157,18 +164,28 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 			break;
 		}
 	}
-	if(i >= sectionCount) { /* Search incomplete */
-		logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_LAYOUT), "Unable to match head section with system layout", NULL);
-		return core.statusID = stCORE_ERROR_LAYOUT;
-	}
 	
-	j = 1; k = 0;
-	while(networkOrder[i] != headSection) { /* Build flow order following network order in flow direction */
-		if(++k > sectionCount) {
+	/* Walk from head in flow direction through network order */
+	j = 1; k = 1;
+	while(networkOrder[i] != headSection) {
+		/* Monitor loop */
+		if(++k > sectionCount) { 
 			logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_LAYOUT), "Unexpected system layout section order", NULL);
 			return core.statusID = stCORE_ERROR_LAYOUT;
 		}
-		flowOrder[j++] = networkOrder[i];
+		
+		/* Check address */
+		if(networkOrder[i] < 1 || CORE_SECTION_ADDRESS_MAX < networkOrder[i]) {
+			args.i[0] = networkOrder[i];
+			args.i[1] = CORE_SECTION_ADDRESS_MAX;
+			logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_LAYOUT), "Section address %i exceeds limits [1, %i]", &args);
+			return core.statusID = stCORE_ERROR_LAYOUT;
+		}
+		
+		/* Register in mapping table */
+		core.sectionMap[networkOrder[i]] = j++;
+		
+		/* Adjust index in flow direction */
 		if(flowDirection == stDIRECTION_RIGHT) {
 			if(i == sectionCount - 1) i = 0;
 			else i += 1;
@@ -176,17 +193,6 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 		else {
 			if(i == 0) i = sectionCount - 1;
 			else i -= 1;
-		}
-	}
-	
-	for(i = 1; i < sectionCount; i++) { 
-		if(flowOrder[i] != flowOrder[i - 1] + 1) { /* Check flow order is in ascending order (system layout easy setup) */
-			args.i[0] = flowOrder[i];
-			args.i[1] = flowOrder[i - 1];
-			if(flowDirection == stDIRECTION_LEFT) coreStringCopy(args.s[0], "left", sizeof(args.s[0]));
-			else coreStringCopy(args.s[0], "right", sizeof(args.s[0]));
-			logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_LAYOUT), "Non-increasing numbering in flow direction. Section %i %s of section %i", &args);
-			return core.statusID = stCORE_ERROR_LAYOUT;
 		}
 	}
 	

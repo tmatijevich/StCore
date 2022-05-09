@@ -17,7 +17,7 @@ void StCoreSection(StCoreSection_typ *inst) {
 	/***********************
 	 Declare Local Variables
 	***********************/
-	static StCoreSection_typ *usedInst[CORE_SECTION_MAX];
+	static StCoreSection_typ *usedInst[CORE_SECTION_ADDRESS_MAX + 1];
 	coreFormatArgumentType args;
 	unsigned char *pSectionControl, *pSectionStatus;
 	unsigned long dataUInt32;
@@ -36,17 +36,25 @@ void StCoreSection(StCoreSection_typ *inst) {
 			resetOutput(inst);
 			if(inst->Enable) {
 				/* Check select */
-				if(inst->Section < 1 || core.interface.sectionCount < inst->Section) {
+				if(inst->Section < 1 || CORE_SECTION_ADDRESS_MAX < inst->Section) {
 					args.i[0] = inst->Section;
-					args.i[1] = core.interface.sectionCount;
-					logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_INPUT), "Section %i context of StCoreSection call exceeds limits [1, %]", &args);
+					args.i[1] = CORE_SECTION_ADDRESS_MAX;
+					logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_INPUT), "Section %i of StCoreSection call exceeds limits [1, %]", &args);
 					inst->Error = true;
 					inst->StatusID = stCORE_ERROR_INPUT;
 					inst->Internal.State = CORE_FUNCTION_ERROR;
 				}
+				else if(core.sectionMap[inst->Section] < 0) {
+					args.i[0] = inst->Section;
+					logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_INPUT), "Section %i of StCoreSection call is not defined in system layout", &args);
+					inst->Error = true;
+					inst->StatusID = stCORE_ERROR_INPUT;
+					inst->Internal.State = CORE_FUNCTION_ERROR;
+				}
+				
 				/* Register instance */
-				else if(usedInst[inst->Section - 1] == NULL) {
-					usedInst[inst->Section - 1] = inst;
+				else if(usedInst[inst->Section] == NULL) {
+					usedInst[inst->Section] = inst;
 					inst->Internal.Select = inst->Section;
 					inst->Internal.State = CORE_FUNCTION_EXECUTING;
 				}
@@ -60,9 +68,9 @@ void StCoreSection(StCoreSection_typ *inst) {
 				}
 			}
 			/* Unregister instance */
-			else if(1 <= inst->Section && inst->Section <= core.interface.sectionCount) {
-				if(usedInst[inst->Section - 1] == inst)
-					usedInst[inst->Section - 1] = NULL;
+			else if(1 <= inst->Section && inst->Section <= CORE_SECTION_ADDRESS_MAX) {
+				if(usedInst[inst->Section] == inst)
+					usedInst[inst->Section] = NULL;
 			}
 			break;
 			
@@ -89,7 +97,7 @@ void StCoreSection(StCoreSection_typ *inst) {
 			/*******
 			 Control
 			*******/
-			pSectionControl = core.pCyclicControl + core.interface.sectionControlOffset + inst->Section - 1;
+			pSectionControl = core.pCyclicControl + core.interface.sectionControlOffset + (unsigned char)core.sectionMap[inst->Internal.Select];
 			
 			/* Enable */
 			if(inst->EnableSection) SET_BIT(*pSectionControl, stSECTION_ENABLE);
@@ -102,7 +110,7 @@ void StCoreSection(StCoreSection_typ *inst) {
 			/******
 			 Status
 			******/
-			pSectionStatus = core.pCyclicStatus + core.interface.sectionStatusOffset + inst->Section - 1;
+			pSectionStatus = core.pCyclicStatus + core.interface.sectionStatusOffset + (unsigned char)core.sectionMap[inst->Internal.Select];
 			
 			inst->Enabled = GET_BIT(*pSectionStatus, stSECTION_ENABLED);
 			inst->UnrecognizedPallets = GET_BIT(*pSectionStatus, stSECTION_UNRECOGNIZED_PALLET);
@@ -116,21 +124,21 @@ void StCoreSection(StCoreSection_typ *inst) {
 			/********************
 			 Extended Information
 			********************/
-			SuperTrakServChanRead(inst->Section, stPAR_SECTION_FAULTS_ACTIVE, 1, 1, (unsigned long)&dataUInt32, sizeof(dataUInt32));
+			SuperTrakServChanRead(inst->Internal.Select, stPAR_SECTION_FAULTS_ACTIVE, 1, 1, (unsigned long)&dataUInt32, sizeof(dataUInt32));
 			for(i = 0; i < 32; i++) {
 				if(GET_BIT(dataUInt32, i) && !GET_BIT(inst->Info.Warnings, i))
-					coreLogFaultWarning(32 + i, inst->Section);
+					coreLogFaultWarning(32 + i, inst->Internal.Select);
 			}
 			memcpy(&inst->Info.Warnings, &dataUInt32, sizeof(inst->Info.Warnings));
 			
-			SuperTrakServChanRead(inst->Section, stPAR_SECTION_FAULTS_ACTIVE, 0, 1, (unsigned long)&dataUInt32, sizeof(dataUInt32));
+			SuperTrakServChanRead(inst->Internal.Select, stPAR_SECTION_FAULTS_ACTIVE, 0, 1, (unsigned long)&dataUInt32, sizeof(dataUInt32));
 			for(i = 0; i < 32; i++) {
 				if(GET_BIT(dataUInt32, i) && !GET_BIT(inst->Info.Faults, i))
-					coreLogFaultWarning(i, inst->Section);
+					coreLogFaultWarning(i, inst->Internal.Select);
 			}
 			memcpy(&inst->Info.Faults, &dataUInt32, sizeof(inst->Info.Faults));
 			
-			SuperTrakServChanRead(inst->Section, stPAR_SECTION_PALLET_COUNT, 0, 1, (unsigned long)&dataUInt16, sizeof(dataUInt16));
+			SuperTrakServChanRead(inst->Internal.Select, stPAR_SECTION_PALLET_COUNT, 0, 1, (unsigned long)&dataUInt16, sizeof(dataUInt16));
 			inst->Info.PalletCount = (unsigned char)dataUInt16;
 			
 			break;
@@ -140,8 +148,8 @@ void StCoreSection(StCoreSection_typ *inst) {
 			if(inst->ErrorReset && !inst->Internal.PreviousErrorReset) {
 				resetOutput(inst); /* Clear error */
 				/* Check if used instance (valid select) and go to EXECUTING otherwise DISABLED */
-				if(1 <= inst->Section && inst->Section <= core.interface.sectionCount) {
-					if(usedInst[inst->Section - 1] == inst)
+				if(1 <= inst->Section && inst->Section <= CORE_SECTION_ADDRESS_MAX) {
+					if(usedInst[inst->Section] == inst)
 						inst->Internal.State = CORE_FUNCTION_EXECUTING;
 					else
 						inst->Internal.State = CORE_FUNCTION_DISABLED;

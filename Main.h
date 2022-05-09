@@ -35,6 +35,7 @@ extern "C"
 #define CORE_COMMAND_COUNT 					48
 #define CORE_COMMAND_BUFFER_SIZE 			4U
 #define CORE_SECTION_MAX 					64 		/* SuperTrak is allowed up to 64 gateway communication boards */
+#define CORE_SECTION_ADDRESS_MAX 			99 		/* Users can number sections with 1-99 */
 #define CORE_CYCLE_TIME 					800U 	/* 800 us cycle time */
 #define CORE_COMMAND_TIMEOUT 				250000U /* 250 ms command request timeout */
 #define CORE_TARGET_RELEASE_PER_BYTE 		4U
@@ -141,6 +142,7 @@ struct coreGlobalType {
 	coreCommandType *pSimpleRelease;
 	coreCommandBufferType *pCommandBuffer;
 	SuperTrakControlIfConfig_t interface;
+	signed char sectionMap[CORE_SECTION_ADDRESS_MAX + 1]; /* Map user address 1-99 to offset 0-63, -1 for unused */
 	unsigned char targetCount;
 	unsigned char palletCount;
 	unsigned char networkIOCount;
