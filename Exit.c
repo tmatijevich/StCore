@@ -35,6 +35,8 @@ long StCoreExit(void) {
 		TMP_free(allocationSize, (void**)core.pCommandBuffer);
 	}
 	
+	coreLog(core.ident, CORE_LOG_SEVERITY_INFO, CORE_LOGBOOK_FACILITY, 1300, "Exit", "Allocated memory is free", NULL);
+	
 	return 0;
 	
-} /* Function definition */
+} /* End function */

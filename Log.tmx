@@ -28,6 +28,12 @@
         <seg>SuperTrak and StCore initialization complete</seg>
       </tuv>
     </tu>
+    <tu tuid="1610679572">
+      <note>Exit 1300</note>
+      <tuv xml:lang="en">
+        <seg>StCore shutdown complete</seg>
+      </tuv>
+    </tu>
     <tu tuid="-536803376">
       <note>Cyclic 2000</note>
       <tuv xml:lang="en">

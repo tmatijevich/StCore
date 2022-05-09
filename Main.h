@@ -163,7 +163,7 @@ void coreLogMessage(UserLogSeverityEnum severity, unsigned short code, char *mes
 void coreLogFormat(UserLogSeverityEnum severity, unsigned short code, char *message, FormatStringArgumentsType *args);
 unsigned short coreLogCode(long event);
 char* coreStringCopy(char *destination, const char *source, unsigned long size);
-void coreLogServiceChannel(unsigned short result, unsigned short parameter);
+void coreLogServiceChannel(unsigned short result, unsigned short parameter, char *object);
 void coreLogFaultWarning(unsigned char index, unsigned char section);
 
 /* Commands */

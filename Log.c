@@ -139,10 +139,10 @@ unsigned short coreLogCode(long event) {
 }
 
 /* Log service channel error responses for all StCore functions */
-void coreLogServiceChannel(unsigned short result, unsigned short parameter) {
+void coreLogServiceChannel(unsigned short result, unsigned short parameter, char *object) {
 	
 	/* Declare local variables */
-	FormatStringArgumentsType args;
+	coreFormatArgumentType args;
 	
 	/* Check result */
 	if(result == scERR_SUCCESS)
@@ -200,9 +200,9 @@ void coreLogServiceChannel(unsigned short result, unsigned short parameter) {
 			break;
 	}
 	
-	coreLogFormat(USERLOG_SEVERITY_CRITICAL, coreLogCode(stCORE_ERROR_COMM), "Serv. chan. error %i accessing par %i: %s", &args);
+	coreLog(core.ident, CORE_LOG_SEVERITY_ERROR, CORE_LOGBOOK_FACILITY, coreLogCode(stCORE_ERROR_COMM), object, "Serv. chan. error %i accessing par %i: %s", &args);
 	
-} /* Function defintion */
+} /* End function */
 
 /* Log SuperTrak faults and warnings */
 void coreLogFaultWarning(unsigned char index, unsigned char section) {

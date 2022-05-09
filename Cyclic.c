@@ -5,6 +5,10 @@
 *******************************************************************************/
 
 #include "Main.h"
+#define LOG_OBJECT "Cyclic"
+
+/* Prototypes */
+static long logMessage(coreLogSeverityEnum severity, unsigned short code, char *message, coreFormatArgumentType *args);
 
 /* Process SuperTrak control interface */
 long StCoreCyclic(void) {
@@ -14,7 +18,7 @@ long StCoreCyclic(void) {
 	***********************/
 	static unsigned char taskVerified;
 	RTInfo_typ fbRTInfo;
-	FormatStringArgumentsType args;
+	coreFormatArgumentType args;
 	static unsigned long timerSave, saveParameters;
 	long status;
 	SuperTrakControlIfConfig_t currentInterfaceConfig;
@@ -38,7 +42,7 @@ long StCoreCyclic(void) {
 		if(fbRTInfo.task_class != 1 || fbRTInfo.cycle_time != 800) {
 			args.i[0] = fbRTInfo.task_class;
 			args.i[1] = fbRTInfo.cycle_time;
-			coreLogFormat(USERLOG_SEVERITY_CRITICAL, coreLogCode(stCORE_ERROR_CYCLE), "Invalid task class %i or cycle time %i us", &args);
+			logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_CYCLE), "Invalid task class %i or cycle time %i us", &args);
 			core.error = true;
 			core.statusID = stCORE_ERROR_CYCLE;
 		}
@@ -52,7 +56,7 @@ long StCoreCyclic(void) {
 			saveParameters = 0x000020; /* Global parameters and PLC interface configuration */
 			status = SuperTrakServChanWrite(0, stPAR_SAVE_PARAMETERS, 0, 1, (unsigned long)&saveParameters, sizeof(saveParameters));
 			if(status != scERR_SUCCESS) {
-				coreLogServiceChannel((unsigned short)status, stPAR_SAVE_PARAMETERS);
+				coreLogServiceChannel((unsigned short)status, stPAR_SAVE_PARAMETERS, LOG_OBJECT);
 				core.error = true;
 				core.statusID = stCORE_ERROR_COMM;
 			}
@@ -63,7 +67,7 @@ long StCoreCyclic(void) {
 		
 	/* 4. Monitor changes to control interface configuration */
 	else if(memcmp(&currentInterfaceConfig, &core.interface, sizeof(currentInterfaceConfig)) != 0) {
-		coreLogMessage(USERLOG_SEVERITY_CRITICAL, coreLogCode(stCORE_ERROR_INTERFACE), "Please restart controller and do not modify control interface configuration");
+		logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_INTERFACE), "Please restart controller and do not modify control interface configuration", NULL);
 		core.error = true;
 		core.statusID = stCORE_ERROR_INTERFACE;
 	}
@@ -86,7 +90,7 @@ long StCoreCyclic(void) {
 		/* Do nothing */
 	}
 	else if(core.pCyclicControl == NULL || core.pCyclicStatus == NULL) {
-		coreLogMessage(USERLOG_SEVERITY_CRITICAL, coreLogCode(stCORE_ERROR_ALLOC), "StCoreCyclic() cannot reference cyclic control or status data due to null pointer");
+		logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_ALLOC), "StCoreCyclic() cannot reference cyclic control or status data due to null pointer", NULL);
 		core.error = true;
 		core.statusID = stCORE_ERROR_ALLOC;
 	}
@@ -104,4 +108,9 @@ long StCoreCyclic(void) {
 	
 	return core.statusID;
 	
-} /* Function definition */
+} /* End function */
+
+/* Create local logging function */
+long logMessage(coreLogSeverityEnum severity, unsigned short code, char *message, coreFormatArgumentType *args) {
+	return coreLog(core.ident, severity, CORE_LOGBOOK_FACILITY, code, LOG_OBJECT, message, args);
+}
