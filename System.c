@@ -5,20 +5,17 @@
 *******************************************************************************/
 
 #include "Main.h"
+#define LOG_OBJECT "System"
 
-static void clearOutputs(StCoreSystem_typ *inst);
-
-enum systemStateEnum {
-	SYSTEM_STATE_DISABLED = 0,
-	SYSTEM_STATE_EXECUTING = 1,
-	SYSTEM_STATE_ERROR = 255
-};
+/* Prototypes */
+static void resetOutput(StCoreSystem_typ *inst);
+static long logMessage(coreLogSeverityEnum severity, unsigned short code, char *message, coreFormatArgumentType *args);
 
 /* System core interface */
 void StCoreSystem(StCoreSystem_typ *inst) {
 	
 	/***********************
-	 Declare local variables
+	 Declare Local Variables
 	***********************/
 	static StCoreSystem_typ *usedInst;
 	unsigned short *pSystemControl, *pSystemStatus;
@@ -28,26 +25,26 @@ void StCoreSystem(StCoreSystem_typ *inst) {
 	SuperTrakPalletInfo_t palletInfo[255];
 		
 	/************
-	 Switch state
+	 Switch State
 	************/
 	/* Interrupt if disabled */
 	if(!inst->Enable)
-		inst->Internal.State = SYSTEM_STATE_DISABLED;
+		inst->Internal.State = CORE_FUNCTION_DISABLED;
 		
 	switch(inst->Internal.State) {
-		case SYSTEM_STATE_DISABLED:
-			clearOutputs(inst);
+		case CORE_FUNCTION_DISABLED:
+			resetOutput(inst);
 			if(inst->Enable) {
 				/* Register isntance */
 				if(usedInst == NULL) {
 					usedInst = inst;
-					inst->Internal.State = SYSTEM_STATE_EXECUTING;
+					inst->Internal.State = CORE_FUNCTION_EXECUTING;
 				}
 				else {
-					coreLogMessage(USERLOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_INST), "Multiple instances of StCoreSystem()");
+					logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_INST), "Multiple instances of StCoreSystem", NULL);
 					inst->Error = true;
 					inst->StatusID = stCORE_ERROR_INST;
-					inst->Internal.State = SYSTEM_STATE_ERROR;
+					inst->Internal.State = CORE_FUNCTION_ERROR;
 				}
 			}
 			/* Unregister instance */
@@ -56,22 +53,22 @@ void StCoreSystem(StCoreSystem_typ *inst) {
 			}
 			break;
 			
-		case SYSTEM_STATE_EXECUTING:
+		case CORE_FUNCTION_EXECUTING:
 			/* Check core error */
 			if(core.error) {
-				clearOutputs(inst);
+				resetOutput(inst);
 				inst->Error = true;
 				inst->StatusID = core.statusID;
-				inst->Internal.State = SYSTEM_STATE_ERROR;
+				inst->Internal.State = CORE_FUNCTION_ERROR;
 				break;
 			}
 			/* Check references */
 			if(core.pCyclicControl == NULL || core.pCyclicStatus == NULL) {
-				coreLogMessage(USERLOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_ALLOC), "StCoreSystem() cannot reference cyclic control or status data due to null pointer");
-				clearOutputs(inst);
+				logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_ALLOC), "StCoreSystem cannot reference cyclic data", NULL);
+				resetOutput(inst);
 				inst->Error = true;
 				inst->StatusID = stCORE_ERROR_ALLOC;
-				inst->Internal.State = SYSTEM_STATE_ERROR;
+				inst->Internal.State = CORE_FUNCTION_ERROR;
 				break;
 			}
 			/* Report valid */
@@ -83,21 +80,21 @@ void StCoreSystem(StCoreSystem_typ *inst) {
 			pSystemControl = (unsigned short*)(core.pCyclicControl + core.interface.systemControlOffset);
 			
 			/* Enable */
-			if(inst->EnableAllSections) SET_BIT(*pSystemControl, 0);
-			else CLEAR_BIT(*pSystemControl, 0);
+			if(inst->EnableAllSections) SET_BIT(*pSystemControl, stSYSTEM_ENABLE_ALL_SECTIONS);
+			else CLEAR_BIT(*pSystemControl, stSYSTEM_ENABLE_ALL_SECTIONS);
 			
 			/* Clear faults/warnings */
-			if(inst->AcknowledgeFaults) SET_BIT(*pSystemControl, 7);
-			else CLEAR_BIT(*pSystemControl, 7);
+			if(inst->AcknowledgeFaults) SET_BIT(*pSystemControl, stSYSTEM_ACKNOWLEDGE_FAULTS);
+			else CLEAR_BIT(*pSystemControl, stSYSTEM_ACKNOWLEDGE_FAULTS);
 			
 			/******
 			 Status
 			******/
 			pSystemStatus = (unsigned short*)(core.pCyclicStatus + core.interface.systemStatusOffset);
 			
-			inst->PalletsStopped = GET_BIT(*pSystemStatus, 4);
-			inst->WarningPresent = GET_BIT(*pSystemStatus, 6);
-			inst->FaultPresent = GET_BIT(*pSystemStatus, 7);
+			inst->PalletsStopped = GET_BIT(*pSystemStatus, stSYSTEM_PALLETS_STOPPED);
+			inst->WarningPresent = GET_BIT(*pSystemStatus, stSYSTEM_WARNING);
+			inst->FaultPresent = GET_BIT(*pSystemStatus, stSYSTEM_FAULT);
 			inst->PalletCount = (unsigned char)(*(pSystemStatus + 1)); /* Access the next 16 bits */
 			
 			/* Extended information */
@@ -128,12 +125,12 @@ void StCoreSystem(StCoreSystem_typ *inst) {
 				/* Reference the section status byte */
 				pSectionStatus = core.pCyclicStatus + core.interface.sectionStatusOffset + i;
 				
-				if(GET_BIT(*pSectionStatus, 0)) inst->Info.Disabled = false;
+				if(GET_BIT(*pSectionStatus, stSECTION_ENABLED)) inst->Info.Disabled = false;
 				else inst->Info.Enabled = false;
-				if(!GET_BIT(*pSectionStatus, 2)) inst->Info.MotorPower = false;
-				if(GET_BIT(*pSectionStatus, 5)) inst->Info.DisabledExternally = true;
-				if(GET_BIT(*pSectionStatus, 6)) inst->Info.SectionWarningPresent = true;
-				if(GET_BIT(*pSectionStatus, 7)) inst->Info.SectionFaultPresent = true;
+				if(!GET_BIT(*pSectionStatus, stSECTION_MOTOR_POWER_ON)) inst->Info.MotorPower = false;
+				if(GET_BIT(*pSectionStatus, stSECTION_DISABLED_EXTERNALLY)) inst->Info.DisabledExternally = true;
+				if(GET_BIT(*pSectionStatus, stSECTION_WARNING)) inst->Info.SectionWarningPresent = true;
+				if(GET_BIT(*pSectionStatus, stSECTION_FAULT)) inst->Info.SectionFaultPresent = true;
 			}
 			
 			/* Pallet information */
@@ -141,10 +138,10 @@ void StCoreSystem(StCoreSystem_typ *inst) {
 			inst->Info.PalletInitializingCount = 0;
 			SuperTrakGetPalletInfo((unsigned long)&palletInfo, COUNT_OF(palletInfo), false);
 			for(i = 0; i < COUNT_OF(palletInfo); i++) {
-				if(GET_BIT(palletInfo[i].status, 0)) { /* Pallet present */
-					if(GET_BIT(palletInfo[i].status, 1))
+				if(GET_BIT(palletInfo[i].status, stPALLET_PRESENT)) { /* Pallet present */
+					if(GET_BIT(palletInfo[i].status, stPALLET_RECOVERING))
 						inst->Info.PalletRecoveringCount++;
-					if(GET_BIT(palletInfo[i].status, 5))
+					if(GET_BIT(palletInfo[i].status, stPALLET_INITIALIZING))
 						inst->Info.PalletInitializingCount++;
 				}
 			}
@@ -153,11 +150,11 @@ void StCoreSystem(StCoreSystem_typ *inst) {
 			
 		default:
 			if(inst->ErrorReset && !inst->Internal.PreviousErrorReset) {
-				clearOutputs(inst);
+				resetOutput(inst);
 				if(inst == usedInst)
-					inst->Internal.State = SYSTEM_STATE_EXECUTING;
+					inst->Internal.State = CORE_FUNCTION_EXECUTING;
 				else
-					inst->Internal.State = SYSTEM_STATE_DISABLED;
+					inst->Internal.State = CORE_FUNCTION_DISABLED;
 			}
 			
 			break;
@@ -165,10 +162,10 @@ void StCoreSystem(StCoreSystem_typ *inst) {
 	
 	inst->Internal.PreviousErrorReset = inst->ErrorReset;
 	
-} /* Function defintion */
+} /* End function */
 
-/* Clean instance outputs */
-void clearOutputs(StCoreSystem_typ *inst) {
+/* Clear instance outputs */
+void resetOutput(StCoreSystem_typ *inst) {
 	inst->Valid = false;
 	inst->Error = false;
 	inst->StatusID = 0;
@@ -177,4 +174,9 @@ void clearOutputs(StCoreSystem_typ *inst) {
 	inst->FaultPresent = false;
 	inst->PalletCount = 0;
 	memset(&inst->Info, 0, sizeof(inst->Info));
+}
+
+/* Create local logging function */
+long logMessage(coreLogSeverityEnum severity, unsigned short code, char *message, coreFormatArgumentType *args) {
+	return coreLog(core.ident, severity, CORE_LOGBOOK_FACILITY, code, LOG_OBJECT, message, args);
 }

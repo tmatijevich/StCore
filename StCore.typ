@@ -18,18 +18,10 @@ TYPE
 		PalletRecoveringCount : USINT; (*(Derived) Total number of pallets reporting recovering status*)
 		PalletInitializingCount : USINT; (*(Derived) Total number of palelts reporting initializing (moving to load target) status*)
 	END_STRUCT;
-	StCoreSystemInternalType : 	STRUCT  (*Local internal system information*)
-		State : USINT; (*Execution state*)
-		PreviousErrorReset : BOOL; (*Previous ErrorReset value*)
-	END_STRUCT;
 	StCoreSectionInfoType : 	STRUCT  (*Extended section information*)
 		Warnings : UDINT; (*(Par 1480) Active SuperTrak section warnings*)
 		Faults : UDINT; (*(Par 1480) Active SuperTrak section faults*)
 		PalletCount : USINT; (*(Par 1502) Number of pallets on the section*)
-	END_STRUCT;
-	StCoreSectionInternalType : 	STRUCT  (*Local internal section information*)
-		State : USINT; (*Execution state*)
-		PreviousErrorReset : BOOL; (*Previous ErrorReset value*)
 	END_STRUCT;
 	StCoreFunctionInternalType : 	STRUCT  (*Local internal function information*)
 		State : USINT; (*Execution state*)

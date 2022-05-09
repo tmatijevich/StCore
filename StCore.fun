@@ -43,7 +43,7 @@ FUNCTION_BLOCK StCoreSystem (*SuperTrak system interface function*)
 		Info : StCoreSystemInfoType; (*Extended system information*)
 	END_VAR
 	VAR
-		Internal : StCoreSystemInternalType; (*Local internal data*)
+		Internal : StCoreFunctionInternalType; (*Local internal data*)
 	END_VAR
 END_FUNCTION_BLOCK
 
@@ -70,7 +70,7 @@ FUNCTION_BLOCK StCoreSection (*SuperTrak section interface function*)
 		Info : StCoreSectionInfoType; (*Extended section information*)
 	END_VAR
 	VAR
-		Internal : StCoreSectionInternalType; (*Local internal data*)
+		Internal : StCoreFunctionInternalType; (*Local internal data*)
 	END_VAR
 END_FUNCTION_BLOCK
 (*Simple target release*)

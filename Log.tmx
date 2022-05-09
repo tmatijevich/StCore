@@ -88,6 +88,12 @@
         <seg>StCore pallet command buffer is now full and will reject commands until cleared</seg>
       </tuv>
     </tu>
+    <tu tuid="-1610542000">
+      <note>Any 5200</note>
+      <tuv xml:lang="en">
+        <seg>StCore index selection change ignored while enabled</seg>
+      </tuv>
+    </tu>
     <tu tuid="1610684272">
       <note>Any 6000</note>
       <tuv xml:lang="en">
