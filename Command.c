@@ -5,58 +5,60 @@
 *******************************************************************************/
 
 #include "Main.h"
+#define LOG_OBJECT "Command"
 
-#define CHANNEL_BYTE_MAX 8 /* 8 bytes (64 bits) for a maximum of 64 command channels */
-
-static void setCommandName(char *str, unsigned char ID, unsigned long size);
-static void setContextName(char *str, unsigned char ID, unsigned long size);
-static void setDirectionName(char *str, unsigned char ID, unsigned long size);
-static void setDestinationName(char *str, unsigned char ID, unsigned char destination, unsigned long size);
-void getParameterString(char *str, unsigned long size, SuperTrakCommand_t data);
+/* Prototypes */
+static long logMessage(coreLogSeverityEnum severity, unsigned short code, char *message, coreFormatArgumentType *args);
+static void getCommand(char *str, unsigned long size, SuperTrakCommand_t data);
+static void getContext(char *str, unsigned long size, SuperTrakCommand_t data);
+static void getDirection(char *str, unsigned long size, SuperTrakCommand_t data);
+static void getParameter(char *str, unsigned long size, SuperTrakCommand_t data);
 
 /* Create command ID, context, and buffer assignment */
 long coreCommandCreate(unsigned char start, unsigned char target, unsigned char pallet, unsigned short direction, coreCommandCreateType *create) {
 	
 	/***********************
-	 Declare local variables
+	 Declare Local Variables
 	***********************/
 	unsigned char *pPalletPresent;
-	FormatStringArgumentsType args;
+	coreFormatArgumentType args;
+	SuperTrakCommand_t data;
 	
 	/*****************
-	 Derive command ID
+	 Derive Command ID
 	*****************/
 	/* Add 1 if direction is right, add 2 if pallet context */
-	/* Exception: There is no direction choice for configuration (start < 64) */
+	/* Exception: There is no direction choice for configuration (start >= 64) */
 	/* Exception: The set pallet ID command can only be in context of target (start != 64) */
-	create->commandID = start + (unsigned char)(direction > 0 && start < 64) + 2 * (unsigned char)(target == 0 && start != 64);
+	create->commandID = start + (unsigned char)(direction > 0 && start < CORE_COMMAND_ID_PALLET_ID) + 2 * (unsigned char)(target == 0 && start != CORE_COMMAND_ID_PALLET_ID);
 	
-	/***********************
-	 Check global references
-	***********************/
-	setCommandName(args.s[0], create->commandID, sizeof(args.s[0]));
+	/***************
+	 Check Reference
+	***************/
+	data.u1[0] = create->commandID;
+	getCommand(args.s[0], sizeof(args.s[0]), data);
 	if(core.pCyclicStatus == NULL) {
-		coreLogFormat(USERLOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_ALLOC), "%s command assignment cannot reference cyclic data", &args);
+		logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_ALLOC), "%s command assignment cannot reference cyclic data", &args);
 		return stCORE_ERROR_ALLOC;
 	}
 	
-	/********************************
-	 Assign context and manager index
-	********************************/
+	/*************************
+	 Assign Context and Buffer
+	*************************/
 	if(target != 0) {
 		if(target > core.targetCount) {
 			args.i[0] = target;
 			args.i[1] = core.targetCount;
-			coreLogFormat(USERLOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_INPUT), "Target %i context exceeds count [1, %i] of %s command", &args);
+			logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_INPUT), "%s command's target %i context exceeds limits [1, %i]", &args);
 			return stCORE_ERROR_INPUT;
 		}
-					
-		pPalletPresent = core.pCyclicStatus + core.interface.targetStatusOffset + 3 * target + 1;
+			
+		pPalletPresent = core.pCyclicStatus + core.interface.targetStatusOffset + CORE_TARGET_STATUS_BYTE_COUNT * target + 1;
 		if(*pPalletPresent < 1 || core.palletCount < *pPalletPresent) {
-			args.i[0] = *pPalletPresent;
-			args.i[1] = target;
+			args.i[0] = target;
+			args.i[1] = *pPalletPresent;
 			args.i[2] = core.palletCount;
-			coreLogFormat(USERLOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_INPUT), "Pallet %i present at target %i exceeds count [1, %i] of %s command", &args);
+			logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_INPUT), "%s command's target %i context with pallet %i present exceeding limits [1, %i]", &args);
 			return stCORE_ERROR_INPUT;
 		}
 		
@@ -67,7 +69,7 @@ long coreCommandCreate(unsigned char start, unsigned char target, unsigned char 
 		if(pallet < 1 || core.palletCount < pallet) {
 			args.i[0] = pallet;
 			args.i[1] = core.palletCount;
-			coreLogFormat(USERLOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_INPUT), "Pallet %i context exceeds count [1, %i] of %s command", &args);
+			logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_INPUT), "%s command's pallet %i context exceeds limits [1, %i]", &args);
 			return stCORE_ERROR_INPUT;
 		}
 		
@@ -83,17 +85,17 @@ long coreCommandCreate(unsigned char start, unsigned char target, unsigned char 
 long coreCommandRequest(unsigned char index, SuperTrakCommand_t command, void *pInstance, coreCommandType **ppCommand) {
 	
 	/***********************
-	 Declare local variables
+	 Declare Local Variables
 	***********************/
 	coreCommandBufferType *pBuffer;
 	coreCommandType *pCommand;
-	FormatStringArgumentsType args;
+	coreFormatArgumentType args;
 	
-	/****************
-	 Check references
-	****************/
+	/***************
+	 Check Reference
+	***************/
 	if(core.pCommandBuffer == NULL) {
-		coreLogFormat(USERLOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_ALLOC), "%s command request cannot reference command manager", &args);
+		logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_ALLOC), "%s command request cannot reference command buffer", &args);
 		return stCORE_ERROR_ALLOC;
 	}
 	
@@ -104,13 +106,13 @@ long coreCommandRequest(unsigned char index, SuperTrakCommand_t command, void *p
 	pCommand = &pBuffer->buffer[pBuffer->write];
 	
 	/* Prepare message */
-	setContextName(args.s[0], command.u1[0], sizeof(args.s[0]));
+	getContext(args.s[0], sizeof(args.s[0]), command);
 	args.i[0] = command.u1[1];
-	setCommandName(args.s[1], command.u1[0], sizeof(args.s[1]));
+	getCommand(args.s[1], sizeof(args.s[1]), command);
 	
 	/* Check if pending or busy */
 	if(GET_BIT(pCommand->status, CORE_COMMAND_PENDING) || GET_BIT(pCommand->status, CORE_COMMAND_BUSY)) {
-		coreLogFormat(USERLOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_BUFFER), "%s %i %s command rejected because buffer is full", &args);
+		logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_BUFFER), "%s %i %s command rejected because buffer is full", &args);
 		return stCORE_ERROR_BUFFER;
 	}
 	
@@ -125,8 +127,8 @@ long coreCommandRequest(unsigned char index, SuperTrakCommand_t command, void *p
 	if(ppCommand != NULL) *ppCommand = pCommand;
 	
 	/* Debug comfirmation message */
-	getParameterString(args.s[2], sizeof(args.s[2]), command);
-	coreLogFormat(USERLOG_SEVERITY_DEBUG, 5200, "%s %i %s command request (%s)", &args);
+	getParameter(args.s[2], sizeof(args.s[2]), command);
+	logMessage(CORE_LOG_SEVERITY_DEBUG, 5200, "%s %i %s command request (%s)", &args);
 	
 	/* Increment write index and check if full */
 	pBuffer->write = (pBuffer->write + 1) % CORE_COMMAND_BUFFER_SIZE;
@@ -134,7 +136,7 @@ long coreCommandRequest(unsigned char index, SuperTrakCommand_t command, void *p
 	if(GET_BIT(pCommand->status, CORE_COMMAND_PENDING) || GET_BIT(pCommand->status, CORE_COMMAND_BUSY)) {
 		args.i[0] = index;
 		args.i[1] = CORE_COMMAND_BUFFER_SIZE;
-		coreLogFormat(USERLOG_SEVERITY_WARNING, coreLogCode(stCORE_WARNING_BUFFER), "Pallet %i command buffer is now full (size = %i)", &args);
+		logMessage(CORE_LOG_SEVERITY_WARNING, coreLogCode(stCORE_WARNING_BUFFER), "Pallet %i command buffer is now full (size = %i)", &args);
 	}
 	
 	return 0;
@@ -145,7 +147,7 @@ long coreCommandRequest(unsigned char index, SuperTrakCommand_t command, void *p
 void coreCommandManager(void) {
 	
 	/***********************
-	 Declare local variables
+	 Declare Local Variables
 	***********************/
 	static unsigned char logAlloc = true, logPause = true;
 	coreCommandBufferType *pBuffer;
@@ -153,20 +155,20 @@ void coreCommandManager(void) {
 	SuperTrakCommand_t *pChannel;
 	long i, j;
 	unsigned char *pTrigger, *pComplete, *pSuccess, complete, success, pause;
-	static unsigned char used[CHANNEL_BYTE_MAX], reset[CHANNEL_BYTE_MAX], channel, start;
+	static unsigned char used[CORE_COMMAND_BYTE_MAX], reset[CORE_COMMAND_BYTE_MAX], channel, start;
 	static unsigned long timer[CORE_COMMAND_COUNT];
 	coreCommandType *pSimpleCommand; /* Simple target release command storage */
 	unsigned char *pTargetRelease, *pTargetStatus, lowerBit, upperBit; /* Simple target release and target status cyclic bits */
 	unsigned long *pSimpleReleaseTimer;
-	FormatStringArgumentsType args;
+	coreFormatArgumentType args;
 	
 	/****************
-	 Check references
+	 Check References
 	****************/
 	if(core.pCyclicControl == NULL || core.pCyclicStatus == NULL || core.pCommandBuffer == NULL || core.pSimpleRelease == NULL) {
 		if(logAlloc) {
 			logAlloc = false;
-			coreLogMessage(USERLOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_ALLOC), "StCoreCyclic (coreCommandManager) is unable to reference cyclic data or command buffers");
+			logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_ALLOC), "StCoreCyclic (coreCommandManager) is unable to reference cyclic data or command buffer", NULL);
 		}
 		return;
 	}
@@ -174,7 +176,7 @@ void coreCommandManager(void) {
 		logAlloc = true;
 	
 	/***********************
-	 Process command buffers
+	 Process Command Buffers
 	***********************/
 	pause = false; /* Reset pause for channel availability */
 	i = start; j = 0;
@@ -186,38 +188,38 @@ void coreCommandManager(void) {
 		/* Pallet buffer busy sending command */
 		if(GET_BIT(pCommand->status, CORE_COMMAND_BUSY)) {
 			/* Access data */
-			pTrigger = core.pCyclicControl + core.interface.commandTriggerOffset + pBuffer->channel / 8; /* Trigger group */
+			pTrigger = core.pCyclicControl + core.interface.commandTriggerOffset + pBuffer->channel / CORE_COMMAND_TRIGGER_PER_BYTE; /* Trigger group */
 			pChannel = (SuperTrakCommand_t*)(core.pCyclicControl + core.interface.commandDataOffset) + pBuffer->channel;
-			pComplete = core.pCyclicStatus + core.interface.commandCompleteOffset + pBuffer->channel / 8;
-			pSuccess = core.pCyclicStatus + core.interface.commandSuccessOffset + pBuffer->channel / 8;
-			complete = GET_BIT(*pComplete, pBuffer->channel % 8);
-			success = GET_BIT(*pSuccess, pBuffer->channel % 8);
+			pComplete = core.pCyclicStatus + core.interface.commandCompleteOffset + pBuffer->channel / CORE_COMMAND_COMPLETE_PER_BYTE;
+			pSuccess = core.pCyclicStatus + core.interface.commandSuccessOffset + pBuffer->channel / CORE_COMMAND_SUCCESS_PER_BYTE;
+			complete = GET_BIT(*pComplete, pBuffer->channel % CORE_COMMAND_COMPLETE_PER_BYTE);
+			success = GET_BIT(*pSuccess, pBuffer->channel % CORE_COMMAND_SUCCESS_PER_BYTE);
 			
 			/* Track time */
-			timer[pBuffer->channel] += 800;
+			timer[pBuffer->channel] += CORE_CYCLE_TIME;
 			
 			/* Build message */
-			setContextName(args.s[0], pChannel->u1[0], sizeof(args.s[0]));
+			getContext(args.s[0], sizeof(args.s[0]), *pChannel);
 			args.i[0] = pChannel->u1[1];
-			setCommandName(args.s[1], pChannel->u1[0], sizeof(args.s[1]));
+			getCommand(args.s[1], sizeof(args.s[1]), *pChannel);
 			
 			/* Wait for complete or timeout */
 			if(complete) {
 				/* Confirm success or failure */
 				if(success)
-					coreLogFormat(USERLOG_SEVERITY_DEBUG, 6000, "%s %i %s command acknowledged", &args);
+					logMessage(CORE_LOG_SEVERITY_DEBUG, 6000, "%s %i %s command acknowledged", &args);
 				else {
-					coreLogFormat(USERLOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_COMMAND), "%s %i %s command execution failed", &args);
+					logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_COMMAND), "%s %i %s command execution failed", &args);
 					SET_BIT(pCommand->status, CORE_COMMAND_ERROR);
 				}
 				
 				/* Clear cyclic data and timer */
 				memset(pChannel, 0, sizeof(*pChannel));
-				CLEAR_BIT(*pTrigger, pBuffer->channel % 8);
+				CLEAR_BIT(*pTrigger, pBuffer->channel % CORE_COMMAND_TRIGGER_PER_BYTE);
 				timer[pBuffer->channel] = 0;
 				
 				/* Reopen channels only after all pallet buffers have all been polled */
-				SET_BIT(reset[channel / 8], channel % 8);
+				SET_BIT(reset[channel / CORE_COMMAND_TRIGGER_PER_BYTE], channel % CORE_COMMAND_TRIGGER_PER_BYTE);
 				
 				/* Update command status */
 				CLEAR_BIT(pCommand->status, CORE_COMMAND_BUSY);
@@ -226,12 +228,12 @@ void coreCommandManager(void) {
 				/* Move to next command in buffer */
 				pBuffer->read = (pBuffer->read + 1) % CORE_COMMAND_BUFFER_SIZE;
 			}
-			else if(timer[pBuffer->channel] >= 500000) {
-				coreLogFormat(USERLOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_TIMEOUT), "%s %i %s command execution timed out", &args);
+			else if(timer[pBuffer->channel] >= CORE_COMMAND_TIMEOUT) {
+				logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_TIMEOUT), "%s %i %s command execution timed out", &args);
 				
 				/* Clear cyclic data and timer */
 				memset(pCommand, 0, sizeof(*pCommand));
-				CLEAR_BIT(*pTrigger, pBuffer->channel % 8);
+				CLEAR_BIT(*pTrigger, pBuffer->channel % CORE_COMMAND_TRIGGER_PER_BYTE);
 				timer[pBuffer->channel] = 0;
 				
 				/* Update command status */
@@ -247,12 +249,12 @@ void coreCommandManager(void) {
 		/* Pallet buffer has command pending */
 		else if(!pause && GET_BIT(pCommand->status, CORE_COMMAND_PENDING)) {
 			/* Is the next channel available? */
-			if(GET_BIT(used[channel / 8], channel % 8)) {
+			if(GET_BIT(used[channel / CORE_COMMAND_TRIGGER_PER_BYTE], channel % CORE_COMMAND_TRIGGER_PER_BYTE)) {
 				pause = true; /* Pause for the rest of this loop */
 				start = i; /* Remember spot where the pause started */
 				if(logPause) {
 					logPause = false;
-					coreLogMessage(USERLOG_SEVERITY_WARNING, 6001, "Pallet command buffers are paused because all channels are in use");
+					logMessage(CORE_LOG_SEVERITY_ERROR, 6001, "Pallet command buffers are paused because all channels are in use", NULL);
 				}
 			}
 			else {
@@ -261,8 +263,8 @@ void coreCommandManager(void) {
 				memcpy(pChannel, &pCommand->command, sizeof(SuperTrakCommand_t));
 				
 				/* Set trigger */
-				pTrigger = core.pCyclicControl + core.interface.commandTriggerOffset + channel / 8;
-				SET_BIT(*pTrigger, channel % 8);
+				pTrigger = core.pCyclicControl + core.interface.commandTriggerOffset + channel / CORE_COMMAND_TRIGGER_PER_BYTE;
+				SET_BIT(*pTrigger, channel % CORE_COMMAND_TRIGGER_PER_BYTE);
 				
 				/* Update command channel and status */
 				pBuffer->channel = channel;
@@ -270,7 +272,7 @@ void coreCommandManager(void) {
 				SET_BIT(pCommand->status, CORE_COMMAND_BUSY);
 				
 				/* Mark the channel as used. Increment channel index */
-				SET_BIT(used[channel / 8], channel % 8);
+				SET_BIT(used[channel / CORE_COMMAND_TRIGGER_PER_BYTE], channel % CORE_COMMAND_TRIGGER_PER_BYTE);
 				channel = (channel + 1) % CORE_COMMAND_COUNT;
 				
 				/* Re-enable pause warning log message */
@@ -286,9 +288,9 @@ void coreCommandManager(void) {
 		
 	/* Re-open channels */
 	for(i = 0; i < CORE_COMMAND_COUNT; i++) {
-		if(GET_BIT(reset[i / 8], i % 8)) {
-			CLEAR_BIT(reset[i / 8], i % 8);
-			CLEAR_BIT(used[i / 8], i % 8);
+		if(GET_BIT(reset[i / CORE_COMMAND_TRIGGER_PER_BYTE], i % CORE_COMMAND_TRIGGER_PER_BYTE)) {
+			CLEAR_BIT(reset[i / CORE_COMMAND_TRIGGER_PER_BYTE], i % CORE_COMMAND_TRIGGER_PER_BYTE);
+			CLEAR_BIT(used[i / CORE_COMMAND_TRIGGER_PER_BYTE], i % CORE_COMMAND_TRIGGER_PER_BYTE);
 		}
 	}
 	
@@ -315,6 +317,10 @@ void coreCommandManager(void) {
 			
 			/* 1. First check for an error */
 			if(GET_BIT(*pTargetStatus, stTARGET_RELEASE_ERROR)) {
+				args.i[0] = i + 1;
+				args.i[1] = pSimpleCommand->command.u1[0];
+				logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_COMMAND), "Target %i release from local move configuration %i has failed", &args);
+				
 				/* Clear release bits */
 				CLEAR_BIT(*pTargetRelease, lowerBit);
 				CLEAR_BIT(*pTargetRelease, upperBit);
@@ -328,6 +334,10 @@ void coreCommandManager(void) {
 			/* 2. Next check for not present */
 			/* Need to check for error first in case pallet was never present */
 			else if(!GET_BIT(*pTargetStatus, stTARGET_PALLET_PRESENT)) {
+				args.i[0] = i + 1;
+				args.i[1] = pSimpleCommand->command.u1[0];
+				logMessage(CORE_LOG_SEVERITY_DEBUG, 6100, "Target %i release from local move configuration %i acknowledged", &args);
+				
 				/* Clear release bits */
 				CLEAR_BIT(*pTargetRelease, lowerBit);
 				CLEAR_BIT(*pTargetRelease, upperBit);
@@ -339,6 +349,10 @@ void coreCommandManager(void) {
 			
 			/* 3. Check for timeout */
 			else if(*pSimpleReleaseTimer > CORE_COMMAND_TIMEOUT) {
+				args.i[0] = i + 1;
+				args.i[1] = pSimpleCommand->command.u1[0];
+				logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_TIMEOUT), "Target %i release from local move configuration %i has timed out", &args);
+				
 				/* Clear release bits */
 				CLEAR_BIT(*pTargetRelease, lowerBit);
 				CLEAR_BIT(*pTargetRelease, upperBit);
@@ -377,68 +391,107 @@ void coreCommandManager(void) {
 	
 } /* End function */
 
+/* Create local logging function */
+long logMessage(coreLogSeverityEnum severity, unsigned short code, char *message, coreFormatArgumentType *args) {
+	return coreLog(core.ident, severity, CORE_LOGBOOK_FACILITY, code, LOG_OBJECT, message, args);
+}
+
 /* Write lowercase command name to str */
-void setCommandName(char *str, unsigned char ID, unsigned long size) {
-	if(ID == 16 || ID == 17 || ID == 18 || ID == 19)
+void getCommand(char *str, unsigned long size, SuperTrakCommand_t data) {
+	if(CORE_COMMAND_ID_RELEASE <= data.u1[0] && data.u1[0] <= CORE_COMMAND_ID_RELEASE + 3)
 		coreStringCopy(str, "release pallet", size);
-	else if(ID == 24 || ID == 25 || ID == 26 || ID == 27)
+	else if(CORE_COMMAND_ID_OFFSET <= data.u1[0] && data.u1[0] <= CORE_COMMAND_ID_OFFSET + 3)
 		coreStringCopy(str, "release target offset", size);
-	else if(ID == 28 || ID == 29 || ID == 30 || ID == 31)
+	else if(CORE_COMMAND_ID_INCREMENT <= data.u1[0] && data.u1[0] <= CORE_COMMAND_ID_INCREMENT + 3)
 		coreStringCopy(str, "release incremental offset", size);
-	else if(ID == 60 || ID == 62)
+	else if(data.u1[0] == CORE_COMMAND_ID_CONTINUE || data.u1[0] == CORE_COMMAND_ID_CONTINUE + 2)
 		coreStringCopy(str, "continue move", size);
-	else if(ID == 64)
+	else if(data.u1[0] == CORE_COMMAND_ID_PALLET_ID)
 		coreStringCopy(str, "set pallet ID", size);
-	else if(ID == 68 || ID == 70)
+	else if(data.u1[0] == CORE_COMMAND_ID_MOTION || data.u1[0] == CORE_COMMAND_ID_MOTION + 2)
 		coreStringCopy(str, "set motion parameters", size);
-	else if(ID == 72 || ID == 74)
+	else if(data.u1[0] == CORE_COMMAND_ID_MECHANICAL || data.u1[0] == CORE_COMMAND_ID_MECHANICAL + 2)
 		coreStringCopy(str, "set mechanical parameters", size);
-	else if(ID == 76 || ID == 78)
+	else if(data.u1[0] == CORE_COMMAND_ID_CONTROL || data.u1[0] == CORE_COMMAND_ID_CONTROL + 2)
 		coreStringCopy(str, "set control parameters", size);
 	else
 		coreStringCopy(str, "unknown", size);
 }
 
 /* Write uppercase context name to str based on command */
-void setContextName(char *str, unsigned char ID, unsigned long size) {
-	if(ID == 16 || ID == 17 || ID == 24 || ID == 25 || ID == 28 || ID == 29 || ID == 60 || ID == 64 || ID == 68 || ID == 72 || ID == 76)
+void getContext(char *str, unsigned long size, SuperTrakCommand_t data) {
+	if(data.u1[0] == CORE_COMMAND_ID_RELEASE || data.u1[0] == CORE_COMMAND_ID_RELEASE + 1 ||
+	  data.u1[0] == CORE_COMMAND_ID_OFFSET || data.u1[0] == CORE_COMMAND_ID_OFFSET + 1 ||
+	  data.u1[0] == CORE_COMMAND_ID_INCREMENT || data.u1[0] == CORE_COMMAND_ID_INCREMENT + 1 ||
+	  data.u1[0] == CORE_COMMAND_ID_CONTINUE || data.u1[0] == CORE_COMMAND_ID_PALLET_ID || data.u1[0] == CORE_COMMAND_ID_MOTION || data.u1[0] == CORE_COMMAND_ID_MECHANICAL || data.u1[0] == CORE_COMMAND_ID_CONTROL)
 		coreStringCopy(str, "Target", size);
-	else if(ID == 18 || ID == 19 || ID == 26 || ID == 27 || ID == 30 || ID == 31 || ID == 62 || ID == 70 || ID == 74 || ID == 78)
+	else if(data.u1[0] == CORE_COMMAND_ID_RELEASE + 2 || data.u1[0] == CORE_COMMAND_ID_RELEASE + 3 ||
+	  data.u1[0] == CORE_COMMAND_ID_OFFSET + 2 || data.u1[0] == CORE_COMMAND_ID_OFFSET + 3 ||
+	  data.u1[0] == CORE_COMMAND_ID_INCREMENT + 2 || data.u1[0] == CORE_COMMAND_ID_INCREMENT + 3 ||
+	  data.u1[0] == CORE_COMMAND_ID_CONTINUE + 2 || data.u1[0] == CORE_COMMAND_ID_MOTION + 2 || data.u1[0] == CORE_COMMAND_ID_MECHANICAL + 2 || data.u1[0] == CORE_COMMAND_ID_CONTROL + 2)
 		coreStringCopy(str, "Pallet", size);
 	else
 		coreStringCopy(str, "Unknown", size);
 }
 
 /* Write lowercase direction name to str based on command */
-void setDirectionName(char *str, unsigned char ID, unsigned long size) {
-	if(ID == 16 || ID == 18 || ID == 24 || ID == 26 || ID == 28 || ID == 30) 
+void getDirection(char *str, unsigned long size, SuperTrakCommand_t data) {
+	if(data.u1[0] == CORE_COMMAND_ID_RELEASE || data.u1[0] == CORE_COMMAND_ID_RELEASE + 2 || 
+	  data.u1[0] == CORE_COMMAND_ID_OFFSET || data.u1[0] == CORE_COMMAND_ID_OFFSET + 2 || 
+	  data.u1[0] == CORE_COMMAND_ID_INCREMENT || data.u1[0] == CORE_COMMAND_ID_INCREMENT + 2) 
 		coreStringCopy(str, "left", size);
-	else if(ID == 17 || ID == 19 || ID == 25 || ID == 27 || ID == 29 || ID == 31)
+	else if(data.u1[0] == CORE_COMMAND_ID_RELEASE + 1 || data.u1[0] == CORE_COMMAND_ID_RELEASE + 3 || 
+	  data.u1[0] == CORE_COMMAND_ID_OFFSET + 1 || data.u1[0] == CORE_COMMAND_ID_OFFSET + 3 || 
+	  data.u1[0] == CORE_COMMAND_ID_INCREMENT + 1 || data.u1[0] == CORE_COMMAND_ID_INCREMENT + 3)
 		coreStringCopy(str, "right", size);
 	else
 		coreStringCopy(str, "n/a", size);
 }
 
-/* Write destination target in text */
-void setDestinationName(char *str, unsigned char ID, unsigned char destination, unsigned long size) {
-	FormatStringArgumentsType args;
-	if(ID == 16 || ID == 17 || ID == 18 || ID == 19 || ID == 24 || ID == 25 || ID == 26 || ID == 27) {
-		args.i[0] = destination;
-		IecFormatString(str, size, "T%i", &args);
-	}
-	else
-		coreStringCopy(str, "n/a", size);
-}
-
 /* Write command parameters */
-void getParameterString(char *str, unsigned long size, SuperTrakCommand_t data) {
+void getParameter(char *str, unsigned long size, SuperTrakCommand_t data) {
 	/* Declare local variables */
-	FormatStringArgumentsType args;
+	coreFormatArgumentType args;
+	unsigned short dataUInt16;
 	
-	if(data.u1[0] == 16 || data.u1[0] == 17 || data.u1[0] == 18 || data.u1[0] == 19) {
-		setDirectionName(args.s[0], data.u1[0], sizeof(args.s[0]));
+	if(CORE_COMMAND_ID_RELEASE <= data.u1[0] && data.u1[0] <= CORE_COMMAND_ID_RELEASE + 3) {
+		getDirection(args.s[0], sizeof(args.s[0]), data);
 		args.i[0] = data.u1[2];
-		IecFormatString(str, size, "direction: %s, destination: T%i", &args);
+		coreFormat(str, size, "direction: %s, destination: T%i", &args);
+	}
+	else if(CORE_COMMAND_ID_OFFSET <= data.u1[0] && data.u1[0] <= CORE_COMMAND_ID_OFFSET + 3) {
+		getDirection(args.s[0], sizeof(args.s[0]), data);
+		args.i[0] = data.u1[2];
+		memcpy(&args.i[1], &data.u1[4], sizeof(args.i[1]));
+		coreFormat(str, size, "direction: %s, destination: T%i, offset: %i um", &args);
+	}
+	else if(CORE_COMMAND_ID_INCREMENT <= data.u1[0] && data.u1[0] <= CORE_COMMAND_ID_INCREMENT + 3) {
+		memcpy(&args.i[0], &data.u1[4], sizeof(args.i[0]));
+		coreFormat(str, size, "offset: %i um", &args);
+	}
+	else if(data.u1[0] == CORE_COMMAND_ID_PALLET_ID) {
+		args.i[0] = data.u1[2];
+		coreFormat(str, size, "ID: %i", &args);
+	}
+	else if(data.u1[0] == CORE_COMMAND_ID_MOTION || data.u1[0] == CORE_COMMAND_ID_MOTION + 2) {
+		memcpy(&dataUInt16, data.u1[2], sizeof(dataUInt16));
+		args.i[0] = dataUInt16;
+		memcpy(&dataUInt16, data.u1[4], sizeof(dataUInt16));
+		args.i[1] = dataUInt16;
+		coreFormat(str, size, "velocity: %i mm/s, acceleration: %i m/s", &args);
+	}
+	else if(data.u1[0] == CORE_COMMAND_ID_MECHANICAL || data.u1[0] == CORE_COMMAND_ID_MECHANICAL + 2) {
+		memcpy(&dataUInt16, data.u1[2], sizeof(dataUInt16));
+		args.f[0] = dataUInt16 / 10.0;
+		memcpy(&dataUInt16, data.u1[4], sizeof(dataUInt16));
+		args.f[1] = dataUInt16 / 10.0;
+		coreFormat(str, size, "length: %f mm, offset: %f mm", &args);
+	}
+	else if(data.u1[0] == CORE_COMMAND_ID_CONTROL || data.u1[0] == CORE_COMMAND_ID_CONTROL + 2) {
+		args.i[0] = data.u1[2];
+		args.i[1] = data.u1[3];
+		args.i[2] = data.u1[4];
+		coreFormat(str, size, "set: %i, moving: %i%%, stationary: %i%%", &args);
 	}
 	else
 		coreStringCopy(str, "n/a", size);

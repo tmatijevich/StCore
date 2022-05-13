@@ -32,12 +32,13 @@ extern "C"
 #define CORE_FORMAT_SIZE 					125
 #define CORE_FORMAT_ARGUMENT_COUNT 			5
 #define CORE_FORMAT_ARGUMENT_SIZE 			81
-#define CORE_COMMAND_COUNT 					48
+#define CORE_COMMAND_COUNT 					48 		/* Default value, max is 64 */
+#define CORE_COMMAND_BYTE_MAX 				8 		/* 64 commands max (8 bytes max) */
 #define CORE_COMMAND_BUFFER_SIZE 			4U
 #define CORE_SECTION_MAX 					64 		/* SuperTrak is allowed up to 64 gateway communication boards */
 #define CORE_SECTION_ADDRESS_MAX 			99 		/* Users can number sections with 1-99 */
 #define CORE_CYCLE_TIME 					800U 	/* 800 us cycle time */
-#define CORE_COMMAND_TIMEOUT 				250000U /* 250 ms command request timeout */
+#define CORE_COMMAND_TIMEOUT 				500000U /* 500 ms command request timeout */
 #define CORE_TARGET_RELEASE_PER_BYTE 		4U
 #define CORE_TARGET_RELEASE_BIT_COUNT 		2U
 #define CORE_COMMAND_TRIGGER_PER_BYTE 		8U
@@ -160,6 +161,7 @@ extern struct coreGlobalType core;
  Function prototypes 
 *******************/
 /* Logging and string handling */
+unsigned long coreFormat(char *str, unsigned long size, char *format, coreFormatArgumentType *args);
 long coreLog(ArEventLogIdentType ident, coreLogSeverityEnum severity, unsigned char facility, unsigned short code, char *object, char *message, coreFormatArgumentType *args);
 void coreLogMessage(UserLogSeverityEnum severity, unsigned short code, char *message);
 void coreLogFormat(UserLogSeverityEnum severity, unsigned short code, char *message, FormatStringArgumentsType *args);
