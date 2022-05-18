@@ -257,7 +257,7 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	}
 	
 	/* Command count */
-	core.interface.commandCount = ROUND_UP_MULTIPLE(CORE_COMMAND_COUNT, CORE_COMMAND_TRIGGER_PER_BYTE);
+	core.interface.commandCount = ROUND_UP_MULTIPLE(CORE_COMMAND_COUNT, CORE_COMMAND_DATA_BYTE_COUNT);
 	status = SuperTrakServChanWrite(0, stPAR_PLC_IF_COMMAND_COUNT, 0, 1, (unsigned long)&core.interface.commandCount, sizeof(core.interface.commandCount));
 	if(status != scERR_SUCCESS) {
 		coreLogServiceChannel((unsigned short)status, stPAR_PLC_IF_COMMAND_COUNT, LOG_OBJECT);
@@ -281,7 +281,7 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	}
 	
 	/* Revision */
-	core.interface.revision = 0;
+	core.interface.revision = 3;
 	status = SuperTrakServChanWrite(0, stPAR_PLC_IF_REVISION, 0, 1, (unsigned long)&core.interface.revision, sizeof(core.interface.revision));
 	if(status != scERR_SUCCESS) {
 		coreLogServiceChannel((unsigned short)status, stPAR_PLC_IF_REVISION, LOG_OBJECT);

@@ -128,7 +128,7 @@ long coreCommandRequest(unsigned char index, SuperTrakCommand_t command, void *p
 	
 	/* Debug comfirmation message */
 	getParameter(args.s[2], sizeof(args.s[2]), command);
-	logMessage(CORE_LOG_SEVERITY_DEBUG, 5200, "%s %i %s command request (%s)", &args);
+	logMessage(CORE_LOG_SEVERITY_DEBUG, 6000, "%s %i %s command request (%s)", &args);
 	
 	/* Increment write index and check if full */
 	pBuffer->write = (pBuffer->write + 1) % CORE_COMMAND_BUFFER_SIZE;
@@ -154,7 +154,7 @@ void coreCommandManager(void) {
 	coreCommandType *pCommand;
 	SuperTrakCommand_t *pChannel;
 	long i, j;
-	unsigned char *pTrigger, *pComplete, *pSuccess, complete, success, pause;
+	unsigned char *pStatus, complete, success, pause;
 	static unsigned char used[CORE_COMMAND_BYTE_MAX], reset[CORE_COMMAND_BYTE_MAX], channel, start;
 	static unsigned long timer[CORE_COMMAND_COUNT];
 	coreCommandType *pSimpleCommand; /* Simple target release command storage */
@@ -188,12 +188,10 @@ void coreCommandManager(void) {
 		/* Pallet buffer busy sending command */
 		if(GET_BIT(pCommand->status, CORE_COMMAND_BUSY)) {
 			/* Access data */
-			pTrigger = core.pCyclicControl + core.interface.commandTriggerOffset + pBuffer->channel / CORE_COMMAND_TRIGGER_PER_BYTE; /* Trigger group */
 			pChannel = (SuperTrakCommand_t*)(core.pCyclicControl + core.interface.commandDataOffset) + pBuffer->channel;
-			pComplete = core.pCyclicStatus + core.interface.commandCompleteOffset + pBuffer->channel / CORE_COMMAND_COMPLETE_PER_BYTE;
-			pSuccess = core.pCyclicStatus + core.interface.commandSuccessOffset + pBuffer->channel / CORE_COMMAND_SUCCESS_PER_BYTE;
-			complete = GET_BIT(*pComplete, pBuffer->channel % CORE_COMMAND_COMPLETE_PER_BYTE);
-			success = GET_BIT(*pSuccess, pBuffer->channel % CORE_COMMAND_SUCCESS_PER_BYTE);
+			pStatus = core.pCyclicStatus + core.interface.commandStatusOffset + pBuffer->channel / CORE_COMMAND_STATUS_PER_BYTE;
+			complete = GET_BIT(*pStatus, (pBuffer->channel % CORE_COMMAND_STATUS_PER_BYTE) * CORE_COMMAND_STATUS_BIT_COUNT);
+			success = GET_BIT(*pStatus, (pBuffer->channel % CORE_COMMAND_STATUS_PER_BYTE) * CORE_COMMAND_STATUS_BIT_COUNT + 1);
 			
 			/* Track time */
 			timer[pBuffer->channel] += CORE_CYCLE_TIME;
@@ -207,7 +205,7 @@ void coreCommandManager(void) {
 			if(complete) {
 				/* Confirm success or failure */
 				if(success)
-					logMessage(CORE_LOG_SEVERITY_DEBUG, 6000, "%s %i %s command acknowledged", &args);
+					logMessage(CORE_LOG_SEVERITY_DEBUG, 6100, "%s %i %s command acknowledged", &args);
 				else {
 					logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_COMMAND), "%s %i %s command execution failed", &args);
 					SET_BIT(pCommand->status, CORE_COMMAND_ERROR);
@@ -215,11 +213,10 @@ void coreCommandManager(void) {
 				
 				/* Clear cyclic data and timer */
 				memset(pChannel, 0, sizeof(*pChannel));
-				CLEAR_BIT(*pTrigger, pBuffer->channel % CORE_COMMAND_TRIGGER_PER_BYTE);
 				timer[pBuffer->channel] = 0;
 				
 				/* Reopen channels only after all pallet buffers have all been polled */
-				SET_BIT(reset[channel / CORE_COMMAND_TRIGGER_PER_BYTE], channel % CORE_COMMAND_TRIGGER_PER_BYTE);
+				SET_BIT(reset[pBuffer->channel / CORE_COMMAND_FLAG_PER_BYTE], pBuffer->channel % CORE_COMMAND_FLAG_PER_BYTE);
 				
 				/* Update command status */
 				CLEAR_BIT(pCommand->status, CORE_COMMAND_BUSY);
@@ -232,9 +229,11 @@ void coreCommandManager(void) {
 				logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_TIMEOUT), "%s %i %s command execution timed out", &args);
 				
 				/* Clear cyclic data and timer */
-				memset(pCommand, 0, sizeof(*pCommand));
-				CLEAR_BIT(*pTrigger, pBuffer->channel % CORE_COMMAND_TRIGGER_PER_BYTE);
+				memset(pChannel, 0, sizeof(*pChannel));
 				timer[pBuffer->channel] = 0;
+				
+				/* Reopen channels only after all pallet buffers have all been polled */
+				SET_BIT(reset[pBuffer->channel / CORE_COMMAND_FLAG_PER_BYTE], pBuffer->channel % CORE_COMMAND_FLAG_PER_BYTE);
 				
 				/* Update command status */
 				CLEAR_BIT(pCommand->status, CORE_COMMAND_BUSY);
@@ -249,12 +248,12 @@ void coreCommandManager(void) {
 		/* Pallet buffer has command pending */
 		else if(!pause && GET_BIT(pCommand->status, CORE_COMMAND_PENDING)) {
 			/* Is the next channel available? */
-			if(GET_BIT(used[channel / CORE_COMMAND_TRIGGER_PER_BYTE], channel % CORE_COMMAND_TRIGGER_PER_BYTE)) {
+			if(GET_BIT(used[channel / CORE_COMMAND_FLAG_PER_BYTE], channel % CORE_COMMAND_FLAG_PER_BYTE)) {
 				pause = true; /* Pause for the rest of this loop */
 				start = i; /* Remember spot where the pause started */
 				if(logPause) {
 					logPause = false;
-					logMessage(CORE_LOG_SEVERITY_ERROR, 6001, "Pallet command buffers are paused because all channels are in use", NULL);
+					logMessage(CORE_LOG_SEVERITY_WARNING, 5102, "Pallet command buffers are paused because all channels are in use", NULL);
 				}
 			}
 			else {
@@ -262,17 +261,13 @@ void coreCommandManager(void) {
 				pChannel = (SuperTrakCommand_t*)(core.pCyclicControl + core.interface.commandDataOffset) + channel;
 				memcpy(pChannel, &pCommand->command, sizeof(SuperTrakCommand_t));
 				
-				/* Set trigger */
-				pTrigger = core.pCyclicControl + core.interface.commandTriggerOffset + channel / CORE_COMMAND_TRIGGER_PER_BYTE;
-				SET_BIT(*pTrigger, channel % CORE_COMMAND_TRIGGER_PER_BYTE);
-				
 				/* Update command channel and status */
 				pBuffer->channel = channel;
 				CLEAR_BIT(pCommand->status, CORE_COMMAND_PENDING);
 				SET_BIT(pCommand->status, CORE_COMMAND_BUSY);
 				
 				/* Mark the channel as used. Increment channel index */
-				SET_BIT(used[channel / CORE_COMMAND_TRIGGER_PER_BYTE], channel % CORE_COMMAND_TRIGGER_PER_BYTE);
+				SET_BIT(used[channel / CORE_COMMAND_FLAG_PER_BYTE], channel % CORE_COMMAND_FLAG_PER_BYTE);
 				channel = (channel + 1) % CORE_COMMAND_COUNT;
 				
 				/* Re-enable pause warning log message */
@@ -288,9 +283,9 @@ void coreCommandManager(void) {
 		
 	/* Re-open channels */
 	for(i = 0; i < CORE_COMMAND_COUNT; i++) {
-		if(GET_BIT(reset[i / CORE_COMMAND_TRIGGER_PER_BYTE], i % CORE_COMMAND_TRIGGER_PER_BYTE)) {
-			CLEAR_BIT(reset[i / CORE_COMMAND_TRIGGER_PER_BYTE], i % CORE_COMMAND_TRIGGER_PER_BYTE);
-			CLEAR_BIT(used[i / CORE_COMMAND_TRIGGER_PER_BYTE], i % CORE_COMMAND_TRIGGER_PER_BYTE);
+		if(GET_BIT(reset[i / CORE_COMMAND_FLAG_PER_BYTE], i % CORE_COMMAND_FLAG_PER_BYTE)) {
+			CLEAR_BIT(reset[i / CORE_COMMAND_FLAG_PER_BYTE], i % CORE_COMMAND_FLAG_PER_BYTE);
+			CLEAR_BIT(used[i / CORE_COMMAND_FLAG_PER_BYTE], i % CORE_COMMAND_FLAG_PER_BYTE);
 		}
 	}
 	

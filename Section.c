@@ -19,7 +19,8 @@ void StCoreSection(StCoreSection_typ *inst) {
 	***********************/
 	static StCoreSection_typ *usedInst[CORE_SECTION_ADDRESS_MAX + 1];
 	coreFormatArgumentType args;
-	unsigned char *pSectionControl, *pSectionStatus;
+	unsigned char *pSectionControl;
+	unsigned short *pSectionStatus;
 	unsigned long dataUInt32;
 	long i;
 	unsigned short dataUInt16;
@@ -110,7 +111,7 @@ void StCoreSection(StCoreSection_typ *inst) {
 			/******
 			 Status
 			******/
-			pSectionStatus = core.pCyclicStatus + core.interface.sectionStatusOffset + (unsigned char)core.sectionMap[inst->Internal.Select];
+			pSectionStatus = (unsigned short*)(core.pCyclicStatus + core.interface.sectionStatusOffset) + core.sectionMap[inst->Internal.Select];
 			
 			inst->Enabled = GET_BIT(*pSectionStatus, stSECTION_ENABLED);
 			inst->UnrecognizedPallets = GET_BIT(*pSectionStatus, stSECTION_UNRECOGNIZED_PALLET);
@@ -120,6 +121,8 @@ void StCoreSection(StCoreSection_typ *inst) {
 			inst->DisabledExternally = GET_BIT(*pSectionStatus, stSECTION_DISABLED_EXTERNALLY);
 			inst->WarningPresent = GET_BIT(*pSectionStatus, stSECTION_WARNING);
 			inst->FaultPresent = GET_BIT(*pSectionStatus, stSECTION_FAULT);
+			inst->DisabledPallet = GET_BIT(*pSectionStatus, 8);
+			inst->PalletsInitializing = GET_BIT(*pSectionStatus, 9);
 			
 			/********************
 			 Extended Information
@@ -177,6 +180,8 @@ void resetOutput(StCoreSection_typ *inst) {
 	inst->DisabledExternally = false;
 	inst->WarningPresent = false;
 	inst->FaultPresent = false;
+	inst->DisabledPallet = false;
+	inst->PalletsInitializing = false;
 	memset(&inst->Info, 0, sizeof(inst->Info));
 }
 

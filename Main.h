@@ -41,11 +41,11 @@ extern "C"
 #define CORE_COMMAND_TIMEOUT 				500000U /* 500 ms command request timeout */
 #define CORE_TARGET_RELEASE_PER_BYTE 		4U
 #define CORE_TARGET_RELEASE_BIT_COUNT 		2U
-#define CORE_COMMAND_TRIGGER_PER_BYTE 		8U
 #define CORE_COMMAND_DATA_BYTE_COUNT 		8U
+#define CORE_COMMAND_FLAG_PER_BYTE 			8U 		/* This is an internal count to store flags for each command channel */
 #define CORE_TARGET_STATUS_BYTE_COUNT 		3U
-#define CORE_COMMAND_COMPLETE_PER_BYTE 		8U
-#define CORE_COMMAND_SUCCESS_PER_BYTE 		8U
+#define CORE_COMMAND_STATUS_PER_BYTE 		4U
+#define CORE_COMMAND_STATUS_BIT_COUNT 		2U
 #define CORE_NETWORK_IO_PER_BYTE 			8U
 /* These command IDs are defined by the SuperTrak PLC communication protocol */
 #define CORE_COMMAND_ID_RELEASE 			16 		/* 16, 17, 18, 19 target/pallet? left/right? */
