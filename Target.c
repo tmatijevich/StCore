@@ -4,10 +4,11 @@
  * Date: 2022-04-13
 *******************************************************************************/
 
-/* Headers */
 #include "Main.h"
+#define LOG_OBJECT "Target"
 
-/* Function prototypes */
+/* Prototypes */
+static long logMessage(coreLogSeverityEnum severity, unsigned short code, char *message, coreFormatArgumentType *args);
 static void resetOutput(StCoreTarget_typ *inst);
 static void activateCommand(StCoreTarget_typ *inst, unsigned char select);
 static void resetCommand(StCoreTarget_typ *inst);
@@ -17,7 +18,7 @@ static void recordInput(StCoreTarget_typ *inst, unsigned short *pData);
 long StCoreTargetStatus(unsigned char Target, StCoreTargetStatusType *Status) {
 	
 	/*********************** 
-	 Declare local variables
+	 Declare Local Variables
 	***********************/
 	unsigned char *pTargetStatus;
 	unsigned short dataUInt16;
@@ -37,17 +38,17 @@ long StCoreTargetStatus(unsigned char Target, StCoreTargetStatusType *Status) {
 		return stCORE_ERROR_ALLOC;
 	
 	/**********
-	 Set status
+	 Set Status
 	**********/
 	pTargetStatus = core.pCyclicStatus + core.interface.targetStatusOffset + 3 * Target;
 	
-	Status->PalletPresent = GET_BIT(*pTargetStatus, 0);
-	Status->PalletInPosition = GET_BIT(*pTargetStatus, 1);
-	Status->PalletPreArrival = GET_BIT(*pTargetStatus, 2);
-	Status->PalletOverTarget = GET_BIT(*pTargetStatus, 3);
-	Status->PalletPositionUncertain = GET_BIT(*pTargetStatus, 6);
+	Status->PalletPresent = GET_BIT(*pTargetStatus, stTARGET_PALLET_PRESENT);
+	Status->PalletInPosition = GET_BIT(*pTargetStatus, stTARGET_PALLET_IN_POSITION);
+	Status->PalletPreArrival = GET_BIT(*pTargetStatus, stTARGET_PALLET_PRE_ARRIVAL);
+	Status->PalletOverTarget = GET_BIT(*pTargetStatus, stTARGET_PALLET_OVER);
+	Status->PalletPositionUncertain = GET_BIT(*pTargetStatus, stTARGET_PALLET_POS_UNCERTAIN);
 	
-	Status->PalletID = *(core.pCyclicStatus + core.interface.targetStatusOffset + 3 * Target + 1);
+	Status->PalletID = *(core.pCyclicStatus + core.interface.targetStatusOffset + CORE_TARGET_STATUS_BYTE_COUNT * Target + 1);
 	
 	SuperTrakServChanRead(0, stPAR_TARGET_SECTION, Target, 1, (unsigned long)&dataUInt16, sizeof(dataUInt16));
 	Status->Info.Section = (unsigned char)dataUInt16;
@@ -75,15 +76,15 @@ long StCoreTargetStatus(unsigned char Target, StCoreTargetStatusType *Status) {
 void StCoreTarget(StCoreTarget_typ *inst) {
 	
 	/*********************** 
-	 Declare local variables
+	 Declare Local Variables
 	***********************/
-	FormatStringArgumentsType args;
+	coreFormatArgumentType args;
 	StCoreTargetStatusType status;
 	unsigned short input;
 	coreCommandType *pCommand;
 	
 	/************
-	 Switch state
+	 Switch State
 	************/
 	/* Interrupt if disabled */
 	if(inst->Enable == false)
@@ -99,9 +100,9 @@ void StCoreTarget(StCoreTarget_typ *inst) {
 				if(inst->Target < 1 || core.targetCount < inst->Target) {
 					args.i[0] = inst->Target;
 					args.i[1] = core.targetCount;
-					coreLogFormat(USERLOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_INST), "StCoreTarget call with target %i exceeds limits [1, %i]", &args);
+					logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_INPUT), "StCoreTarget call with target %i exceeds limits [1, %i]", &args);
 					inst->Error = true;
-					inst->StatusID = stCORE_ERROR_INST;
+					inst->StatusID = stCORE_ERROR_INPUT;
 					inst->Internal.State = CORE_FUNCTION_ERROR;
 				}
 				else {
@@ -127,7 +128,7 @@ void StCoreTarget(StCoreTarget_typ *inst) {
 			if(inst->Target != inst->Internal.Select && inst->Target != inst->Internal.PreviousSelect) {
 				args.i[0] = inst->Internal.Select;
 				args.i[1] = inst->Target;
-				coreLogFormat(USERLOG_SEVERITY_WARNING, 555, "StCoreTarget target select %i change to %i is ignored until re-enabled", &args);
+				logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_INPUT), "StCoreTarget target select %i change to %i is ignored until re-enabled", &args);
 			}
 			
 			/*******
@@ -207,7 +208,7 @@ void StCoreTarget(StCoreTarget_typ *inst) {
 							if(GET_BIT(pCommand->status, CORE_COMMAND_DONE)) {
 								if(GET_BIT(pCommand->status, CORE_COMMAND_ERROR)) {
 									args.i[0] = inst->Internal.Select;
-									coreLogFormat(USERLOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_COMMAND), "StCoreTarget target %i command error", &args);
+									logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_COMMAND), "StCoreTarget target %i command error", &args);
 									resetOutput(inst);
 									inst->Error = true;
 									inst->StatusID = stCORE_ERROR_COMMAND;
@@ -276,6 +277,11 @@ void StCoreTarget(StCoreTarget_typ *inst) {
 	recordInput(inst, &inst->Internal.PreviousCommand);
 	
 } /* End function */
+
+/* Create local logging function */
+long logMessage(coreLogSeverityEnum severity, unsigned short code, char *message, coreFormatArgumentType *args) {
+	return coreLog(core.ident, severity, CORE_LOGBOOK_FACILITY, code, LOG_OBJECT, message, args);
+}
 
 /* Clear all function block outputs */
 void resetOutput(StCoreTarget_typ *inst) {

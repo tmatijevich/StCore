@@ -474,16 +474,16 @@ void getParameter(char *str, unsigned long size, SuperTrakCommand_t data) {
 		coreFormat(str, size, "ID: %i", &args);
 	}
 	else if(data.u1[0] == CORE_COMMAND_ID_MOTION || data.u1[0] == CORE_COMMAND_ID_MOTION + 2) {
-		memcpy(&dataUInt16, data.u1[2], sizeof(dataUInt16));
+		memcpy(&dataUInt16, &data.u1[2], sizeof(dataUInt16));
 		args.i[0] = dataUInt16;
-		memcpy(&dataUInt16, data.u1[4], sizeof(dataUInt16));
+		memcpy(&dataUInt16, &data.u1[4], sizeof(dataUInt16));
 		args.i[1] = dataUInt16;
 		coreFormat(str, size, "velocity: %i mm/s, acceleration: %i m/s", &args);
 	}
 	else if(data.u1[0] == CORE_COMMAND_ID_MECHANICAL || data.u1[0] == CORE_COMMAND_ID_MECHANICAL + 2) {
-		memcpy(&dataUInt16, data.u1[2], sizeof(dataUInt16));
+		memcpy(&dataUInt16, &data.u1[2], sizeof(dataUInt16));
 		args.f[0] = dataUInt16 / 10.0;
-		memcpy(&dataUInt16, data.u1[4], sizeof(dataUInt16));
+		memcpy(&dataUInt16, &data.u1[4], sizeof(dataUInt16));
 		args.f[1] = dataUInt16 / 10.0;
 		coreFormat(str, size, "length: %f mm, offset: %f mm", &args);
 	}

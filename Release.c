@@ -5,6 +5,10 @@
 *******************************************************************************/
 
 #include "Main.h"
+#define LOG_OBJECT "Release"
+
+/* Prototypes */
+static long logMessage(coreLogSeverityEnum severity, unsigned short code, char *message, coreFormatArgumentType *args);
 
 /* Release with local move configuration */
 long StCoreSimpleRelease(unsigned char Target, unsigned char LocalMove) {
@@ -17,24 +21,24 @@ long coreSimpleRelease(unsigned char target, unsigned char localMove, void *pIns
 	/***********************
 	 Declare Local Variables
 	***********************/
-	FormatStringArgumentsType args;
+	coreFormatArgumentType args;
 	coreCommandType *pSimpleCommand;
 	
 	if(core.pSimpleRelease == NULL) {
-		coreLogMessage(USERLOG_SEVERITY_ERROR, 55555, "Target simple release unable to reference command buffers");
+		logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_ALLOC), "Target simple release unable to reference command buffers", NULL);
 		return stCORE_ERROR_ALLOC;
 	}
 	
 	if(target < 1 || core.targetCount < target) {
 		args.i[0] = target;
 		args.i[1] = core.targetCount;
-		coreLogFormat(USERLOG_SEVERITY_ERROR, 55555, "Target simple release target %i exceeds initial target count [1, %i]", &args);
+		logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_INPUT), "Target simple release target %i exceeds initial target count [1, %i]", &args);
 		return stCORE_ERROR_INPUT;
 	}
 	
 	if(localMove < 1 || 3 < localMove) {
 		args.i[0] = localMove;
-		coreLogFormat(USERLOG_SEVERITY_ERROR, 55555, "Target simple release local move index %i exceeds limits [1, 3]", &args);
+		logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_INPUT), "Target simple release local move index %i exceeds limits [1, 3]", &args);
 		return stCORE_ERROR_INPUT;
 	}
 	
@@ -43,7 +47,7 @@ long coreSimpleRelease(unsigned char target, unsigned char localMove, void *pIns
 	if(GET_BIT(pSimpleCommand->status, CORE_COMMAND_BUSY) || GET_BIT(pSimpleCommand->status, CORE_COMMAND_PENDING)) {
 		args.i[0] = target;
 		args.i[1] = localMove;
-		coreLogFormat(USERLOG_SEVERITY_ERROR, 55555, "Target simple release target %i local move %i rejected due to command in progress", &args);
+		logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_BUFFER), "Target simple release target %i local move %i rejected due to command in progress", &args);
 		return stCORE_ERROR_BUFFER;
 	}
 	
@@ -226,3 +230,8 @@ long coreContinueMove(unsigned char target, unsigned char pallet, void *pInstanc
 	return 0;
 	
 } /* End function */
+
+/* Create local logging function */
+long logMessage(coreLogSeverityEnum severity, unsigned short code, char *message, coreFormatArgumentType *args) {
+	return coreLog(core.ident, severity, CORE_LOGBOOK_FACILITY, code, LOG_OBJECT, message, args);
+}

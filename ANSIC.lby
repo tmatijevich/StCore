@@ -20,11 +20,11 @@
   </Files>
   <Dependencies>
     <Dependency ObjectName="SuperTrak" />
-    <Dependency ObjectName="IecString" />
-    <Dependency ObjectName="UserLog" />
-    <Dependency ObjectName="ArEventLog" />
     <Dependency ObjectName="brsystem" />
     <Dependency ObjectName="sys_lib" />
+    <Dependency ObjectName="runtime" />
+    <Dependency ObjectName="ArEventLog" />
+    <Dependency ObjectName="AsBrStr" />
     <Dependency ObjectName="AsIoTime" />
   </Dependencies>
 </Library>

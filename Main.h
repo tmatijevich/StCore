@@ -153,20 +153,18 @@ struct coreGlobalType {
 };
 
 /****************
- Global variables
+ Global Variables
 ****************/
 extern struct coreGlobalType core;
 
 /******************* 
- Function prototypes 
+ Function Prototypes 
 *******************/
 /* Logging and string handling */
+char* coreStringCopy(char *destination, const char *source, unsigned long size);
 unsigned long coreFormat(char *str, unsigned long size, char *format, coreFormatArgumentType *args);
 long coreLog(ArEventLogIdentType ident, coreLogSeverityEnum severity, unsigned char facility, unsigned short code, char *object, char *message, coreFormatArgumentType *args);
-void coreLogMessage(UserLogSeverityEnum severity, unsigned short code, char *message);
-void coreLogFormat(UserLogSeverityEnum severity, unsigned short code, char *message, FormatStringArgumentsType *args);
 unsigned short coreLogCode(long event);
-char* coreStringCopy(char *destination, const char *source, unsigned long size);
 void coreLogServiceChannel(unsigned short result, unsigned short parameter, char *object);
 void coreLogFaultWarning(unsigned char index, unsigned char section);
 

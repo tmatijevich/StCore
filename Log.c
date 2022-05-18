@@ -6,14 +6,6 @@
 
 #include "Main.h"
 
-void coreLogMessage(UserLogSeverityEnum severity, unsigned short code, char *message) {
-	CustomMessage(severity, code, message, CORE_LOGBOOK_NAME, CORE_LOGBOOK_FACILITY);
-}
-
-void coreLogFormat(UserLogSeverityEnum severity, unsigned short code, char *message, FormatStringArgumentsType *args) {
-	CustomFormatMessage(severity, code, message, args, CORE_LOGBOOK_NAME, CORE_LOGBOOK_FACILITY);
-}
-
 /* Safely copy a string */
 char* coreStringCopy(char *destination, const char *source, unsigned long size) {
 	destination[size - 1] = '\0'; /* Ensure null terminator */
@@ -208,9 +200,9 @@ void coreLogServiceChannel(unsigned short result, unsigned short parameter, char
 void coreLogFaultWarning(unsigned char index, unsigned char section) {
 	
 	/* Local variables */
-	FormatStringArgumentsType args;
+	coreFormatArgumentType args;
 	char temp[80];
-	UserLogSeverityEnum severity;
+	coreLogSeverityEnum severity;
 	
 	/* Out of range */
 	if(index > 63)
@@ -221,21 +213,21 @@ void coreLogFaultWarning(unsigned char index, unsigned char section) {
 		coreStringCopy(args.s[0], "System", sizeof(args.s[0]));
 	else {
 		args.i[0] = section;
-		IecFormatString(temp, sizeof(temp), "Section %i", &args);
+		coreFormat(temp, sizeof(temp), "Section %i", &args);
 		coreStringCopy(args.s[0], temp, sizeof(args.s[0]));
 	}
 		
 	/* Fault or warning */
 	if(index < 32) {
-		severity = USERLOG_SEVERITY_ERROR;
+		severity = CORE_LOG_SEVERITY_ERROR;
 		coreStringCopy(args.s[1], "fault", sizeof(args.s[1]));
 	}
 	else {
-		severity = USERLOG_SEVERITY_WARNING;
+		severity = CORE_LOG_SEVERITY_WARNING;
 		coreStringCopy(args.s[1], "warning", sizeof(args.s[1]));
 	}
 	
 	/* Write */
-	CustomFormatMessage(severity, index % 32, "%s %s", &args, CORE_LOGBOOK_NAME, 2);
+	coreLog(core.ident, severity, 2, index % 32, "SuperTrak", "%s %s", &args);
 	
-} /* Function definition */
+} /* End function */
