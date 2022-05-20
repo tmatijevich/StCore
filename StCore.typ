@@ -72,4 +72,27 @@ TYPE
 		PalletID : USINT; (*(IF) ID of the pallet present at the target*)
 		Info : StCoreTargetInfoType; (*Extended target status information*)
 	END_STRUCT;
+	StCorePalletInfoType : 	STRUCT  (*Extended pallet information*)
+		ControlMode : USINT; (*Trajectory, CNC, Cam, or External*)
+		PositionUm : DINT; (*um (Par 1310) Actual pallet position*)
+		Velocity : REAL; (*mm/s (Par 1314) Actual pallet velocity*)
+		DestinationTarget : USINT; (*(Par 1339) Destination target*)
+		SetSection : USINT; (*(Par 1306) Pallet section number setpoint*)
+		SetPosition : LREAL; (*mm (Par 1311) Pallet position setpoint*)
+		SetPositionUm : DINT; (*um (Par 1311) Pallet position setpoint*)
+		SetVelocity : REAL; (*mm/s (Par 1313) Pallet velocity setpoint*)
+		SetAcceleration : REAL; (*mm/s/s (Par 1312) Pallet acceleration setpoint*)
+	END_STRUCT;
+	StCorePalletStatusType : 	STRUCT  (*Pallet status information*)
+		Present : BOOL; (*(Par 1328) Pallet is present on the system*)
+		Recovering : BOOL; (*(Par 1328) Pallet requires recovery when enabled or is recovering*)
+		AtTarget : BOOL; (*(Par 1328) Pallet has arrived at target and is in position*)
+		InPosition : BOOL; (*(Par 1328) Pallet is in position at target*)
+		ServoEnabled : BOOL; (*(Par 1328) Pallet is currently controlled by the system*)
+		Initializing : BOOL; (*(Par 1328) Pallet is moving to Load Target*)
+		Lost : BOOL; (*(Par 1328) Pallet has lost position feedback*)
+		Section : USINT; (*(Par 1307) Actual pallet section number*)
+		Position : LREAL; (*mm (Par 1310) Actual pallet position*)
+		Info : StCorePalletInfoType; (*Extended pallet status information*)
+	END_STRUCT;
 END_TYPE

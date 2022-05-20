@@ -31,8 +31,13 @@ long StCoreExit(void) {
 	}
 	
 	if(core.pCommandBuffer) {
-		allocationSize = sizeof(SuperTrakCommand_t) * CORE_COMMAND_BUFFER_SIZE * core.palletCount;
+		allocationSize = sizeof(coreCommandBufferType) * core.palletCount;
 		TMP_free(allocationSize, (void**)core.pCommandBuffer);
+	}
+	
+	if(core.pPalletData) {
+		allocationSize = sizeof(SuperTrakPalletInfo_t) * core.palletCount;
+		TMP_free(allocationSize, (void**)core.pPalletData);
 	}
 	
 	coreLog(core.ident, CORE_LOG_SEVERITY_INFO, CORE_LOGBOOK_FACILITY, 1300, "Exit", "Allocated memory is free", NULL);

@@ -15,6 +15,7 @@
     <File Description="Release commands">Release.c</File>
     <File Description="Configuration commands">Configuration.c</File>
     <File Description="Target interface">Target.c</File>
+    <File Description="Pallet interface">Pallet.c</File>
     <File Description="Additional logging">Log.c</File>
     <File Description="User event texts">Log.tmx</File>
   </Files>

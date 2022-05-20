@@ -338,6 +338,17 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	}
 	memset(core.pCommandBuffer, 0, allocationSize); /* Initialization memory to zero */
 	
+	/* Memory for pallet information */
+	allocationSize = sizeof(SuperTrakPalletInfo_t) * core.palletCount;
+	if(core.pPalletData)
+		TMP_free(allocationSize, (void**)core.pPalletData);
+	status = TMP_alloc(allocationSize, (void**)&core.pPalletData);
+	if(status) {
+		logMemoryManagement((unsigned short)status, allocationSize, "pallet data");
+		return stCORE_ERROR_ALLOC;
+	}
+	memset(core.pPalletData, 0, allocationSize);
+	
 	args.i[0] = sectionCount;
 	args.i[1] = core.targetCount;
 	logMessage(CORE_LOG_SEVERITY_SUCCESS, 1200, "%i sections and %i targets defined in TrakMaster", &args);

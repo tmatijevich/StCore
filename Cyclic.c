@@ -20,9 +20,10 @@ long StCoreCyclic(void) {
 	RTInfo_typ fbRTInfo;
 	coreFormatArgumentType args;
 	static unsigned long timerSave, saveParameters;
-	long status;
+	long status, i;
 	SuperTrakControlIfConfig_t currentInterfaceConfig;
 	static SuperTrakControlInterface_t controlInterface;
+	SuperTrakPalletInfo_t *pPalletData;
 	
 	/************
 	 Verification
@@ -89,8 +90,8 @@ long StCoreCyclic(void) {
 	if(core.error || saveParameters == 0) {
 		/* Do nothing */
 	}
-	else if(core.pCyclicControl == NULL || core.pCyclicStatus == NULL) {
-		logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_ALLOC), "StCoreCyclic() cannot reference cyclic control or status data due to null pointer", NULL);
+	else if(core.pCyclicControl == NULL || core.pCyclicStatus == NULL || core.pPalletData == NULL) {
+		logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_ALLOC), "StCoreCyclic cannot reference allocated cyclic or pallet data", NULL);
 		core.error = true;
 		core.statusID = stCORE_ERROR_ALLOC;
 	}
@@ -105,6 +106,18 @@ long StCoreCyclic(void) {
 	/* Process SuperTrak status */
 	if(!core.error && saveParameters) 
 		SuperTrakProcessStatus(0, &controlInterface);
+	
+	/* Read pallet information */
+	SuperTrakGetPalletInfo((unsigned long)core.pPalletData, core.palletCount, false); /* Read memory structure from 0 to palletCount - 1 */
+	
+	/* Update pallet mapping */
+	memset(&core.palletMap, -1, sizeof(core.palletMap));
+	for(i = 0; i < core.palletCount; i++) {
+		pPalletData = core.pPalletData + i;
+		/* Mapping the pallet ID if assigned (non-zero) to offset in memory structure (i) */
+		if(pPalletData->palletID)
+			core.palletMap[pPalletData->palletID] = i;
+	}
 	
 	return core.statusID;
 	

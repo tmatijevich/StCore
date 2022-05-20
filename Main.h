@@ -37,6 +37,8 @@ extern "C"
 #define CORE_COMMAND_BUFFER_SIZE 			4U
 #define CORE_SECTION_MAX 					64 		/* SuperTrak is allowed up to 64 gateway communication boards */
 #define CORE_SECTION_ADDRESS_MAX 			99 		/* Users can number sections with 1-99 */
+#define CORE_PALLET_MAX 					256 	/* SuperTrak memory structure has up to 256 pallets */
+#define CORE_PALLET_ID_MAX 					254 	/* Users can number pallets 1-254, 0 for unidentified */
 #define CORE_CYCLE_TIME 					800U 	/* 800 us cycle time */
 #define CORE_COMMAND_TIMEOUT 				500000U /* 500 ms command request timeout */
 #define CORE_TARGET_RELEASE_PER_BYTE 		4U
@@ -143,7 +145,9 @@ struct coreGlobalType {
 	coreCommandType *pSimpleRelease;
 	coreCommandBufferType *pCommandBuffer;
 	SuperTrakControlIfConfig_t interface;
-	signed char sectionMap[CORE_SECTION_ADDRESS_MAX + 1]; /* Map user address 1-99 to offset 0-63, -1 for unused */
+	signed char sectionMap[UCHAR_MAX + 1]; /* Map user address 1-99 to offset 0-63, -1 for unused */
+	signed short palletMap[UCHAR_MAX + 1]; /* Map pallet ID 1-254 to memory structure 0-255, -1 for unused */
+	SuperTrakPalletInfo_t *pPalletData;
 	unsigned char targetCount;
 	unsigned char palletCount;
 	unsigned char networkIOCount;

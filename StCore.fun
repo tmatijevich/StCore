@@ -198,3 +198,12 @@ FUNCTION_BLOCK StCoreTarget (*Target core interface*)
 		Internal : StCoreFunctionInternalType; (*Local internal data*)
 	END_VAR
 END_FUNCTION_BLOCK
+
+FUNCTION StCorePalletStatus : DINT (*Get pallet status*)
+	VAR_INPUT
+		Pallet : USINT; (*Pallet ID*)
+	END_VAR
+	VAR_IN_OUT
+		Status : StCorePalletStatusType; (*Pallet status reference*)
+	END_VAR
+END_FUNCTION
