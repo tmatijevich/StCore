@@ -207,3 +207,39 @@ FUNCTION StCorePalletStatus : DINT (*Get pallet status*)
 		Status : StCorePalletStatusType; (*Pallet status reference*)
 	END_VAR
 END_FUNCTION
+
+FUNCTION_BLOCK StCorePallet (*Pallet core interface*)
+	VAR_INPUT
+		Enable : BOOL;
+		Pallet : USINT; (*Select pallet ID*)
+		ErrorReset : BOOL;
+		Parameters : StCorePalletParameterType;
+		ReleasePallet : BOOL; (*Release pallet to a target*)
+		ReleaseTargetOffset : BOOL; (*Release pallet to a target plus offset*)
+		ReleaseIncrementalOffset : BOOL; (*Increment a pallet's current offset*)
+		ContinueMove : BOOL; (*Resume a pallet's previously requested move when stopped*)
+		SetMotionParameters : BOOL; (*Set the pallet's velocity and acceleration*)
+		SetMechanicalParameters : BOOL; (*Set the pallet's shelf width and center offset*)
+		SetControlParameters : BOOL; (*Set the pallet's control gain set and filter weights*)
+	END_VAR
+	VAR_OUTPUT
+		Valid : BOOL; (*Successful function execution*)
+		Error : BOOL; (*An error has occurred with the function*)
+		StatusID : DINT; (*Function error identifier*)
+		Present : BOOL;
+		Recovering : BOOL;
+		AtTarget : BOOL;
+		InPosition : BOOL;
+		ServoEnabled : BOOL;
+		Initializing : BOOL;
+		Lost : BOOL;
+		Section : USINT;
+		Position : LREAL;
+		Info : StCorePalletInfoType; (*Extended pallet information*)
+		Busy : BOOL; (*A command request is executing*)
+		Acknowledged : BOOL; (*A command request has successfully acknowledged*)
+	END_VAR
+	VAR
+		Internal : StCoreFunctionInternalType; (*Local internal data*)
+	END_VAR
+END_FUNCTION_BLOCK

@@ -39,6 +39,12 @@ TYPE
 		Mechanical : StCoreMechanicalParameterType; (*Mechanical parameters for configuration command*)
 		Control : StCoreControlParameterType; (*Control parameters for configuration command*)
 	END_STRUCT;
+	StCorePalletParameterType : 	STRUCT  (*Target interface parameters*)
+		Release : StCoreReleaseParameterType; (*Release command parameters*)
+		Motion : StCoreMotionParameterType; (*Motion parameters for configuration command*)
+		Mechanical : StCoreMechanicalParameterType; (*Mechanical parameters for configuration command*)
+		Control : StCoreControlParameterType; (*Control parameters for configuration command*)
+	END_STRUCT;
 	StCoreReleaseParameterType : 	STRUCT  (*Release command parameter structure*)
 		Direction : UINT := stDIRECTION_RIGHT; (*Direction of motion (stDIRECTION_RIGHT or stDIRECTION_LEFT)*)
 		DestinationTarget : USINT := 1; (*Destination target*)

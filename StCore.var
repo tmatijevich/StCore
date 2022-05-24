@@ -28,6 +28,8 @@ VAR CONSTANT
 	stCORE_WARNING_SELECT : DINT := -1610542000; (*StCore function index selection has changed while enabled*)
 	stCORE_ERROR_BUFFER : DINT := -536800276; (*StCore command buffer is already full and the command is rejected*)
 	stCORE_WARNING_BUFFER : DINT := -1610542099; (*StCore pallet command buffer is now full and will reject commands until cleared*)
-	stCORE_ERROR_COMMAND : DINT := -536799176; (*StCore command execution failed. See SuperTrak system fault for more details*)
+	stCORE_ERROR_COMMAND : DINT := -536799176; (*StCore command execution failed. See SuperTrak system fault for more details.*)
 	stCORE_ERROR_TIMEOUT : DINT := -536799076; (*StCore command execution timeout*)
+	stCORE_ERROR_CRITICAL : DINT := -1; (*A critical error has occurred during StCore initialization or cyclic operation. Review logger, verify configuration and program, and restart.*)
+	stCORE_ERROR_ACKNOWLEDGE : DINT := -2; (*StCore command cannot be acknowledge because the buffer was overwritten by additional commands*)
 END_VAR

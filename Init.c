@@ -201,6 +201,10 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	************/
 	/* Read section of 255 targets, indexed 0..254 */
 	status = SuperTrakServChanRead(0, stPAR_TARGET_SECTION, 1, COUNT_OF(dataUInt16), (unsigned long)&dataUInt16, sizeof(dataUInt16));
+	if(status != scERR_SUCCESS) {
+		coreLogServiceChannel((unsigned short)status, stPAR_TARGET_SECTION, LOG_OBJECT);
+		return core.statusID = stCORE_ERROR_COMM;
+	}
 	
 	/* Find the last target to be defined (non-zero section number) */
 	for(i = 0, core.targetCount = 0; i < COUNT_OF(dataUInt16); i++) {

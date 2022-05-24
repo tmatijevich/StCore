@@ -151,6 +151,7 @@ struct coreGlobalType {
 	unsigned char targetCount;
 	unsigned char palletCount;
 	unsigned char networkIOCount;
+	unsigned char ready;
 	unsigned char error;
 	long statusID;
 	ArEventLogIdentType ident;

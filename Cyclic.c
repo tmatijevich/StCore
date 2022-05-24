@@ -24,6 +24,7 @@ long StCoreCyclic(void) {
 	SuperTrakControlIfConfig_t currentInterfaceConfig;
 	static SuperTrakControlInterface_t controlInterface;
 	SuperTrakPalletInfo_t *pPalletData;
+	unsigned short palletPresentCount, *pSystemPalletCount;
 	
 	/************
 	 Verification
@@ -52,7 +53,7 @@ long StCoreCyclic(void) {
 	}
 		
 	/* 3. Delay and save parameters */
-	else if(saveParameters == 0) {
+	else if(!core.ready) {
 		if(timerSave >= 500000) {
 			saveParameters = 0x000020; /* Global parameters and PLC interface configuration */
 			status = SuperTrakServChanWrite(0, stPAR_SAVE_PARAMETERS, 0, 1, (unsigned long)&saveParameters, sizeof(saveParameters));
@@ -61,6 +62,8 @@ long StCoreCyclic(void) {
 				core.error = true;
 				core.statusID = stCORE_ERROR_COMM;
 			}
+			else
+				core.ready = true;
 		}
 		else
 			timerSave += 800;
@@ -74,9 +77,16 @@ long StCoreCyclic(void) {
 	}
 	
 	/*****************************
-	 Process SuperTrak cyclic data
+	 Process SuperTrak Cyclic Data
 	*****************************/
-	/* Process StCore command buffers */
+	/* Check references */
+	if((core.pCyclicControl == NULL || core.pCyclicStatus == NULL || core.pPalletData == NULL) && !core.error) {
+		logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_ALLOC), "StCoreCyclic cannot reference allocated cyclic or pallet data", NULL);
+		core.error = true;
+		core.statusID = stCORE_ERROR_ALLOC;
+	}
+	
+	/* Process StCore commands */
 	coreCommandManager();
 	
 	/* Reference control interface */
@@ -87,16 +97,9 @@ long StCoreCyclic(void) {
 	controlInterface.connectionType = stCONNECTION_LOCAL;
 	
 	/* Process SuperTrak control */
-	if(core.error || saveParameters == 0) {
-		/* Do nothing */
-	}
-	else if(core.pCyclicControl == NULL || core.pCyclicStatus == NULL || core.pPalletData == NULL) {
-		logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_ALLOC), "StCoreCyclic cannot reference allocated cyclic or pallet data", NULL);
-		core.error = true;
-		core.statusID = stCORE_ERROR_ALLOC;
-	}
-	else {
-		/* Only call if there is no error and valid references */
+	if(core.pCyclicControl && core.pCyclicStatus && core.ready) { /* Only process control data if the references are valid */
+		if(core.error)
+			memset(core.pCyclicControl, 0, core.interface.controlSize); /* Clear control data on critical error */
 		SuperTrakProcessControl(0, &controlInterface);
 	}
 		
@@ -104,22 +107,50 @@ long StCoreCyclic(void) {
 	SuperTrakCyclic1();
 	
 	/* Process SuperTrak status */
-	if(!core.error && saveParameters) 
+	if(core.pCyclicControl && core.pCyclicStatus && core.ready) /* Only process status data if the references are valid */
 		SuperTrakProcessStatus(0, &controlInterface);
+	
+	/**************
+	 Pallet Manager
+	**************/
+	/* Reset mapping */
+	memset(&core.palletMap, -1, sizeof(core.palletMap));
+	
+	/* Do not proceed if error or not ready */
+	if(core.error) {
+		if(core.pPalletData)
+			memset(core.pPalletData, 0, sizeof(SuperTrakPalletInfo_t) * core.palletCount); /* Clear pallet data on critical error */
+		return core.statusID;
+	}
 	
 	/* Read pallet information */
 	SuperTrakGetPalletInfo((unsigned long)core.pPalletData, core.palletCount, false); /* Read memory structure from 0 to palletCount - 1 */
 	
 	/* Update pallet mapping */
-	memset(&core.palletMap, -1, sizeof(core.palletMap));
+	palletPresentCount = 0;
 	for(i = 0; i < core.palletCount; i++) {
 		pPalletData = core.pPalletData + i;
 		/* Mapping the pallet ID if assigned (non-zero) to offset in memory structure (i) */
 		if(pPalletData->palletID)
 			core.palletMap[pPalletData->palletID] = i;
+		
+		/* Count the number of pallets present up to the user allocated amount */
+		if(GET_BIT(pPalletData->status, stPALLET_PRESENT))
+			palletPresentCount++;
 	}
 	
-	return core.statusID;
+	/* Compare pallets present from allocated data to system total pallets */
+	pSystemPalletCount = (unsigned short*)(core.pCyclicStatus + core.interface.systemStatusOffset + 2);
+	if(palletPresentCount != *pSystemPalletCount && !core.error && core.ready) {
+		args.i[0] = *pSystemPalletCount;
+		args.i[1] = palletPresentCount;
+		args.i[2] = core.palletCount;
+		logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_PALLET), "%i total pallets on system but only %i are allocated for - increase PalletCount %i in StCoreInit", &args);
+		core.error = true;
+		return core.statusID = stCORE_ERROR_PALLET;
+	}
+	
+	return 0;
 	
 } /* End function */
 

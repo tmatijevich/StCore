@@ -114,16 +114,6 @@ void StCoreTarget(StCoreTarget_typ *inst) {
 			break;
 			
 		case CORE_FUNCTION_EXECUTING:
-			/* Check references */
-			if(core.pCyclicControl == NULL || core.pCyclicStatus == NULL) {
-				/* Do not spam the logger, StCoreSystem logs this */
-				resetOutput(inst);
-				inst->Error = true;
-				inst->StatusID = stCORE_ERROR_ALLOC;
-				inst->Internal.State = CORE_FUNCTION_ERROR;
-				break;
-			}
-			
 			/* Check select changes */
 			if(inst->Target != inst->Internal.Select && inst->Target != inst->Internal.PreviousSelect) {
 				args.i[0] = inst->Internal.Select;
@@ -201,7 +191,7 @@ void StCoreTarget(StCoreTarget_typ *inst) {
 					resetCommand(inst);
 				
 				/* Monitor buffered command address */
-				if(inst->Internal.pCommand != 0) { 
+				else if(inst->Internal.pCommand != 0) { 
 					if(!inst->Acknowledged) { /* Command request acknowledged */
 						pCommand = (coreCommandType*)inst->Internal.pCommand;
 						if(pCommand->pInstance == inst) { /* Buffered command matches this instance */
@@ -230,7 +220,7 @@ void StCoreTarget(StCoreTarget_typ *inst) {
 						} /* Instance matches buffered command? */
 					} /* Command request acknowledged? */
 					
-					/* Wait here for acknowledgement */
+					/* Wait here while acknowledged */
 					
 				} /* Non-zero buffered command address? */
 				
