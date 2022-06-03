@@ -81,7 +81,7 @@ long StCoreCyclic(void) {
 	*****************************/
 	/* Check references */
 	if((core.pCyclicControl == NULL || core.pCyclicStatus == NULL || core.pPalletData == NULL) && !core.error) {
-		logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_ALLOCATION), "StCoreCyclic cannot reference allocated cyclic or pallet data", NULL);
+		logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_ALLOCATION), "StCoreCyclic cannot reference cyclic data", NULL);
 		core.error = true;
 		core.statusID = stCORE_ERROR_ALLOCATION;
 	}
@@ -145,7 +145,7 @@ long StCoreCyclic(void) {
 		args.i[0] = *pSystemPalletCount;
 		args.i[1] = palletPresentCount;
 		args.i[2] = core.palletCount;
-		logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_PALLET), "%i total pallets on system but only %i are allocated for - increase PalletCount %i in StCoreInit", &args);
+		logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_PALLET), "%i total pallets with %i allocated. Increase PalletCount %i in StCoreInit", &args);
 		core.error = true;
 		return core.statusID = stCORE_ERROR_PALLET;
 	}

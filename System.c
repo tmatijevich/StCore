@@ -22,7 +22,6 @@ void StCoreSystem(StCoreSystem_typ *inst) {
 	unsigned long dataUInt32;
 	long i;
 	unsigned char *pSectionStatus;
-	SuperTrakPalletInfo_t palletInfo[255];
 		
 	/************
 	 Switch State
@@ -131,19 +130,6 @@ void StCoreSystem(StCoreSystem_typ *inst) {
 				if(GET_BIT(*pSectionStatus, stSECTION_DISABLED_EXTERNALLY)) inst->Info.DisabledExternally = true;
 				if(GET_BIT(*pSectionStatus, stSECTION_WARNING)) inst->Info.SectionWarningPresent = true;
 				if(GET_BIT(*pSectionStatus, stSECTION_FAULT)) inst->Info.SectionFaultPresent = true;
-			}
-			
-			/* Pallet information */
-			inst->Info.PalletRecoveringCount = 0;
-			inst->Info.PalletInitializingCount = 0;
-			SuperTrakGetPalletInfo((unsigned long)&palletInfo, COUNT_OF(palletInfo), false);
-			for(i = 0; i < COUNT_OF(palletInfo); i++) {
-				if(GET_BIT(palletInfo[i].status, stPALLET_PRESENT)) { /* Pallet present */
-					if(GET_BIT(palletInfo[i].status, stPALLET_RECOVERING))
-						inst->Info.PalletRecoveringCount++;
-					if(GET_BIT(palletInfo[i].status, stPALLET_INITIALIZING))
-						inst->Info.PalletInitializingCount++;
-				}
 			}
 			
 			break;

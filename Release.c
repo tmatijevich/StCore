@@ -83,7 +83,7 @@ long coreReleasePallet(unsigned char target, unsigned char pallet, unsigned shor
 	/**********************
 	 Get command assignment
 	**********************/
-	status = coreCommandCreate(16, target, pallet, direction, &create);
+	status = coreCommandCreate(CORE_COMMAND_ID_RELEASE, target, pallet, direction, &create);
 	if(status)
 		return status;
 	
@@ -124,7 +124,7 @@ long coreReleaseTargetOffset(unsigned char target, unsigned char pallet, unsigne
 	/**********************
 	 Get command assignment
 	**********************/
-	status = coreCommandCreate(24, target, pallet, direction, &create);
+	status = coreCommandCreate(CORE_COMMAND_ID_OFFSET, target, pallet, direction, &create);
 	if(status)
 		return status;
 	
@@ -167,7 +167,7 @@ long coreReleaseIncrementalOffset(unsigned char target, unsigned char pallet, do
 	/**********************
 	 Get command assignment
 	**********************/
-	status = coreCommandCreate(28, target, pallet, 0, &create);
+	status = coreCommandCreate(CORE_COMMAND_ID_INCREMENT, target, pallet, 0, &create);
 	if(status)
 		return status;
 	
@@ -209,7 +209,7 @@ long coreContinueMove(unsigned char target, unsigned char pallet, void *pInstanc
 	/**********************
 	 Get command assignment
 	**********************/
-	status = coreCommandCreate(60, target, pallet, 0, &create);
+	status = coreCommandCreate(CORE_COMMAND_ID_CONTINUE, target, pallet, 0, &create);
 	if(status)
 		return status;
 	

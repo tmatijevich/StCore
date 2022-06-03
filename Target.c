@@ -137,7 +137,7 @@ void StCoreTarget(StCoreTarget_typ *inst) {
 			}
 			
 			/* Check select changes */
-			if(inst->Target != inst->Internal.Select && inst->Target != inst->Internal.PreviousSelect) {
+			if(inst->Target != inst->Internal.Select && inst->Target != inst->Internal.PreviousSelect && !inst->StatusID) {
 				args.i[0] = inst->Internal.Select;
 				args.i[1] = inst->Target;
 				logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_WARNING_INDEX), "StCoreTarget target %i index change to %i is ignored until re-enabled", &args);

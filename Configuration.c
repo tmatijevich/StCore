@@ -24,7 +24,7 @@ long coreSetPalletID(unsigned char target, unsigned char palletID, void *pInstan
 	/**********************
 	 Get command assignment
 	**********************/
-	status = coreCommandCreate(64, target, 0, 0, &assign);
+	status = coreCommandCreate(CORE_COMMAND_ID_PALLET_ID, target, 0, 0, &assign);
 	if(status)
 		return status;
 	
@@ -66,7 +66,7 @@ long coreSetMotionParameters(unsigned char target, unsigned char pallet, double 
 	/**********************
 	 Get command assignment
 	**********************/
-	status = coreCommandCreate(68, target, pallet, 0, &assign);
+	status = coreCommandCreate(CORE_COMMAND_ID_MOTION, target, pallet, 0, &assign);
 	if(status)
 		return status;
 	
@@ -111,7 +111,7 @@ long coreSetMechanicalParameters(unsigned char target, unsigned char pallet, dou
 	/**********************
 	 Get command assignment
 	**********************/
-	status = coreCommandCreate(72, target, pallet, 0, &assign);
+	status = coreCommandCreate(CORE_COMMAND_ID_MECHANICAL, target, pallet, 0, &assign);
 	if(status)
 		return status;
 	
@@ -155,7 +155,7 @@ long coreSetControlParameters(unsigned char target, unsigned char pallet, unsign
 	/**********************
 	 Get command assignment
 	**********************/
-	status = coreCommandCreate(76, target, pallet, 0, &assign);
+	status = coreCommandCreate(CORE_COMMAND_ID_CONTROL, target, pallet, 0, &assign);
 	if(status)
 		return status;
 	

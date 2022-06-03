@@ -210,10 +210,10 @@ END_FUNCTION
 
 FUNCTION_BLOCK StCorePallet (*Pallet core interface*)
 	VAR_INPUT
-		Enable : BOOL;
+		Enable : BOOL; (*Enable function execution*)
 		Pallet : USINT; (*Select pallet ID*)
-		ErrorReset : BOOL;
-		Parameters : StCorePalletParameterType;
+		ErrorReset : BOOL; (*Reset function error*)
+		Parameters : StCorePalletParameterType; (*Command parameters*)
 		ReleasePallet : BOOL; (*Release pallet to a target*)
 		ReleaseTargetOffset : BOOL; (*Release pallet to a target plus offset*)
 		ReleaseIncrementalOffset : BOOL; (*Increment a pallet's current offset*)
@@ -226,15 +226,15 @@ FUNCTION_BLOCK StCorePallet (*Pallet core interface*)
 		Valid : BOOL; (*Successful function execution*)
 		Error : BOOL; (*An error has occurred with the function*)
 		StatusID : DINT; (*Function error identifier*)
-		Present : BOOL;
-		Recovering : BOOL;
-		AtTarget : BOOL;
-		InPosition : BOOL;
-		ServoEnabled : BOOL;
-		Initializing : BOOL;
-		Lost : BOOL;
-		Section : USINT;
-		Position : LREAL;
+		Present : BOOL; (*(Par 1328) Pallet is present on the system*)
+		Recovering : BOOL; (*(Par 1328) Pallet requires recovery when enabled or is recovering*)
+		AtTarget : BOOL; (*(Par 1328) Pallet has arrived at target and is in position*)
+		InPosition : BOOL; (*(Par 1328) Pallet is in position at target*)
+		ServoEnabled : BOOL; (*(Par 1328) Pallet is currently controlled by the system*)
+		Initializing : BOOL; (*(Par 1328) Pallet is moving to Load Target*)
+		Lost : BOOL; (*(Par 1328) Pallet has lost position feedback*)
+		Section : USINT; (*(Par 1307) Actual pallet section number*)
+		Position : LREAL; (*mm (Par 1310) Actual pallet position*)
 		Info : StCorePalletInfoType; (*Extended pallet information*)
 		Busy : BOOL; (*A command request is executing*)
 		Acknowledged : BOOL; (*A command request has successfully acknowledged*)

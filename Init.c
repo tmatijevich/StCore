@@ -348,7 +348,7 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 		TMP_free(allocationSize, (void**)core.pPalletData);
 	status = TMP_alloc(allocationSize, (void**)&core.pPalletData);
 	if(status) {
-		logMemoryManagement((unsigned short)status, allocationSize, "pallet data");
+		logMemoryManagement((unsigned short)status, allocationSize, "pallet status data");
 		return stCORE_ERROR_ALLOCATION;
 	}
 	memset(core.pPalletData, 0, allocationSize);

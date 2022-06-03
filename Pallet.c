@@ -150,7 +150,7 @@ void StCorePallet(StCorePallet_typ *inst) {
 			}
 			
 			/* Monitor select */
-			if(inst->Internal.Select != inst->Pallet && inst->Pallet != inst->Internal.PreviousSelect) {
+			if(inst->Internal.Select != inst->Pallet && inst->Pallet != inst->Internal.PreviousSelect && !inst->StatusID) {
 				args.i[0] = inst->Internal.Select;
 				args.i[1] = inst->Pallet;
 				logMessage(CORE_LOG_SEVERITY_WARNING, coreLogCode(stCORE_WARNING_INDEX), "StCorePallet pallet change from %i to %i ignored until re-enabled", &args);

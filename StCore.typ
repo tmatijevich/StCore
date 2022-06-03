@@ -15,8 +15,6 @@ TYPE
 		DisabledExternally : BOOL; (*(Derived) One or more section disabled from external condition*)
 		SectionWarningPresent : BOOL; (*(Derived) One or more active SuperTrak section warning*)
 		SectionFaultPresent : BOOL; (*(Derived) One or more active SuperTrak section fault*)
-		PalletRecoveringCount : USINT; (*(Derived) Total number of pallets reporting recovering status*)
-		PalletInitializingCount : USINT; (*(Derived) Total number of palelts reporting initializing (moving to load target) status*)
 	END_STRUCT;
 	StCoreSectionInfoType : 	STRUCT  (*Extended section information*)
 		Warnings : UDINT; (*(Par 1480) Active SuperTrak section warnings*)

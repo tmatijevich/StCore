@@ -40,14 +40,14 @@ void StCoreSection(StCoreSection_typ *inst) {
 				if(inst->Section < 1 || CORE_SECTION_ADDRESS_MAX < inst->Section) {
 					args.i[0] = inst->Section;
 					args.i[1] = CORE_SECTION_ADDRESS_MAX;
-					logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_INDEX), "Section %i of StCoreSection exceeds limits [1, %]", &args);
+					logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_INDEX), "StCoreSection section %i index exceeds limits [1, %]", &args);
 					inst->Error = true;
 					inst->StatusID = stCORE_ERROR_INDEX;
 					inst->Internal.State = CORE_FUNCTION_ERROR;
 				}
 				else if(core.sectionMap[inst->Section] < 0) {
 					args.i[0] = inst->Section;
-					logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_INDEX), "Section %i of StCoreSection is not defined in system layout", &args);
+					logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_INDEX), "StCoreSection section %i index is not defined in system layout", &args);
 					inst->Error = true;
 					inst->StatusID = stCORE_ERROR_INDEX;
 					inst->Internal.State = CORE_FUNCTION_ERROR;
