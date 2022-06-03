@@ -25,21 +25,21 @@ long coreSimpleRelease(unsigned char target, unsigned char localMove, void *pIns
 	coreCommandType *pSimpleCommand;
 	
 	if(core.pSimpleRelease == NULL) {
-		logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_ALLOC), "Target simple release unable to reference command buffers", NULL);
-		return stCORE_ERROR_ALLOC;
+		logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_ALLOCATION), "Target simple release unable to reference command buffers", NULL);
+		return stCORE_ERROR_ALLOCATION;
 	}
 	
 	if(target < 1 || core.targetCount < target) {
 		args.i[0] = target;
 		args.i[1] = core.targetCount;
-		logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_INPUT), "Target simple release target %i exceeds initial target count [1, %i]", &args);
-		return stCORE_ERROR_INPUT;
+		logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_INDEX), "Target simple release target %i exceeds initial target count [1, %i]", &args);
+		return stCORE_ERROR_INDEX;
 	}
 	
 	if(localMove < 1 || 3 < localMove) {
 		args.i[0] = localMove;
-		logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_INPUT), "Target simple release local move index %i exceeds limits [1, 3]", &args);
-		return stCORE_ERROR_INPUT;
+		logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_INDEX), "Target simple release local move index %i exceeds limits [1, 3]", &args);
+		return stCORE_ERROR_INDEX;
 	}
 	
 	pSimpleCommand = core.pSimpleRelease + target - 1;

@@ -60,7 +60,7 @@ long StCoreCyclic(void) {
 			if(status != scERR_SUCCESS) {
 				coreLogServiceChannel((unsigned short)status, stPAR_SAVE_PARAMETERS, LOG_OBJECT);
 				core.error = true;
-				core.statusID = stCORE_ERROR_COMM;
+				core.statusID = stCORE_ERROR_PARAMETER;
 			}
 			else
 				core.ready = true;
@@ -71,9 +71,9 @@ long StCoreCyclic(void) {
 		
 	/* 4. Monitor changes to control interface configuration */
 	else if(memcmp(&currentInterfaceConfig, &core.interface, sizeof(currentInterfaceConfig)) != 0) {
-		logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_INTERFACE), "Please restart controller and do not modify control interface configuration", NULL);
+		logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_PROTOCAL), "Please restart controller and do not modify control interface configuration", NULL);
 		core.error = true;
-		core.statusID = stCORE_ERROR_INTERFACE;
+		core.statusID = stCORE_ERROR_PROTOCAL;
 	}
 	
 	/*****************************
@@ -81,9 +81,9 @@ long StCoreCyclic(void) {
 	*****************************/
 	/* Check references */
 	if((core.pCyclicControl == NULL || core.pCyclicStatus == NULL || core.pPalletData == NULL) && !core.error) {
-		logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_ALLOC), "StCoreCyclic cannot reference allocated cyclic or pallet data", NULL);
+		logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_ALLOCATION), "StCoreCyclic cannot reference allocated cyclic or pallet data", NULL);
 		core.error = true;
-		core.statusID = stCORE_ERROR_ALLOC;
+		core.statusID = stCORE_ERROR_ALLOCATION;
 	}
 	
 	/* Process StCore commands */

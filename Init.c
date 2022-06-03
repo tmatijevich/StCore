@@ -12,7 +12,7 @@ static long logMessage(coreLogSeverityEnum severity, unsigned short code, char *
 void logMemoryManagement(unsigned short result, unsigned long size, char *name);
 
 /* Global variable declaration */
-struct coreGlobalType core = {.error = true, .statusID = stCORE_ERROR_INIT};
+struct coreGlobalType core = {.error = true, .statusID = stCORE_ERROR_INITIALIZATION};
 
 /*********************
  StCoreInit definition
@@ -38,7 +38,7 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	
 	/* Assmume initialization error until the routine completes successfully (for transfer with init/exit routines) */
 	core.error = true;
-	core.statusID = stCORE_ERROR_INIT;
+	core.statusID = stCORE_ERROR_INITIALIZATION;
 	
 	/**************
 	 Create Logbook
@@ -100,7 +100,7 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	status = SuperTrakServChanRead(0, stPAR_SECTION_COUNT, 0, 1, (unsigned long)&sectionCount, sizeof(sectionCount));
 	if(status != scERR_SUCCESS) {
 		coreLogServiceChannel((unsigned short)status, stPAR_SECTION_COUNT, LOG_OBJECT);
-		return core.statusID = stCORE_ERROR_COMM;
+		return core.statusID = stCORE_ERROR_PARAMETER;
 	}
 		
 	/* Verify section count */
@@ -117,21 +117,21 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	status = SuperTrakServChanRead(0, stPAR_SECTION_ADDRESS, 0, sectionCount, (unsigned long)&networkOrder, sizeof(networkOrder));
 	if(status != scERR_SUCCESS) {
 		coreLogServiceChannel((unsigned short)status, stPAR_SECTION_ADDRESS, LOG_OBJECT);
-		return core.statusID = stCORE_ERROR_COMM;
+		return core.statusID = stCORE_ERROR_PARAMETER;
 	}
 	
 	/* Read head section */
 	status = SuperTrakServChanRead(0, stPAR_LOGICAL_HEAD_SECTION, 0, 1, (unsigned long)&headSection, sizeof(headSection));
 	if(status != scERR_SUCCESS) {
 		coreLogServiceChannel((unsigned short)status, stPAR_LOGICAL_HEAD_SECTION, LOG_OBJECT);
-		return core.statusID = stCORE_ERROR_COMM;
+		return core.statusID = stCORE_ERROR_PARAMETER;
 	}
 	
 	/* Read flow direction */
 	status = SuperTrakServChanRead(0, stPAR_FLOW_DIRECTION, 0, 1, (unsigned long)&flowDirection, sizeof(flowDirection));
 	if(status != scERR_SUCCESS) {
 		coreLogServiceChannel((unsigned short)status, stPAR_FLOW_DIRECTION, LOG_OBJECT);
-		return core.statusID = stCORE_ERROR_COMM;
+		return core.statusID = stCORE_ERROR_PARAMETER;
 	}
 	
 	/* Clear mapping table */
@@ -203,7 +203,7 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	status = SuperTrakServChanRead(0, stPAR_TARGET_SECTION, 1, COUNT_OF(dataUInt16), (unsigned long)&dataUInt16, sizeof(dataUInt16));
 	if(status != scERR_SUCCESS) {
 		coreLogServiceChannel((unsigned short)status, stPAR_TARGET_SECTION, LOG_OBJECT);
-		return core.statusID = stCORE_ERROR_COMM;
+		return core.statusID = stCORE_ERROR_PARAMETER;
 	}
 	
 	/* Find the last target to be defined (non-zero section number) */
@@ -225,7 +225,7 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	status = SuperTrakServChanWrite(0, stPAR_PLC_IF_OPTIONS, 0, 1, (unsigned long)&core.interface.options, sizeof(core.interface.options));
 	if(status != scERR_SUCCESS) {
 		coreLogServiceChannel((unsigned short)status, stPAR_PLC_IF_OPTIONS, LOG_OBJECT);
-		return core.statusID = stCORE_ERROR_COMM;
+		return core.statusID = stCORE_ERROR_PARAMETER;
 	}
 	
 	/* Section start */
@@ -233,7 +233,7 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	status = SuperTrakServChanWrite(0, stPAR_PLC_IF_SECTION_START, 0, 1, (unsigned long)&core.interface.sectionStartIndex, sizeof(core.interface.sectionStartIndex));
 	if(status != scERR_SUCCESS) {
 		coreLogServiceChannel((unsigned short)status, stPAR_PLC_IF_SECTION_START, LOG_OBJECT);
-		return core.statusID = stCORE_ERROR_COMM;
+		return core.statusID = stCORE_ERROR_PARAMETER;
 	}
 	
 	/* Section count */
@@ -241,7 +241,7 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	status = SuperTrakServChanWrite(0, stPAR_PLC_IF_SECTION_COUNT, 0, 1, (unsigned long)&core.interface.sectionCount, sizeof(core.interface.sectionCount));
 	if(status != scERR_SUCCESS) {
 		coreLogServiceChannel((unsigned short)status, stPAR_PLC_IF_SECTION_COUNT, LOG_OBJECT);
-		return core.statusID = stCORE_ERROR_COMM;
+		return core.statusID = stCORE_ERROR_PARAMETER;
 	}
 	
 	/* Target start */
@@ -249,7 +249,7 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	status = SuperTrakServChanWrite(0, stPAR_PLC_IF_TARGET_START, 0, 1, (unsigned long)&core.interface.targetStartIndex, sizeof(core.interface.targetStartIndex));
 	if(status != scERR_SUCCESS) {
 		coreLogServiceChannel((unsigned short)status, stPAR_PLC_IF_TARGET_START, LOG_OBJECT);
-		return core.statusID = stCORE_ERROR_COMM;
+		return core.statusID = stCORE_ERROR_PARAMETER;
 	}
 	
 	/* Target count */
@@ -257,7 +257,7 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	status = SuperTrakServChanWrite(0, stPAR_PLC_IF_TARGET_COUNT, 0, 1, (unsigned long)&core.interface.targetCount, sizeof(core.interface.targetCount));
 	if(status != scERR_SUCCESS) {
 		coreLogServiceChannel((unsigned short)status, stPAR_PLC_IF_TARGET_COUNT, LOG_OBJECT);
-		return core.statusID = stCORE_ERROR_COMM;
+		return core.statusID = stCORE_ERROR_PARAMETER;
 	}
 	
 	/* Command count */
@@ -265,7 +265,7 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	status = SuperTrakServChanWrite(0, stPAR_PLC_IF_COMMAND_COUNT, 0, 1, (unsigned long)&core.interface.commandCount, sizeof(core.interface.commandCount));
 	if(status != scERR_SUCCESS) {
 		coreLogServiceChannel((unsigned short)status, stPAR_PLC_IF_COMMAND_COUNT, LOG_OBJECT);
-		return core.statusID = stCORE_ERROR_COMM;
+		return core.statusID = stCORE_ERROR_PARAMETER;
 	}
 	
 	/* Network IO start */
@@ -273,7 +273,7 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	status = SuperTrakServChanWrite(0, stPAR_PLC_IF_NETWORK_IO_START, 0, 1, (unsigned long)&core.interface.networkIoStartIndex, sizeof(core.interface.networkIoStartIndex));
 	if(status != scERR_SUCCESS) {
 		coreLogServiceChannel((unsigned short)status, stPAR_PLC_IF_NETWORK_IO_START, LOG_OBJECT);
-		return core.statusID = stCORE_ERROR_COMM;
+		return core.statusID = stCORE_ERROR_PARAMETER;
 	}
 	
 	/* Network IO count */
@@ -281,7 +281,7 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	status = SuperTrakServChanWrite(0, stPAR_PLC_IF_NETWORK_IO_COUNT, 0, 1, (unsigned long)&core.interface.networkIoCount, sizeof(core.interface.networkIoCount));
 	if(status != scERR_SUCCESS) {
 		coreLogServiceChannel((unsigned short)status, stPAR_PLC_IF_NETWORK_IO_COUNT, LOG_OBJECT);
-		return core.statusID = stCORE_ERROR_COMM;
+		return core.statusID = stCORE_ERROR_PARAMETER;
 	}
 	
 	/* Revision */
@@ -289,7 +289,7 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	status = SuperTrakServChanWrite(0, stPAR_PLC_IF_REVISION, 0, 1, (unsigned long)&core.interface.revision, sizeof(core.interface.revision));
 	if(status != scERR_SUCCESS) {
 		coreLogServiceChannel((unsigned short)status, stPAR_PLC_IF_REVISION, LOG_OBJECT);
-		return core.statusID = stCORE_ERROR_COMM;
+		return core.statusID = stCORE_ERROR_PARAMETER;
 	}
 	
 	/**************************
@@ -306,7 +306,7 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	status = TMP_alloc(allocationSize, (void**)&core.pCyclicControl);
 	if(status) {
 		logMemoryManagement((unsigned short)status, allocationSize, "cyclic control data");
-		return stCORE_ERROR_ALLOC;
+		return stCORE_ERROR_ALLOCATION;
 	}
 	memset(core.pCyclicControl, 0, allocationSize); /* Initialization memory to zero */
 	
@@ -316,7 +316,7 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	status = TMP_alloc(allocationSize, (void**)&core.pCyclicStatus);
 	if(status) {
 		logMemoryManagement((unsigned short)status, allocationSize, "cyclic status data");
-		return stCORE_ERROR_ALLOC;
+		return stCORE_ERROR_ALLOCATION;
 	}
 	memset(core.pCyclicStatus, 0, allocationSize); /* Initialization memory to zero */
 	
@@ -327,7 +327,7 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	status = TMP_alloc(allocationSize, (void**)&core.pSimpleRelease);
 	if(status) {
 		logMemoryManagement((unsigned short)status, allocationSize, "simple target release");
-		return stCORE_ERROR_ALLOC;
+		return stCORE_ERROR_ALLOCATION;
 	}
 	memset(core.pSimpleRelease, 0, allocationSize); /* Initialization memory to zero */
 	
@@ -338,7 +338,7 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	status = TMP_alloc(allocationSize, (void**)&core.pCommandBuffer);
 	if(status) {
 		logMemoryManagement((unsigned short)status, allocationSize, "pallet command buffers");
-		return stCORE_ERROR_ALLOC;
+		return stCORE_ERROR_ALLOCATION;
 	}
 	memset(core.pCommandBuffer, 0, allocationSize); /* Initialization memory to zero */
 	
@@ -349,7 +349,7 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	status = TMP_alloc(allocationSize, (void**)&core.pPalletData);
 	if(status) {
 		logMemoryManagement((unsigned short)status, allocationSize, "pallet data");
-		return stCORE_ERROR_ALLOC;
+		return stCORE_ERROR_ALLOCATION;
 	}
 	memset(core.pPalletData, 0, allocationSize);
 	
@@ -378,6 +378,6 @@ void logMemoryManagement(unsigned short result, unsigned long size, char *name) 
 	coreStringCopy(args.s[0], name, sizeof(args.s[0]));
 
 	/* Log message */
-	logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_ALLOC), "TMP_alloc() error %i when allocating %i bytes for %s", &args);
+	logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_ALLOCATION), "TMP_alloc() error %i when allocating %i bytes for %s", &args);
 	
 } /* End function */

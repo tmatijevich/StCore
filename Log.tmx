@@ -7,7 +7,7 @@
     <tu tuid="-536805912">
       <note>Init 65000</note>
       <tuv xml:lang="en">
-        <seg>StCoreInit is unable to create the logbook</seg>
+        <seg>An error occurred during initialization when creating the logbook</seg>
       </tuv>
     </tu>
     <tu tuid="-536804376">
@@ -19,13 +19,13 @@
     <tu tuid="-536804276">
       <note>Init 1100</note>
       <tuv xml:lang="en">
-        <seg>Invalid SuperTrak system layout. Use TrakMaster's easy setup for the system layout</seg>
+        <seg>Invalid SuperTrak layout due to the section count, section addresses, or network order</seg>
       </tuv>
     </tu>
     <tu tuid="536937648">
       <note>Init 1200</note>
       <tuv xml:lang="en">
-        <seg>SuperTrak and StCore initialization complete</seg>
+        <seg>StCore initialization complete</seg>
       </tuv>
     </tu>
     <tu tuid="1610679572">
@@ -49,7 +49,7 @@
     <tu tuid="-536803176">
       <note>Cyclic 2200</note>
       <tuv xml:lang="en">
-        <seg>A pallet ID exceeds the configured pallet count</seg>
+        <seg>An unallocated pallet has been discovered on the SuperTrak</seg>
       </tuv>
     </tu>
     <tu tuid="-536802376">
@@ -61,61 +61,79 @@
     <tu tuid="-536802276">
       <note>Any 3100</note>
       <tuv xml:lang="en">
-        <seg>Unable to allocate or reference cyclic and command memory storage</seg>
+        <seg>Unable to allocate or reference cyclic StCore data</seg>
       </tuv>
     </tu>
     <tu tuid="-536801376">
-      <note>System, Section 4000</note>
+      <note>Function 4000</note>
+      <tuv xml:lang="en">
+        <seg>StCore command context (target or pallet) does not exist on the system</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536801276">
+      <note>Function 4100</note>
+      <tuv xml:lang="en">
+        <seg>StCore command request is rejected due to full buffer</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-1610543099">
+      <note>Function 4101</note>
+      <tuv xml:lang="en">
+        <seg>Future StCore command requests will be rejected until buffer empties</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-1610543098">
+      <note>Function 4102</note>
+      <tuv xml:lang="en">
+        <seg>Pallet command buffers are paused because all channels are in use</seg>
+      </tuv>
+    </tu>
+    <tu tuid="1610682472">
+      <note>Function 4200</note>
+      <tuv xml:lang="en">
+        <seg>StCore command request to SuperTrak</seg>
+      </tuv>
+    </tu>
+    <tu tuid="1610682572">
+      <note>Function 4300</note>
+      <tuv xml:lang="en">
+        <seg>StCore command acknowledged by SuperTrak</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536800976">
+      <note>Function 4400</note>
+      <tuv xml:lang="en">
+        <seg>StCore command response from SuperTrak has timed out</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536800876">
+      <note>Function 4500</note>
+      <tuv xml:lang="en">
+        <seg>SuperTrak responded with error to StCore command request</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536800376">
+      <note>Interface 5000</note>
       <tuv xml:lang="en">
         <seg>Multiple instances of the function block are used in the same context</seg>
       </tuv>
     </tu>
-    <tu tuid="-536800376">
-      <note>Any 5000</note>
-      <tuv xml:lang="en">
-        <seg>StCore function input out of range</seg>
-      </tuv>
-    </tu>
     <tu tuid="-536800276">
-      <note>Any 5100</note>
+      <note>Interface 5100</note>
       <tuv xml:lang="en">
-        <seg>StCore command request is rejected</seg>
+        <seg>The user index selection (section, target, or pallet) does not exist on the system</seg>
       </tuv>
     </tu>
     <tu tuid="-1610542099">
-      <note>Any 5101</note>
+      <note>Interface 5101</note>
       <tuv xml:lang="en">
-        <seg>StCore pallet command buffer is now full and will reject commands until cleared</seg>
+        <seg>The user index selection has been modified while the function block is enabled</seg>
       </tuv>
     </tu>
-    <tu tuid="-1610542000">
-      <note>Any 5200</note>
+    <tu tuid="-536800176">
+      <note>Interface 5200</note>
       <tuv xml:lang="en">
-        <seg>StCore index selection change ignored while enabled</seg>
-      </tuv>
-    </tu>
-    <tu tuid="1610684272">
-      <note>Any 6000</note>
-      <tuv xml:lang="en">
-        <seg>StCore command request</seg>
-      </tuv>
-    </tu>
-    <tu tuid="1610684372">
-      <note>Any 6100</note>
-      <tuv xml:lang="en">
-        <seg>StCore command successful</seg>
-      </tuv>
-    </tu>
-    <tu tuid="-536799176">
-      <note>Any 6200</note>
-      <tuv xml:lang="en">
-        <seg>StCore command failure</seg>
-      </tuv>
-    </tu>
-    <tu tuid="-536799076">
-      <note>Any 6300</note>
-      <tuv xml:lang="en">
-        <seg>StCore command timeout</seg>
+        <seg>StCore function block is unable to acknowledge the command request due to buffer overwrite</seg>
       </tuv>
     </tu>
     <tu tuid="-1610481664">

@@ -13,6 +13,8 @@ static void resetOutput(StCoreTarget_typ *inst);
 static void activateCommand(StCoreTarget_typ *inst, unsigned char select);
 static void resetCommand(StCoreTarget_typ *inst);
 static void recordInput(StCoreTarget_typ *inst, unsigned short *pData);
+static void controlError(StCoreTarget_typ *inst, long status);
+static void statusError(StCoreTarget_typ *inst, long status);
 
 /* Get target status */
 long StCoreTargetStatus(unsigned char Target, StCoreTargetStatusType *Status) {
@@ -29,13 +31,20 @@ long StCoreTargetStatus(unsigned char Target, StCoreTargetStatusType *Status) {
 	/* Clear status structure */
 	memset(Status, 0, sizeof(*Status));
 	
+	/******
+	 Verify
+	******/
+	/* Check core */
+	if(core.error)
+		return core.statusID;
+	
 	/* Check select */
 	if(Target < 1 || core.targetCount < Target)
-		return stCORE_ERROR_INPUT;
+		return stCORE_ERROR_INDEX;
 	
 	/* Check reference */
 	if(core.pCyclicStatus == NULL)
-		return stCORE_ERROR_ALLOC;
+		return stCORE_ERROR_ALLOCATION;
 	
 	/**********
 	 Set Status
@@ -79,7 +88,8 @@ void StCoreTarget(StCoreTarget_typ *inst) {
 	 Declare Local Variables
 	***********************/
 	coreFormatArgumentType args;
-	StCoreTargetStatusType status;
+	long status;
+	StCoreTargetStatusType targetStatus;
 	unsigned short input;
 	coreCommandType *pCommand;
 	
@@ -96,13 +106,14 @@ void StCoreTarget(StCoreTarget_typ *inst) {
 			
 			/* Wait for enable */
 			if(inst->Enable) {
-				/* Check select */
+				/* Check index */
+				/* The number of targets are counted during initialization */
 				if(inst->Target < 1 || core.targetCount < inst->Target) {
 					args.i[0] = inst->Target;
 					args.i[1] = core.targetCount;
-					logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_INPUT), "StCoreTarget call with target %i exceeds limits [1, %i]", &args);
+					logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_INDEX), "StCoreTarget target %i index exceeds initial count [1, %i]", &args);
 					inst->Error = true;
-					inst->StatusID = stCORE_ERROR_INPUT;
+					inst->StatusID = stCORE_ERROR_INDEX;
 					inst->Internal.State = CORE_FUNCTION_ERROR;
 				}
 				else {
@@ -114,11 +125,23 @@ void StCoreTarget(StCoreTarget_typ *inst) {
 			break;
 			
 		case CORE_FUNCTION_EXECUTING:
+			/* Cyclic error checks */
+			if(core.error) {
+				args.i[0] = inst->Internal.Select;
+				logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(core.statusID), "Cannot execute StCoreTarget target %i due to critical error in StCore", &args);
+				resetOutput(inst);
+				inst->Error = true;
+				inst->StatusID = core.statusID;
+				inst->Internal.State = CORE_FUNCTION_ERROR;
+				break;
+			}
+			
 			/* Check select changes */
 			if(inst->Target != inst->Internal.Select && inst->Target != inst->Internal.PreviousSelect) {
 				args.i[0] = inst->Internal.Select;
 				args.i[1] = inst->Target;
-				logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_INPUT), "StCoreTarget target select %i change to %i is ignored until re-enabled", &args);
+				logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_WARNING_INDEX), "StCoreTarget target %i index change to %i is ignored until re-enabled", &args);
+				inst->StatusID = stCORE_WARNING_INDEX;
 			}
 			
 			/*******
@@ -128,57 +151,97 @@ void StCoreTarget(StCoreTarget_typ *inst) {
 			/* Set pallet ID */
 			if(inst->SetPalletID && !GET_BIT(inst->Internal.PreviousCommand, CORE_COMMAND_ID)) {
 				/* Run and activate */
-				coreSetPalletID(inst->Internal.Select, inst->Parameters.PalletID, (void*)inst, (coreCommandType**)&inst->Internal.pCommand);
-				activateCommand(inst, CORE_COMMAND_ID);
+				status = coreSetPalletID(inst->Internal.Select, inst->Parameters.PalletID, (void*)inst, (coreCommandType**)&inst->Internal.pCommand);
+				if(status) { 
+					controlError(inst, status);
+					break;
+				}
+				else
+					activateCommand(inst, CORE_COMMAND_ID);
 			}
 			
 			/* Set motion parameters */
 			if(inst->SetMotionParameters && !GET_BIT(inst->Internal.PreviousCommand, CORE_COMMAND_MOTION)) {
 				/* Run and activate */
-				coreSetMotionParameters(inst->Internal.Select, 0, inst->Parameters.Motion.Velocity, inst->Parameters.Motion.Acceleration, (void*)inst, (coreCommandType**)&inst->Internal.pCommand);
-				activateCommand(inst, CORE_COMMAND_MOTION);
+				status = coreSetMotionParameters(inst->Internal.Select, 0, inst->Parameters.Motion.Velocity, inst->Parameters.Motion.Acceleration, (void*)inst, (coreCommandType**)&inst->Internal.pCommand);
+				if(status) { 
+					controlError(inst, status);
+					break;
+				}
+				else
+					activateCommand(inst, CORE_COMMAND_MOTION);
 			}
 			
 			/* Set mechanical parameters */
 			if(inst->SetMechanicalParameters && !GET_BIT(inst->Internal.PreviousCommand, CORE_COMMAND_MECHANICAL)) {
 				/* Run and activate */
-				coreSetMechanicalParameters(inst->Internal.Select, 0, inst->Parameters.Mechanical.ShelfWidth, inst->Parameters.Mechanical.CenterOffset, (void*)inst, (coreCommandType**)&inst->Internal.pCommand);
-				activateCommand(inst, CORE_COMMAND_MECHANICAL);
+				status = coreSetMechanicalParameters(inst->Internal.Select, 0, inst->Parameters.Mechanical.ShelfWidth, inst->Parameters.Mechanical.CenterOffset, (void*)inst, (coreCommandType**)&inst->Internal.pCommand);
+				if(status) { 
+					controlError(inst, status);
+					break;
+				}
+				else
+					activateCommand(inst, CORE_COMMAND_MECHANICAL);
 			}
 			
 			/* Set mechanical parameters */
 			if(inst->SetControlParameters && !GET_BIT(inst->Internal.PreviousCommand, CORE_COMMAND_CONTROL)) {
 				/* Run and activate */
-				coreSetControlParameters(inst->Internal.Select, 0, inst->Parameters.Control.ControlGainSet, inst->Parameters.Control.MovingFilter, inst->Parameters.Control.StationaryFilter, (void*)inst, (coreCommandType**)&inst->Internal.pCommand);
-				activateCommand(inst, CORE_COMMAND_CONTROL);
+				status = coreSetControlParameters(inst->Internal.Select, 0, inst->Parameters.Control.ControlGainSet, inst->Parameters.Control.MovingFilter, inst->Parameters.Control.StationaryFilter, (void*)inst, (coreCommandType**)&inst->Internal.pCommand);
+				if(status) { 
+					controlError(inst, status);
+					break;
+				}
+				else
+					activateCommand(inst, CORE_COMMAND_CONTROL);
 			}
 			
 			/* Release pallet */
 			if(inst->ReleasePallet && !GET_BIT(inst->Internal.PreviousCommand, CORE_COMMAND_RELEASE)) {
 				/* Run and activate */
-				coreReleasePallet(inst->Internal.Select, 0, inst->Parameters.Release.Direction, inst->Parameters.Release.DestinationTarget, (void*)inst, (coreCommandType**)&inst->Internal.pCommand);
-				activateCommand(inst, CORE_COMMAND_RELEASE);
+				status = coreReleasePallet(inst->Internal.Select, 0, inst->Parameters.Release.Direction, inst->Parameters.Release.DestinationTarget, (void*)inst, (coreCommandType**)&inst->Internal.pCommand);
+				if(status) { 
+					controlError(inst, status);
+					break;
+				}
+				else
+					activateCommand(inst, CORE_COMMAND_RELEASE);
 			}
 			
 			/* Release target offset */
 			if(inst->ReleaseTargetOffset && !GET_BIT(inst->Internal.PreviousCommand, CORE_COMMAND_OFFSET)) {
 				/* Run and activate */
-				coreReleaseTargetOffset(inst->Internal.Select, 0, inst->Parameters.Release.Direction, inst->Parameters.Release.DestinationTarget, inst->Parameters.Release.Offset, (void*)inst, (coreCommandType**)&inst->Internal.pCommand);
-				activateCommand(inst, CORE_COMMAND_OFFSET);
+				status = coreReleaseTargetOffset(inst->Internal.Select, 0, inst->Parameters.Release.Direction, inst->Parameters.Release.DestinationTarget, inst->Parameters.Release.Offset, (void*)inst, (coreCommandType**)&inst->Internal.pCommand);
+				if(status) { 
+					controlError(inst, status);
+					break;
+				}
+				else
+					activateCommand(inst, CORE_COMMAND_OFFSET);
 			}
 			
 			/* Release incremental offset */
 			if(inst->ReleaseIncrementalOffset && !GET_BIT(inst->Internal.PreviousCommand, CORE_COMMAND_INCREMENT)) {
 				/* Run and activate */
-				coreReleaseIncrementalOffset(inst->Internal.Select, 0, inst->Parameters.Release.Offset, (void*)inst, (coreCommandType**)&inst->Internal.pCommand);
-				activateCommand(inst, CORE_COMMAND_INCREMENT);
+				status = coreReleaseIncrementalOffset(inst->Internal.Select, 0, inst->Parameters.Release.Offset, (void*)inst, (coreCommandType**)&inst->Internal.pCommand);
+				if(status) { 
+					controlError(inst, status);
+					break;
+				}
+				else
+					activateCommand(inst, CORE_COMMAND_INCREMENT);
 			}
 			
 			/* Continue move */
 			if(inst->ContinueMove && !GET_BIT(inst->Internal.PreviousCommand, CORE_COMMAND_CONTINUE)) {
 				/* Run and activate */
-				coreContinueMove(inst->Internal.Select, 0, (void*)inst, (coreCommandType**)&inst->Internal.pCommand);
-				activateCommand(inst, CORE_COMMAND_CONTINUE);
+				status = coreContinueMove(inst->Internal.Select, 0, (void*)inst, (coreCommandType**)&inst->Internal.pCommand);
+				if(status) { 
+					controlError(inst, status);
+					break;
+				}
+				else
+					activateCommand(inst, CORE_COMMAND_CONTINUE);
 			}
 			
 			/* Record command inputs */
@@ -214,37 +277,59 @@ void StCoreTarget(StCoreTarget_typ *inst) {
 							}
 						}
 						else { 
-							/* Function block instance does not match buffered command */
-							resetCommand(inst);
+							/* Error if the instance tracking does not match */
+							args.i[0] = inst->Internal.Select;
+							logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_ACKNOWLEDGE), "StCoreTarget target %i command cannot be acknowledged", &args);
+							resetOutput(inst);
+							inst->Error = true;
+							inst->StatusID = stCORE_ERROR_ACKNOWLEDGE;
+							inst->Internal.State = CORE_FUNCTION_ERROR;
+							break;
 							
 						} /* Instance matches buffered command? */
 					} /* Command request acknowledged? */
 					
-					/* Wait here while acknowledged */
+					/* Wait here while acknowledged for user command to reset */
 					
 				} /* Non-zero buffered command address? */
 				
-				/* Clear if buffered command address was not shared */
-				else if(!inst->Acknowledged)
-					resetCommand(inst);
+				/* Error if buffered command address was not shared */
+				else if(!inst->Acknowledged) {
+					args.i[0] = inst->Internal.Select;
+					logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_ACKNOWLEDGE), "StCoreTarget target %i command cannot be acknowledged", &args);
+					resetOutput(inst);
+					inst->Error = true;
+					inst->StatusID = stCORE_ERROR_ACKNOWLEDGE;
+					inst->Internal.State = CORE_FUNCTION_ERROR;
+					break;
+				}
 			}
 			
 			/******
 			 Status
 			******/
 			/* Call target status subroutine */
-			StCoreTargetStatus(inst->Internal.Select, &status);
+			status = StCoreTargetStatus(inst->Internal.Select, &targetStatus);
+			if(status) {
+				statusError(inst, status);
+				break;
+			}
 			
 			/* Map target status data to function block */
-			inst->PalletPresent = status.PalletPresent;
-			inst->PalletInPosition = status.PalletInPosition;
-			inst->PalletPreArrival = status.PalletPreArrival;
-			inst->PalletOverTarget = status.PalletOverTarget;
-			inst->PalletPositionUncertain = status.PalletPositionUncertain;
-			inst->PalletID = status.PalletID;
+			inst->PalletPresent = targetStatus.PalletPresent;
+			inst->PalletInPosition = targetStatus.PalletInPosition;
+			inst->PalletPreArrival = targetStatus.PalletPreArrival;
+			inst->PalletOverTarget = targetStatus.PalletOverTarget;
+			inst->PalletPositionUncertain = targetStatus.PalletPositionUncertain;
+			inst->PalletID = targetStatus.PalletID;
 			
-			memcpy(&inst->Info, &status.Info, sizeof(inst->Info));
+			memcpy(&inst->Info, &targetStatus.Info, sizeof(inst->Info));
 			
+			/* Allow warning reset */
+			if(inst->ErrorReset && !inst->Internal.PreviousErrorReset)
+				inst->StatusID = 0;
+				
+			/* Report valid */
 			inst->Valid = true;
 			
 			break;
@@ -255,6 +340,8 @@ void StCoreTarget(StCoreTarget_typ *inst) {
 			
 			/* Wait for error reset */
 			if(inst->ErrorReset && !inst->Internal.PreviousErrorReset) {
+				/* The function block is enabled otherwise the state would be disabled (interrupt) */
+				/* Maintain the select index when originally enabled */
 				resetOutput(inst);
 				inst->Internal.State = CORE_FUNCTION_EXECUTING;
 			}
@@ -324,4 +411,30 @@ void recordInput(StCoreTarget_typ *inst, unsigned short *pData) {
 	coreAssign16(pData, CORE_COMMAND_MOTION, inst->SetMotionParameters);
 	coreAssign16(pData, CORE_COMMAND_MECHANICAL, inst->SetMechanicalParameters);
 	coreAssign16(pData, CORE_COMMAND_CONTROL, inst->SetControlParameters);
+}
+
+/* Activate error if command request returns error */
+void controlError(StCoreTarget_typ *inst, long status) {
+	/* Declare local variables */
+	coreFormatArgumentType args;
+	
+	args.i[0] = inst->Internal.Select;
+	logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(status), "StCoreTarget target %i received an error from command request", &args);
+	resetOutput(inst);
+	inst->Error = true;
+	inst->StatusID = status;
+	inst->Internal.State = CORE_FUNCTION_ERROR;
+}
+
+/* Activate error if status request returns error */
+void statusError(StCoreTarget_typ *inst, long status) {
+	/* Declare local variables */
+	coreFormatArgumentType args;
+	
+	args.i[0] = inst->Internal.Select;
+	logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(status), "StCoreTarget target %i received an error from status read", &args);
+	resetOutput(inst);
+	inst->Error = true;
+	inst->StatusID = status;
+	inst->Internal.State = CORE_FUNCTION_ERROR;
 }

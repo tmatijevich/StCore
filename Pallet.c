@@ -13,6 +13,8 @@ static void resetOutput(StCorePallet_typ *inst);
 static void activateCommand(StCorePallet_typ *inst, unsigned char select);
 static void resetCommand(StCorePallet_typ *inst);
 static void recordInput(StCorePallet_typ *inst, unsigned short *pData);
+static void controlError(StCorePallet_typ *inst, long status);
+static void statusError(StCorePallet_typ *inst, long status);
 
 /* Get pallet status */
 long StCorePalletStatus(unsigned char Pallet, StCorePalletStatusType *Status) {
@@ -39,11 +41,11 @@ long StCorePalletStatus(unsigned char Pallet, StCorePalletStatusType *Status) {
 	******/
 	/* Check core */
 	if(core.error)
-		return stCORE_ERROR_CRITICAL;
+		return core.statusID;
 	
 	/* Check reference */
 	if(core.pPalletData == NULL)
-		return stCORE_ERROR_ALLOC;
+		return stCORE_ERROR_ALLOCATION;
 		
 	/* Check user input */
 	if(core.palletMap[Pallet] == -1)
@@ -100,7 +102,8 @@ void StCorePallet(StCorePallet_typ *inst) {
 	 Declare Local Variables
 	***********************/
 	coreFormatArgumentType args;
-	StCorePalletStatusType status;
+	long status;
+	StCorePalletStatusType palletStatus;
 	unsigned short input;
 	coreCommandType *pCommand;
 	
@@ -128,10 +131,10 @@ void StCorePallet(StCorePallet_typ *inst) {
 			/* Cyclic error checks */
 			if(core.error) {
 				args.i[0] = inst->Internal.Select;
-				logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_CRITICAL), "Cannot execute StCorePallet pallet %i due to critical StCore error", &args);
+				logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(core.statusID), "Cannot execute StCorePallet pallet %i due to critical error in StCore", &args);
 				resetOutput(inst);
 				inst->Error = true;
-				inst->StatusID = stCORE_ERROR_CRITICAL;
+				inst->StatusID = core.statusID;
 				inst->Internal.State = CORE_FUNCTION_ERROR;
 				break;
 			}
@@ -150,60 +153,95 @@ void StCorePallet(StCorePallet_typ *inst) {
 			if(inst->Internal.Select != inst->Pallet && inst->Pallet != inst->Internal.PreviousSelect) {
 				args.i[0] = inst->Internal.Select;
 				args.i[1] = inst->Pallet;
-				logMessage(CORE_LOG_SEVERITY_WARNING, coreLogCode(stCORE_WARNING_SELECT), "StCorePallet pallet change from %i to %i ignored until re-enabled", &args);
-				inst->StatusID = stCORE_WARNING_SELECT;
+				logMessage(CORE_LOG_SEVERITY_WARNING, coreLogCode(stCORE_WARNING_INDEX), "StCorePallet pallet change from %i to %i ignored until re-enabled", &args);
+				inst->StatusID = stCORE_WARNING_INDEX;
 			}
 			
-			/********
-			 Commands
-			********/
+			/*******
+			 Control
+			*******/
 			/* Set motion parameters */
 			if(inst->SetMotionParameters && !GET_BIT(inst->Internal.PreviousCommand, CORE_COMMAND_MOTION)) {
 				/* Run and activate */
-				coreSetMotionParameters(inst->Internal.Select, 0, inst->Parameters.Motion.Velocity, inst->Parameters.Motion.Acceleration, (void*)inst, (coreCommandType**)&inst->Internal.pCommand);
-				activateCommand(inst, CORE_COMMAND_MOTION);
+				status = coreSetMotionParameters(0, inst->Internal.Select, inst->Parameters.Motion.Velocity, inst->Parameters.Motion.Acceleration, (void*)inst, (coreCommandType**)&inst->Internal.pCommand);
+				if(status) { 
+					controlError(inst, status);
+					break;
+				}
+				else
+					activateCommand(inst, CORE_COMMAND_MOTION);
 			}
 			
 			/* Set mechanical parameters */
 			if(inst->SetMechanicalParameters && !GET_BIT(inst->Internal.PreviousCommand, CORE_COMMAND_MECHANICAL)) {
 				/* Run and activate */
-				coreSetMechanicalParameters(inst->Internal.Select, 0, inst->Parameters.Mechanical.ShelfWidth, inst->Parameters.Mechanical.CenterOffset, (void*)inst, (coreCommandType**)&inst->Internal.pCommand);
-				activateCommand(inst, CORE_COMMAND_MECHANICAL);
+				status = coreSetMechanicalParameters(0, inst->Internal.Select, inst->Parameters.Mechanical.ShelfWidth, inst->Parameters.Mechanical.CenterOffset, (void*)inst, (coreCommandType**)&inst->Internal.pCommand);
+				if(status) { 
+					controlError(inst, status);
+					break;
+				}
+				else
+					activateCommand(inst, CORE_COMMAND_MECHANICAL);
 			}
 			
 			/* Set mechanical parameters */
 			if(inst->SetControlParameters && !GET_BIT(inst->Internal.PreviousCommand, CORE_COMMAND_CONTROL)) {
 				/* Run and activate */
-				coreSetControlParameters(inst->Internal.Select, 0, inst->Parameters.Control.ControlGainSet, inst->Parameters.Control.MovingFilter, inst->Parameters.Control.StationaryFilter, (void*)inst, (coreCommandType**)&inst->Internal.pCommand);
-				activateCommand(inst, CORE_COMMAND_CONTROL);
+				status = coreSetControlParameters(0, inst->Internal.Select, inst->Parameters.Control.ControlGainSet, inst->Parameters.Control.MovingFilter, inst->Parameters.Control.StationaryFilter, (void*)inst, (coreCommandType**)&inst->Internal.pCommand);
+				if(status) { 
+					controlError(inst, status);
+					break;
+				}
+				else
+					activateCommand(inst, CORE_COMMAND_CONTROL);
 			}
 			
 			/* Release pallet */
 			if(inst->ReleasePallet && !GET_BIT(inst->Internal.PreviousCommand, CORE_COMMAND_RELEASE)) {
 				/* Run and activate */
-				coreReleasePallet(inst->Internal.Select, 0, inst->Parameters.Release.Direction, inst->Parameters.Release.DestinationTarget, (void*)inst, (coreCommandType**)&inst->Internal.pCommand);
-				activateCommand(inst, CORE_COMMAND_RELEASE);
+				status = coreReleasePallet(0, inst->Internal.Select, inst->Parameters.Release.Direction, inst->Parameters.Release.DestinationTarget, (void*)inst, (coreCommandType**)&inst->Internal.pCommand);
+				if(status) { 
+					controlError(inst, status);
+					break;
+				}
+				else
+					activateCommand(inst, CORE_COMMAND_RELEASE);
 			}
 			
 			/* Release target offset */
 			if(inst->ReleaseTargetOffset && !GET_BIT(inst->Internal.PreviousCommand, CORE_COMMAND_OFFSET)) {
 				/* Run and activate */
-				coreReleaseTargetOffset(inst->Internal.Select, 0, inst->Parameters.Release.Direction, inst->Parameters.Release.DestinationTarget, inst->Parameters.Release.Offset, (void*)inst, (coreCommandType**)&inst->Internal.pCommand);
-				activateCommand(inst, CORE_COMMAND_OFFSET);
+				status = coreReleaseTargetOffset(0, inst->Internal.Select, inst->Parameters.Release.Direction, inst->Parameters.Release.DestinationTarget, inst->Parameters.Release.Offset, (void*)inst, (coreCommandType**)&inst->Internal.pCommand);
+				if(status) { 
+					controlError(inst, status);
+					break;
+				}
+				else
+					activateCommand(inst, CORE_COMMAND_OFFSET);
 			}
 			
 			/* Release incremental offset */
 			if(inst->ReleaseIncrementalOffset && !GET_BIT(inst->Internal.PreviousCommand, CORE_COMMAND_INCREMENT)) {
 				/* Run and activate */
-				coreReleaseIncrementalOffset(inst->Internal.Select, 0, inst->Parameters.Release.Offset, (void*)inst, (coreCommandType**)&inst->Internal.pCommand);
-				activateCommand(inst, CORE_COMMAND_INCREMENT);
+				status = coreReleaseIncrementalOffset(0, inst->Internal.Select, inst->Parameters.Release.Offset, (void*)inst, (coreCommandType**)&inst->Internal.pCommand);
+				if(status) { 
+					controlError(inst, status);
+					break;
+				}
+				else
+					activateCommand(inst, CORE_COMMAND_INCREMENT);
 			}
 			
 			/* Continue move */
 			if(inst->ContinueMove && !GET_BIT(inst->Internal.PreviousCommand, CORE_COMMAND_CONTINUE)) {
 				/* Run and activate */
-				coreContinueMove(inst->Internal.Select, 0, (void*)inst, (coreCommandType**)&inst->Internal.pCommand);
-				activateCommand(inst, CORE_COMMAND_CONTINUE);
+				status = coreContinueMove(0, inst->Internal.Select, (void*)inst, (coreCommandType**)&inst->Internal.pCommand);
+				if(status) { 
+					controlError(inst, status);
+					break;
+				}
+				else
+					activateCommand(inst, CORE_COMMAND_CONTINUE);
 			}
 			
 			/* Record command inputs */
@@ -266,6 +304,26 @@ void StCorePallet(StCorePallet_typ *inst) {
 					break;
 				}
 			}
+			
+			/******
+			 Status
+			******/
+			status = StCorePalletStatus(inst->Internal.Select, &palletStatus);
+			if(status) {
+				statusError(inst, status);
+				break;
+			}
+			
+			inst->Present = palletStatus.Present;
+			inst->Recovering = palletStatus.Recovering;
+			inst->AtTarget = palletStatus.AtTarget;
+			inst->InPosition = palletStatus.InPosition;
+			inst->ServoEnabled = palletStatus.ServoEnabled;
+			inst->Initializing = palletStatus.Initializing;
+			inst->Lost = palletStatus.Lost;
+			inst->Section = palletStatus.Section;
+			inst->Position = palletStatus.Position;
+			memcpy(&inst->Info, &palletStatus.Info, sizeof(inst->Info));
 			
 			/* Allow warning reset */
 			if(inst->ErrorReset && !inst->Internal.PreviousErrorReset)
@@ -335,7 +393,7 @@ void resetCommand(StCorePallet_typ *inst) {
 	inst->Busy = false;
 	inst->Acknowledged = false;
 	inst->Internal.CommandSelect = false;
-	inst->Internal.pCommand = NULL;
+	inst->Internal.pCommand = 0;
 }
 
 /* Aggregate command inputs */
@@ -347,4 +405,30 @@ void recordInput(StCorePallet_typ *inst, unsigned short *pData) {
 	coreAssign16(pData, CORE_COMMAND_MOTION, inst->SetMotionParameters);
 	coreAssign16(pData, CORE_COMMAND_MECHANICAL, inst->SetMechanicalParameters);
 	coreAssign16(pData, CORE_COMMAND_CONTROL, inst->SetControlParameters);
+}
+
+/* Activate error if command request returns error */
+void controlError(StCorePallet_typ *inst, long status) {
+	/* Declare local variables */
+	coreFormatArgumentType args;
+	
+	args.i[0] = inst->Internal.Select;
+	logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(status), "StCorePallet pallet %i received an error from command request", &args);
+	resetOutput(inst);
+	inst->Error = true;
+	inst->StatusID = status;
+	inst->Internal.State = CORE_FUNCTION_ERROR;
+}
+
+/* Activate error if status request returns error */
+void statusError(StCorePallet_typ *inst, long status) {
+	/* Declare local variables */
+	coreFormatArgumentType args;
+	
+	args.i[0] = inst->Internal.Select;
+	logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(status), "StCorePallet pallet %i received an error from status read", &args);
+	resetOutput(inst);
+	inst->Error = true;
+	inst->StatusID = status;
+	inst->Internal.State = CORE_FUNCTION_ERROR;
 }

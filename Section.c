@@ -40,16 +40,16 @@ void StCoreSection(StCoreSection_typ *inst) {
 				if(inst->Section < 1 || CORE_SECTION_ADDRESS_MAX < inst->Section) {
 					args.i[0] = inst->Section;
 					args.i[1] = CORE_SECTION_ADDRESS_MAX;
-					logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_INPUT), "Section %i of StCoreSection call exceeds limits [1, %]", &args);
+					logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_INDEX), "Section %i of StCoreSection exceeds limits [1, %]", &args);
 					inst->Error = true;
-					inst->StatusID = stCORE_ERROR_INPUT;
+					inst->StatusID = stCORE_ERROR_INDEX;
 					inst->Internal.State = CORE_FUNCTION_ERROR;
 				}
 				else if(core.sectionMap[inst->Section] < 0) {
 					args.i[0] = inst->Section;
-					logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_INPUT), "Section %i of StCoreSection call is not defined in system layout", &args);
+					logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_INDEX), "Section %i of StCoreSection is not defined in system layout", &args);
 					inst->Error = true;
-					inst->StatusID = stCORE_ERROR_INPUT;
+					inst->StatusID = stCORE_ERROR_INDEX;
 					inst->Internal.State = CORE_FUNCTION_ERROR;
 				}
 				
@@ -62,9 +62,9 @@ void StCoreSection(StCoreSection_typ *inst) {
 				/* Instance multiple */
 				else {
 					args.i[0] = inst->Section;
-					logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_INST), "Multiple instances of StCoreSection with section %i", &args);
+					logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_INSTANCE), "Multiple instances of StCoreSection with section %i", &args);
 					inst->Error = true;
-					inst->StatusID = stCORE_ERROR_INST;
+					inst->StatusID = stCORE_ERROR_INSTANCE;
 					inst->Internal.State = CORE_FUNCTION_ERROR;
 				}
 			}
@@ -78,10 +78,11 @@ void StCoreSection(StCoreSection_typ *inst) {
 		case CORE_FUNCTION_EXECUTING:
 			/* Check references */
 			if(core.pCyclicControl == NULL || core.pCyclicStatus == NULL) {
-				/* Do not spam the logger, StCoreSystem() logs this */
+				args.i[0] = inst->Internal.Select;
+				logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_ALLOCATION), "StCoreSection section %i is unable to reference cyclic data", &args);
 				resetOutput(inst);
 				inst->Error = true;
-				inst->StatusID = stCORE_ERROR_ALLOC;
+				inst->StatusID = stCORE_ERROR_ALLOCATION;
 				inst->Internal.State = CORE_FUNCTION_ERROR;
 				break;
 			}
@@ -90,10 +91,9 @@ void StCoreSection(StCoreSection_typ *inst) {
 			if(inst->Section != inst->Internal.Select && inst->Section != inst->Internal.PreviousSelect) {
 				args.i[0] = inst->Internal.PreviousSelect;
 				args.i[1] = inst->Section;
-				logMessage(CORE_LOG_SEVERITY_WARNING, coreLogCode(stCORE_WARNING_SELECT), "StCoreSection select %i change to %i is ignored until re-enabled", &args);
+				logMessage(CORE_LOG_SEVERITY_WARNING, coreLogCode(stCORE_WARNING_INDEX), "StCoreSection section %i index change to %i is ignored until re-enabled", &args);
+				inst->StatusID = stCORE_WARNING_INDEX;
 			}
-			
-			inst->Valid = true;
 			
 			/*******
 			 Control
@@ -143,6 +143,13 @@ void StCoreSection(StCoreSection_typ *inst) {
 			
 			SuperTrakServChanRead(inst->Internal.Select, stPAR_SECTION_PALLET_COUNT, 0, 1, (unsigned long)&dataUInt16, sizeof(dataUInt16));
 			inst->Info.PalletCount = (unsigned char)dataUInt16;
+			
+			/* Allow warning reset */
+			if(inst->ErrorReset && !inst->Internal.PreviousErrorReset)
+				inst->StatusID = 0;
+			
+			/* Report valid */
+			inst->Valid = true;
 			
 			break;
 			

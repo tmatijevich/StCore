@@ -38,8 +38,8 @@ long coreCommandCreate(unsigned char start, unsigned char target, unsigned char 
 	data.u1[0] = create->commandID;
 	getCommand(args.s[0], sizeof(args.s[0]), data);
 	if(core.pCyclicStatus == NULL) {
-		logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_ALLOC), "%s command assignment cannot reference cyclic data", &args);
-		return stCORE_ERROR_ALLOC;
+		logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_ALLOCATION), "%s command assignment cannot reference cyclic data", &args);
+		return stCORE_ERROR_ALLOCATION;
 	}
 	
 	/*************************
@@ -49,8 +49,8 @@ long coreCommandCreate(unsigned char start, unsigned char target, unsigned char 
 		if(target > core.targetCount) {
 			args.i[0] = target;
 			args.i[1] = core.targetCount;
-			logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_INPUT), "%s command's target %i context exceeds limits [1, %i]", &args);
-			return stCORE_ERROR_INPUT;
+			logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_CONTEXT), "%s command's target %i context exceeds limits [1, %i]", &args);
+			return stCORE_ERROR_CONTEXT;
 		}
 			
 		pPalletPresent = core.pCyclicStatus + core.interface.targetStatusOffset + CORE_TARGET_STATUS_BYTE_COUNT * target + 1;
@@ -58,8 +58,8 @@ long coreCommandCreate(unsigned char start, unsigned char target, unsigned char 
 			args.i[0] = target;
 			args.i[1] = *pPalletPresent;
 			args.i[2] = core.palletCount;
-			logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_INPUT), "%s command's target %i context with pallet %i present exceeding limits [1, %i]", &args);
-			return stCORE_ERROR_INPUT;
+			logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_CONTEXT), "%s command's target %i context with pallet %i present exceeding limits [1, %i]", &args);
+			return stCORE_ERROR_CONTEXT;
 		}
 		
 		create->index = *pPalletPresent;
@@ -69,8 +69,8 @@ long coreCommandCreate(unsigned char start, unsigned char target, unsigned char 
 		if(pallet < 1 || core.palletCount < pallet) {
 			args.i[0] = pallet;
 			args.i[1] = core.palletCount;
-			logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_INPUT), "%s command's pallet %i context exceeds limits [1, %i]", &args);
-			return stCORE_ERROR_INPUT;
+			logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_CONTEXT), "%s command's pallet %i context exceeds limits [1, %i]", &args);
+			return stCORE_ERROR_CONTEXT;
 		}
 		
 		create->index = pallet;
@@ -95,8 +95,8 @@ long coreCommandRequest(unsigned char index, SuperTrakCommand_t command, void *p
 	 Check Reference
 	***************/
 	if(core.pCommandBuffer == NULL) {
-		logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_ALLOC), "%s command request cannot reference command buffer", &args);
-		return stCORE_ERROR_ALLOC;
+		logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_ALLOCATION), "%s command request cannot reference command buffer", &args);
+		return stCORE_ERROR_ALLOCATION;
 	}
 	
 	/**********************
@@ -128,7 +128,7 @@ long coreCommandRequest(unsigned char index, SuperTrakCommand_t command, void *p
 	
 	/* Debug comfirmation message */
 	getParameter(args.s[2], sizeof(args.s[2]), command);
-	logMessage(CORE_LOG_SEVERITY_DEBUG, 6000, "%s %i %s command request (%s)", &args);
+	logMessage(CORE_LOG_SEVERITY_DEBUG, 4200, "%s %i %s command request (%s)", &args);
 	
 	/* Increment write index and check if full */
 	pBuffer->write = (pBuffer->write + 1) % CORE_COMMAND_BUFFER_SIZE;
@@ -168,7 +168,7 @@ void coreCommandManager(void) {
 	if(core.pCyclicControl == NULL || core.pCyclicStatus == NULL || core.pCommandBuffer == NULL || core.pSimpleRelease == NULL) {
 		if(logAlloc) {
 			logAlloc = false;
-			logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_ALLOC), "StCoreCyclic (coreCommandManager) is unable to reference cyclic data or command buffer", NULL);
+			logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_ALLOCATION), "StCoreCyclic (coreCommandManager) is unable to reference cyclic data", NULL);
 		}
 		return;
 	}
@@ -205,7 +205,7 @@ void coreCommandManager(void) {
 			if(complete) {
 				/* Confirm success or failure */
 				if(success)
-					logMessage(CORE_LOG_SEVERITY_DEBUG, 6100, "%s %i %s command acknowledged", &args);
+					logMessage(CORE_LOG_SEVERITY_DEBUG, 4300, "%s %i %s command acknowledged", &args);
 				else {
 					logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_COMMAND), "%s %i %s command execution failed", &args);
 					SET_BIT(pCommand->status, CORE_COMMAND_ERROR);
@@ -253,7 +253,9 @@ void coreCommandManager(void) {
 				start = i; /* Remember spot where the pause started */
 				if(logPause) {
 					logPause = false;
-					logMessage(CORE_LOG_SEVERITY_WARNING, 5102, "Pallet command buffers are paused because all channels are in use", NULL);
+					args.i[0] = i;
+					args.i[1] = channel;
+					logMessage(CORE_LOG_SEVERITY_WARNING, coreLogCode(stCORE_WARNING_CHANNEL), "Pallet command buffers paused at pallet=%i command channel=%i", NULL);
 				}
 			}
 			else {
@@ -331,7 +333,7 @@ void coreCommandManager(void) {
 			else if(!GET_BIT(*pTargetStatus, stTARGET_PALLET_PRESENT)) {
 				args.i[0] = i + 1;
 				args.i[1] = pSimpleCommand->command.u1[0];
-				logMessage(CORE_LOG_SEVERITY_DEBUG, 6100, "Target %i release from local move configuration %i acknowledged", &args);
+				logMessage(CORE_LOG_SEVERITY_DEBUG, 4300, "Target %i release from local move configuration %i acknowledged", &args);
 				
 				/* Clear release bits */
 				CLEAR_BIT(*pTargetRelease, lowerBit);

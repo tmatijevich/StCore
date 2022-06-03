@@ -3,33 +3,36 @@
  * Author: Tyler Matijevich
  * Date: 2022-03-02
 *******************************************************************************)
-(*Critical configuration errors:*)
 (*Initialization*)
 VAR CONSTANT
-	stCORE_ERROR_LOGBOOK : DINT := -536805912; (*StCoreInit is unable to create a logbook. Possible naming conflict with StCoreLog or insufficient user partition size*)
-	stCORE_ERROR_INIT : DINT := -536804376; (*StCoreInit has not been called. Call StCoreInit once during _INIT*)
-	stCORE_ERROR_LAYOUT : DINT := -536804276; (*Invalid SuperTrak system layout. Use TrakMaster's easy setup of the system layout*)
+	stCORE_ERROR_LOGBOOK : DINT := -536805912; (*An error occurred during initialization when creating the logbook*)
+	stCORE_ERROR_INITIALIZATION : DINT := -536804376; (*StCoreInit has not been called*)
+	stCORE_ERROR_LAYOUT : DINT := -536804276; (*Invalid SuperTrak layout due to the section count, section addresses, or network order*)
 END_VAR
 (*Cyclic*)
 VAR CONSTANT
-	stCORE_ERROR_CYCLE : DINT := -536803376; (*StCoreCyclic is not called from task class #1 or does not match cyclic timing of 800 us*)
-	stCORE_ERROR_INTERFACE : DINT := -536803276; (*Control interface configuration has been modified from initialization*)
-	stCORE_ERROR_PALLET : DINT := -536803176; (*A pallet ID exceeds the configured pallet count*)
+	stCORE_ERROR_CYCLE : DINT := -536803376; (*StCoreCyclic is not called from task class #1 or does not match cycle time of 800 us*)
+	stCORE_ERROR_PROTOCAL : DINT := -536803276; (*SuperTrak control interface configuration modified from initialization*)
+	stCORE_ERROR_PALLET : DINT := -536803176; (*An unallocated pallet has been discovered on the SuperTrak*)
 END_VAR
 (*Common*)
 VAR CONSTANT
-	stCORE_ERROR_COMM : DINT := -536802376; (*SuperTrak service channel error. See logger for more details*)
-	stCORE_ERROR_ALLOC : DINT := -536802276; (*Unable to allocate or reference cyclic and command memory storage*)
+	stCORE_ERROR_PARAMETER : DINT := -536802376; (*SuperTrak service channel error*)
+	stCORE_ERROR_ALLOCATION : DINT := -536802276; (*Unable to allocate or reference cyclic StCore data*)
 END_VAR
-(*Function errors:*)
+(*Function*)
 VAR CONSTANT
-	stCORE_ERROR_INST : DINT := -536801376; (*Multiple instances of a function block are used in the same context*)
-	stCORE_ERROR_INPUT : DINT := -536800376; (*StCore command function input out of range*)
-	stCORE_WARNING_SELECT : DINT := -1610542000; (*StCore function index selection has changed while enabled*)
-	stCORE_ERROR_BUFFER : DINT := -536800276; (*StCore command buffer is already full and the command is rejected*)
-	stCORE_WARNING_BUFFER : DINT := -1610542099; (*StCore pallet command buffer is now full and will reject commands until cleared*)
-	stCORE_ERROR_COMMAND : DINT := -536799176; (*StCore command execution failed. See SuperTrak system fault for more details.*)
-	stCORE_ERROR_TIMEOUT : DINT := -536799076; (*StCore command execution timeout*)
-	stCORE_ERROR_CRITICAL : DINT := -1; (*A critical error has occurred during StCore initialization or cyclic operation. Review logger, verify configuration and program, and restart.*)
-	stCORE_ERROR_ACKNOWLEDGE : DINT := -2; (*StCore command cannot be acknowledge because the buffer was overwritten by additional commands*)
+	stCORE_ERROR_CONTEXT : DINT := -536801376; (*StCore command context (target or pallet) does not exist on the system*)
+	stCORE_ERROR_BUFFER : DINT := -536801276; (*StCore command request is rejected due to full buffer*)
+	stCORE_WARNING_BUFFER : DINT := -1610543099; (*Future StCore command requests will be rejected until buffer empties*)
+	stCORE_WARNING_CHANNEL : DINT := -1610543098; (*Pallet command buffers are paused because all channels are in use*)
+	stCORE_ERROR_TIMEOUT : DINT := -536800976; (*StCore command response from SuperTrak has timed out*)
+	stCORE_ERROR_COMMAND : DINT := -536800876; (*SuperTrak responded with error to StCore command request*)
+END_VAR
+(*Interface*)
+VAR CONSTANT
+	stCORE_ERROR_INSTANCE : DINT := -536800376; (*Multiple instances of the function block are used in the same context*)
+	stCORE_ERROR_INDEX : DINT := -536800276; (*The user index selection (section, target, or pallet) does not exist on the system*)
+	stCORE_WARNING_INDEX : DINT := -1610542099; (*The user index selection has been modified while the function block is enabled*)
+	stCORE_ERROR_ACKNOWLEDGE : DINT := -536800176; (*StCore function block is unable to acknowledge the command request due to buffer overwrite*)
 END_VAR

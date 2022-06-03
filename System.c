@@ -41,9 +41,9 @@ void StCoreSystem(StCoreSystem_typ *inst) {
 					inst->Internal.State = CORE_FUNCTION_EXECUTING;
 				}
 				else {
-					logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_INST), "Multiple instances of StCoreSystem", NULL);
+					logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_INSTANCE), "Multiple instances of StCoreSystem", NULL);
 					inst->Error = true;
-					inst->StatusID = stCORE_ERROR_INST;
+					inst->StatusID = stCORE_ERROR_INSTANCE;
 					inst->Internal.State = CORE_FUNCTION_ERROR;
 				}
 			}
@@ -64,10 +64,10 @@ void StCoreSystem(StCoreSystem_typ *inst) {
 			}
 			/* Check references */
 			if(core.pCyclicControl == NULL || core.pCyclicStatus == NULL) {
-				logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_ALLOC), "StCoreSystem cannot reference cyclic data", NULL);
+				logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_ALLOCATION), "StCoreSystem cannot reference cyclic data", NULL);
 				resetOutput(inst);
 				inst->Error = true;
-				inst->StatusID = stCORE_ERROR_ALLOC;
+				inst->StatusID = stCORE_ERROR_ALLOCATION;
 				inst->Internal.State = CORE_FUNCTION_ERROR;
 				break;
 			}

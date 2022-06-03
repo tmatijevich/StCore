@@ -192,7 +192,7 @@ void coreLogServiceChannel(unsigned short result, unsigned short parameter, char
 			break;
 	}
 	
-	coreLog(core.ident, CORE_LOG_SEVERITY_ERROR, CORE_LOGBOOK_FACILITY, coreLogCode(stCORE_ERROR_COMM), object, "Serv. chan. error %i accessing par %i: %s", &args);
+	coreLog(core.ident, CORE_LOG_SEVERITY_ERROR, CORE_LOGBOOK_FACILITY, coreLogCode(stCORE_ERROR_PARAMETER), object, "Serv. chan. error %i accessing par %i: %s", &args);
 	
 } /* End function */
 
