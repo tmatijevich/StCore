@@ -21,7 +21,7 @@ void StCoreSystem(StCoreSystem_typ *inst) {
 	unsigned short *pSystemControl, *pSystemStatus;
 	unsigned long dataUInt32;
 	long i;
-	unsigned char *pSectionStatus;
+	unsigned short *pSectionStatus;
 		
 	/************
 	 Switch State
@@ -122,7 +122,7 @@ void StCoreSystem(StCoreSystem_typ *inst) {
 			inst->Info.SectionFaultPresent = false;
 			for(i = 0; i < core.interface.sectionCount; i++) {
 				/* Reference the section status byte */
-				pSectionStatus = core.pCyclicStatus + core.interface.sectionStatusOffset + i;
+				pSectionStatus = (unsigned short*)(core.pCyclicStatus + core.interface.sectionStatusOffset) + i;
 				
 				if(GET_BIT(*pSectionStatus, stSECTION_ENABLED)) inst->Info.Disabled = false;
 				else inst->Info.Enabled = false;
