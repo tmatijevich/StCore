@@ -30,8 +30,10 @@ extern "C"
 #define CORE_LOGBOOK_NAME 					"StCoreLog"
 #define CORE_LOGBOOK_FACILITY 				1
 #define CORE_FORMAT_SIZE 					125
-#define CORE_FORMAT_ARGUMENT_COUNT 			5
+#define CORE_FORMAT_ARGUMENT_COUNT 			6
 #define CORE_FORMAT_ARGUMENT_SIZE 			81
+#define CORE_FAULT_INSTANCE_MAX 			64 		/* Up to 64 instances of faults/warnings per context */
+#define CORE_FAULT_DETAIL_MAX 				4 		/* Four 32-bit signed detail data storage per fault instance */
 #define CORE_COMMAND_COUNT 					48 		/* Default value, max is 64 */
 #define CORE_COMMAND_BYTE_MAX 				8 		/* 64 commands max (8 bytes max) */
 #define CORE_COMMAND_BUFFER_SIZE 			4U
