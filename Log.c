@@ -196,34 +196,77 @@ void coreLogServiceChannel(unsigned short result, unsigned short parameter, char
 	
 } /* End function */
 
-/* Log SuperTrak faults and warnings */
-void coreLogFaultWarning(unsigned char index, unsigned char section) {
+void logSuperTrakFault(unsigned char section, unsigned char instance) {
 	
-	/* Local variables */
+	/***********************
+	 Declare Local Variables
+	***********************/
 	coreFormatArgumentType args;
 	char temp[80];
 	coreLogSeverityEnum severity;
-	unsigned short instanceCode[CORE_FAULT_INSTANCE_MAX];
-	long code, i, detail[CORE_FAULT_DETAIL_MAX];
+	unsigned short fault;
+	long i, status, detail[CORE_FAULT_DETAIL_MAX];
 	
-	/* Out of range */
-	if(index > 63)
-		return;
+	/**************************
+	 Read Fault Code and Detail
+	**************************/
+	status = SuperTrakServChanRead(section, 
+		(unsigned short)(section == 0) * 1465 + (unsigned short)(section > 0) * 1485,
+		instance, 1, (unsigned long)&fault, sizeof(fault));
+	if(status) return;
 	
-	/* Context */
-	if(section == 0) {
-		coreStringCopy(args.s[0], "System", sizeof(args.s[0]));
-		SuperTrakServChanRead(0, 1465, 0, CORE_FAULT_INSTANCE_MAX, (unsigned long)&instanceCode, sizeof(instanceCode));
+	for(i = 0; i < CORE_FAULT_DETAIL_MAX; i++) {
+		status = SuperTrakServChanRead(section, 
+			(unsigned short)(section == 0) * 1474 + (unsigned short)(section > 0) * 1494 + i,
+			instance, 1, (unsigned long)&detail[i], sizeof(detail[i]));
+		if(status) return;
+		args.i[i + 1] = detail[i];
 	}
+	
+	/**************
+	 Detail Message
+	**************/
+	/* Give context to the detail integers depending on the fault or warning */
+	switch(fault) {
+		case 0: /* Motor supply voltage out of range */
+			coreStringCopy(args.s[2], "N/A", sizeof(args.s[2]));
+			coreStringCopy(args.s[3], "Left motor voltage", sizeof(args.s[3]));
+			coreStringCopy(args.s[4], "Right motor voltage", sizeof(args.s[4]));
+			coreStringCopy(args.s[5], "N/A", sizeof(args.s[5]));
+			break;
+		case 15: /* Excessive pallet following error */
+			coreStringCopy(args.s[2], "Pallet ID", sizeof(args.s[2]));
+			coreStringCopy(args.s[3], "Position setpoint", sizeof(args.s[3]));
+			coreStringCopy(args.s[4], "Actual position", sizeof(args.s[4]));
+			coreStringCopy(args.s[5], "N/A", sizeof(args.s[5]));
+			break;
+		case 26: /* Disabled pallet preset */
+			coreStringCopy(args.s[2], "Pallet ID", sizeof(args.s[2]));
+			coreStringCopy(args.s[3], "Position", sizeof(args.s[3]));
+			coreStringCopy(args.s[4], "N/A", sizeof(args.s[4]));
+			coreStringCopy(args.s[5], "N/A", sizeof(args.s[5]));
+			break;
+		default:
+			coreStringCopy(args.s[2], "Detail 0", sizeof(args.s[2]));
+			coreStringCopy(args.s[3], "Detail 1", sizeof(args.s[3]));
+			coreStringCopy(args.s[4], "Detail 2", sizeof(args.s[4]));
+			coreStringCopy(args.s[5], "Detail 3", sizeof(args.s[5]));
+			break;
+	}
+	
+	/*************
+	 Fault Message
+	*************/
+	if(section == 0)
+		coreStringCopy(args.s[0], "System", sizeof(args.s[0]));
 	else {
 		args.i[0] = section;
 		coreFormat(temp, sizeof(temp), "Section %i", &args);
 		coreStringCopy(args.s[0], temp, sizeof(args.s[0]));
-		SuperTrakServChanRead(section, 1485, 0, CORE_FAULT_INSTANCE_MAX, (unsigned long)&instanceCode, sizeof(instanceCode));
 	}
-		
+	
 	/* Fault or warning */
-	if(index < 32) {
+	if(fault < CORE_FAULT_MAX) {
 		severity = CORE_LOG_SEVERITY_ERROR;
 		coreStringCopy(args.s[1], "fault", sizeof(args.s[1]));
 	}
@@ -232,70 +275,57 @@ void coreLogFaultWarning(unsigned char index, unsigned char section) {
 		coreStringCopy(args.s[1], "warning", sizeof(args.s[1]));
 	}
 	
-	/*******
-	 Details
-	*******/
-	/* Search for this faults' instance code */
-	code = -1;
+	args.i[0] = fault % CORE_FAULT_MAX;
+	coreLog(core.ident, severity, 2, fault % CORE_FAULT_MAX, "SuperTrak", "%s %s %i (%s: %i, %s: %i, %s: %i, %s: %i)", &args);
+	
+}
+
+/* Monitor SuperTrak system and section faults and warnings */
+void coreMonitorSuperTrakFault(void) {
+	
+	/***********************
+	 Declare Local Variables
+	***********************/
+	static unsigned short systemInstance[CORE_FAULT_INSTANCE_MAX];
+	static unsigned short sectionInstance[CORE_SECTION_MAX][CORE_FAULT_INSTANCE_MAX];
+	unsigned short instance[CORE_FAULT_INSTANCE_MAX];
+	long i, j, status;
+	
+	/******
+	 System
+	******/
+	status = SuperTrakServChanRead(0, 1465, 0, CORE_FAULT_INSTANCE_MAX, (unsigned long)&instance, sizeof(instance));
+	if(status) return;
 	for(i = 0; i < CORE_FAULT_INSTANCE_MAX; i++) {
-		if(index == instanceCode[i]) {
-			code = i;
-			break;
-		}
-	}
-	
-	if(code >= 0) { /* Code found */
+		/* Skip if 65535 (unused) */
+		if(instance[i] == USHRT_MAX) continue;
 		
-		/* Read the four detail integers (fault or warning) at this code */
-		for(i = 0; i < CORE_FAULT_DETAIL_MAX; i++) {
-			SuperTrakServChanRead(section, 
-			  1474 * ((unsigned short)(section == 0)) + 1494 * ((unsigned short)(section != 0)) + i,
-			  code, 1, (unsigned long)&detail[i], sizeof(detail[i]));
-			args.i[i + 1] = detail[i];
-		}
-		
-		/* Give context to the detail integers depending on the fault or warning */
-		switch(index) {
-			case 0: /* Motor supply voltage out of range */
-				coreStringCopy(args.s[2], "N/A", sizeof(args.s[2]));
-				coreStringCopy(args.s[3], "Left motor voltage", sizeof(args.s[3]));
-				coreStringCopy(args.s[4], "Right motor voltage", sizeof(args.s[4]));
-				coreStringCopy(args.s[5], "N/A", sizeof(args.s[5]));
-				break;
-			case 15: /* Excessive pallet following error */
-				coreStringCopy(args.s[2], "Pallet ID", sizeof(args.s[2]));
-				coreStringCopy(args.s[3], "Position setpoint", sizeof(args.s[3]));
-				coreStringCopy(args.s[4], "Actual position", sizeof(args.s[4]));
-				coreStringCopy(args.s[5], "N/A", sizeof(args.s[5]));
-				break;
-			case 26: /* Disabled pallet preset */
-				coreStringCopy(args.s[2], "Pallet ID", sizeof(args.s[2]));
-				coreStringCopy(args.s[3], "Position", sizeof(args.s[3]));
-				coreStringCopy(args.s[4], "N/A", sizeof(args.s[4]));
-				coreStringCopy(args.s[5], "N/A", sizeof(args.s[5]));
-				break;
-			default:
-				coreStringCopy(args.s[2], "Detail 0", sizeof(args.s[2]));
-				coreStringCopy(args.s[3], "Detail 1", sizeof(args.s[3]));
-				coreStringCopy(args.s[4], "Detail 2", sizeof(args.s[4]));
-				coreStringCopy(args.s[5], "Detail 3", sizeof(args.s[5]));
-				break;
-		}
-	} 
-	else {
-		/* Zero out the detail integers if the code instance was not found */
-		args.i[1] = 0;
-		args.i[2] = 0;
-		args.i[3] = 0;
-		args.i[4] = 0;
-		coreStringCopy(args.s[2], "Detail 0", sizeof(args.s[2]));
-		coreStringCopy(args.s[3], "Detail 1", sizeof(args.s[3]));
-		coreStringCopy(args.s[4], "Detail 2", sizeof(args.s[4]));
-		coreStringCopy(args.s[5], "Detail 3", sizeof(args.s[5]));
+		/* Log when a new instance is recorded */
+		if(instance[i] != systemInstance[i])
+			logSuperTrakFault(0, i);
 	}
+	memcpy(systemInstance, instance, sizeof(systemInstance));
 	
-	/* Write */
-	args.i[0] = index % 32;
-	coreLog(core.ident, severity, 2, index % 32, "SuperTrak", "%s %s %i (%s: %i, %s: %i, %s: %i, %s: %i)", &args);
+	/*******
+	 Section
+	*******/
+	for(j = 1; j < CORE_SECTION_ADDRESS_MAX; j++) {
+		/* Skip undefined sections */
+		if(core.sectionMap[j] == -1) continue;
+		
+		/* Read the fault instances */
+		status = SuperTrakServChanRead(j, 1485, 0, CORE_FAULT_INSTANCE_MAX, (unsigned long)&instance, sizeof(instance));
+		if(status) return;
+		
+		for(i = 0; i < CORE_FAULT_INSTANCE_MAX; i++) {
+			/* Skip if 65535 (unused) */
+			if(instance[i] == USHRT_MAX) continue;
+			
+			/* Log when a new instance is recorded */
+			if(instance[i] != sectionInstance[core.sectionMap[j]][i])
+				logSuperTrakFault(j, i);
+		}
+		memcpy(sectionInstance[core.sectionMap[j]], instance, sizeof(sectionInstance[core.sectionMap[j]]));
+	}
 	
 } /* End function */

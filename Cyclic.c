@@ -109,6 +109,9 @@ long StCoreCyclic(void) {
 	/* Process SuperTrak status */
 	if(core.pCyclicControl && core.pCyclicStatus && core.ready) /* Only process status data if the references are valid */
 		SuperTrakProcessStatus(0, &controlInterface);
+		
+	/* Monitor faults */
+	coreMonitorSuperTrakFault();
 	
 	/**************
 	 Pallet Manager

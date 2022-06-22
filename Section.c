@@ -21,8 +21,6 @@ void StCoreSection(StCoreSection_typ *inst) {
 	coreFormatArgumentType args;
 	unsigned char *pSectionControl;
 	unsigned short *pSectionStatus;
-	unsigned long dataUInt32;
-	long i;
 	unsigned short dataUInt16;
 	
 	/************
@@ -127,19 +125,8 @@ void StCoreSection(StCoreSection_typ *inst) {
 			/********************
 			 Extended Information
 			********************/
-			SuperTrakServChanRead(inst->Internal.Select, stPAR_SECTION_FAULTS_ACTIVE, 1, 1, (unsigned long)&dataUInt32, sizeof(dataUInt32));
-			for(i = 0; i < 32; i++) {
-				if(GET_BIT(dataUInt32, i) && !GET_BIT(inst->Info.Warnings, i))
-					coreLogFaultWarning(32 + i, inst->Internal.Select);
-			}
-			memcpy(&inst->Info.Warnings, &dataUInt32, sizeof(inst->Info.Warnings));
-			
-			SuperTrakServChanRead(inst->Internal.Select, stPAR_SECTION_FAULTS_ACTIVE, 0, 1, (unsigned long)&dataUInt32, sizeof(dataUInt32));
-			for(i = 0; i < 32; i++) {
-				if(GET_BIT(dataUInt32, i) && !GET_BIT(inst->Info.Faults, i))
-					coreLogFaultWarning(i, inst->Internal.Select);
-			}
-			memcpy(&inst->Info.Faults, &dataUInt32, sizeof(inst->Info.Faults));
+			SuperTrakServChanRead(inst->Internal.Select, stPAR_SECTION_FAULTS_ACTIVE, 1, 1, (unsigned long)&inst->Info.Warnings, sizeof(inst->Info.Warnings));
+			SuperTrakServChanRead(inst->Internal.Select, stPAR_SECTION_FAULTS_ACTIVE, 0, 1, (unsigned long)&inst->Info.Faults, sizeof(inst->Info.Faults));
 			
 			SuperTrakServChanRead(inst->Internal.Select, stPAR_SECTION_PALLET_COUNT, 0, 1, (unsigned long)&dataUInt16, sizeof(dataUInt16));
 			inst->Info.PalletCount = (unsigned char)dataUInt16;

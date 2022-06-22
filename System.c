@@ -19,7 +19,6 @@ void StCoreSystem(StCoreSystem_typ *inst) {
 	***********************/
 	static StCoreSystem_typ *usedInst;
 	unsigned short *pSystemControl, *pSystemStatus;
-	unsigned long dataUInt32;
 	long i;
 	unsigned short *pSectionStatus;
 		
@@ -97,19 +96,8 @@ void StCoreSystem(StCoreSystem_typ *inst) {
 			inst->PalletCount = (unsigned char)(*(pSystemStatus + 1)); /* Access the next 16 bits */
 			
 			/* Extended information */
-			SuperTrakServChanRead(0, stPAR_SYSTEM_FAULTS_ACTIVE, 1, 1, (unsigned long)&dataUInt32, sizeof(dataUInt32));
-			for(i = 0; i < 32; i++) {
-				if(GET_BIT(dataUInt32, i) && !GET_BIT(inst->Info.Warnings, i))
-					coreLogFaultWarning(32 + i, 0);
-			}
-			memcpy(&inst->Info.Warnings, &dataUInt32, sizeof(inst->Info.Warnings));
-			
-			SuperTrakServChanRead(0, stPAR_SYSTEM_FAULTS_ACTIVE, 0, 1, (unsigned long)&dataUInt32, sizeof(dataUInt32));
-			for(i = 0; i < 32; i++) {
-				if(GET_BIT(dataUInt32, i) && !GET_BIT(inst->Info.Faults, i))
-					coreLogFaultWarning(i, 0);
-			}
-			memcpy(&inst->Info.Faults, &dataUInt32, sizeof(inst->Info.Faults));
+			SuperTrakServChanRead(0, stPAR_SYSTEM_FAULTS_ACTIVE, 1, 1, (unsigned long)&inst->Info.Warnings, sizeof(inst->Info.Warnings));
+			SuperTrakServChanRead(0, stPAR_SYSTEM_FAULTS_ACTIVE, 0, 1, (unsigned long)&inst->Info.Faults, sizeof(inst->Info.Faults));
 			
 			/* Section information */
 			inst->Info.SectionCount = core.interface.sectionCount;

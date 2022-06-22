@@ -34,6 +34,7 @@ extern "C"
 #define CORE_FORMAT_ARGUMENT_SIZE 			81
 #define CORE_FAULT_INSTANCE_MAX 			64 		/* Up to 64 instances of faults/warnings per context */
 #define CORE_FAULT_DETAIL_MAX 				4 		/* Four 32-bit signed detail data storage per fault instance */
+#define CORE_FAULT_MAX 						32 		/* 32 faults and 32 warnings per context */
 #define CORE_COMMAND_COUNT 					48 		/* Default value, max is 64 */
 #define CORE_COMMAND_BYTE_MAX 				8 		/* 64 commands max (8 bytes max) */
 #define CORE_COMMAND_BUFFER_SIZE 			4U
@@ -173,7 +174,7 @@ unsigned long coreFormat(char *str, unsigned long size, char *format, coreFormat
 long coreLog(ArEventLogIdentType ident, coreLogSeverityEnum severity, unsigned char facility, unsigned short code, char *object, char *message, coreFormatArgumentType *args);
 unsigned short coreLogCode(long event);
 void coreLogServiceChannel(unsigned short result, unsigned short parameter, char *object);
-void coreLogFaultWarning(unsigned char index, unsigned char section);
+void coreMonitorSuperTrakFault(void);
 
 /* Commands */
 long coreSimpleRelease(unsigned char target, unsigned char localMove, void *pInstance, coreCommandType **ppCommand);
