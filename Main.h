@@ -158,6 +158,7 @@ struct coreGlobalType {
 	unsigned char error;
 	long statusID;
 	ArEventLogIdentType ident;
+	unsigned char debug;
 };
 
 /****************

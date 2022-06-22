@@ -29,6 +29,7 @@ FUNCTION_BLOCK StCoreSystem (*SuperTrak system interface function*)
 	VAR_INPUT
 		Enable : BOOL; (*Enable function execution*)
 		ErrorReset : BOOL; (*Reset function error*)
+		Debug : BOOL; (*Enable debug messages of command interface*)
 		EnableAllSections : BOOL; (*(IF) Enable all sections*)
 		AcknowledgeFaults : BOOL; (*(IF) Clear SuperTrak system faults or warnings*)
 	END_VAR

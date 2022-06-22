@@ -86,7 +86,7 @@ long coreLog(ArEventLogIdentType ident, coreLogSeverityEnum severity, unsigned c
 	/* Declare local variables */
 	ArEventLogWrite_typ fbWrite;
 	char asciiMessage[CORE_FORMAT_SIZE + 1];
-	unsigned char severityMap[] = {
+	const unsigned char severityMap[] = {
 		arEVENTLOG_SEVERITY_ERROR, /* CORE_LOG_SEVERITY_ERROR */
 		arEVENTLOG_SEVERITY_WARNING, /* CORE_LOG_SEVERITY_WARNING */
 		arEVENTLOG_SEVERITY_INFO, /* CORE_LOG_SEVERITY_INFO */
@@ -100,6 +100,8 @@ long coreLog(ArEventLogIdentType ident, coreLogSeverityEnum severity, unsigned c
 		return -1;
 		
 	/* Suppress debug messages */
+	if(!core.debug && severity >= CORE_LOG_SEVERITY_DEBUG)
+		return -1;
 	
 	/* Write message */
 	memset(&fbWrite, 0, sizeof(fbWrite));

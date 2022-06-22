@@ -49,6 +49,8 @@ void StCoreSystem(StCoreSystem_typ *inst) {
 			else if(usedInst == inst) {
 				usedInst = NULL;
 			}
+			/* Manage debug state */
+			core.debug = false;
 			break;
 			
 		case CORE_FUNCTION_EXECUTING:
@@ -119,6 +121,9 @@ void StCoreSystem(StCoreSystem_typ *inst) {
 				if(GET_BIT(*pSectionStatus, stSECTION_WARNING)) inst->Info.SectionWarningPresent = true;
 				if(GET_BIT(*pSectionStatus, stSECTION_FAULT)) inst->Info.SectionFaultPresent = true;
 			}
+			
+			/* Manage debug state */
+			core.debug = inst->Debug;
 			
 			break;
 			
