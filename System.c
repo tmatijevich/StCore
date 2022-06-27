@@ -14,6 +14,20 @@ static long logMessage(coreLogSeverityEnum severity, unsigned short code, char *
 /* System core interface */
 void StCoreSystem(StCoreSystem_typ *inst) {
 	
+	/************************************************
+	 Dependencies:
+	  Global:
+	   core.pCyclicControl (w)
+	   core.pCyclicStatus
+	   core.interface
+	   core.error
+	   core.statusID
+	   core.debug (w)
+	  Subroutines:
+	   resetOutput
+	   logMessage
+	************************************************/
+	
 	/***********************
 	 Declare Local Variables
 	***********************/

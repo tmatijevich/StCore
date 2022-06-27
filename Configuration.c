@@ -14,6 +14,13 @@ long StCoreSetPalletID(unsigned char Target, unsigned char PalletID) {
 /* (Internal) Set ID of pallet at target */
 long coreSetPalletID(unsigned char target, unsigned char palletID, void *pInstance, coreCommandType **ppCommand) {
 	
+	/************************************************
+	 Dependencies:
+	  Subroutines:
+	   coreCommandCreate
+	   coreCommandRequest
+	************************************************/
+
 	/***********************
 	 Declare local variables
 	***********************/
@@ -55,6 +62,13 @@ long StCoreSetMotionParameters(unsigned char Target, unsigned char Pallet, doubl
 /* (Internal) Set pallet velocity and/or acceleration */
 long coreSetMotionParameters(unsigned char target, unsigned char pallet, double velocity, double acceleration, void *pInstance, coreCommandType **ppCommand) {
 	
+	/************************************************
+	 Dependencies:
+	  Subroutines:
+	   coreCommandCreate
+	   coreCommandRequest
+	************************************************/
+
 	/***********************
 	 Declare local variables
 	***********************/
@@ -100,6 +114,13 @@ long StCoreSetMechanicalParameters(unsigned char Target, unsigned char Pallet, d
 /* (Internal) Set pallet shelf width and offset */
 long coreSetMechanicalParameters(unsigned char target, unsigned char pallet, double shelfWidth, double centerOffset, void *pInstance, coreCommandType **ppCommand) {
 	
+	/************************************************
+	 Dependencies:
+	  Subroutines:
+	   coreCommandCreate
+	   coreCommandRequest
+	************************************************/
+
 	/***********************
 	 Declare local variables
 	***********************/
@@ -144,6 +165,13 @@ long StCoreSetControlParameters(unsigned char Target, unsigned char Pallet, unsi
 
 /* (Internal) Set pallet control parameters */
 long coreSetControlParameters(unsigned char target, unsigned char pallet, unsigned char controlGainSet, double movingFilter, double stationaryFilter, void *pInstance, coreCommandType **ppCommand) {
+	
+	/************************************************
+	 Dependencies:
+	  Subroutines:
+	   coreCommandCreate
+	   coreCommandRequest
+	************************************************/
 	
 	/***********************
 	 Declare local variables

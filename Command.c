@@ -17,6 +17,20 @@ static void getParameter(char *str, unsigned long size, SuperTrakCommand_t data)
 /* Create command ID, context, and buffer assignment */
 long coreCommandCreate(unsigned char start, unsigned char target, unsigned char pallet, unsigned short direction, coreCommandCreateType *create) {
 	
+	/************************************************
+	 Dependencies:
+	  Global:
+	   core.pCyclicStatus
+	   core.interface
+	   core.targetCount
+	   core.palletCount
+	   core.error
+	   core.statusID
+	  Subroutines:
+	   getCommand
+	   logMessage
+	************************************************/
+	
 	/***********************
 	 Declare Local Variables
 	***********************/
@@ -32,11 +46,19 @@ long coreCommandCreate(unsigned char start, unsigned char target, unsigned char 
 	/* Exception: The set pallet ID command can only be in context of target (start != 64) */
 	create->commandID = start + (unsigned char)(direction > 0 && start < CORE_COMMAND_ID_PALLET_ID) + 2 * (unsigned char)(target == 0 && start != CORE_COMMAND_ID_PALLET_ID);
 	
-	/***************
-	 Check Reference
-	***************/
+	/**********
+	 Check Core
+	**********/
 	data.u1[0] = create->commandID;
 	getCommand(args.s[0], sizeof(args.s[0]), data);
+	
+	/* Check cyclic core */
+	if(core.error) {
+		logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(core.statusID), "%s command assignment aborted due to critical error in StCore", &args);
+		return core.statusID;
+	}
+	
+	/* Check reference */
 	if(core.pCyclicStatus == NULL) {
 		logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_ALLOCATION), "%s command assignment cannot reference cyclic data", &args);
 		return stCORE_ERROR_ALLOCATION;
@@ -84,6 +106,17 @@ long coreCommandCreate(unsigned char start, unsigned char target, unsigned char 
 /* Add command to pallet buffer */
 long coreCommandRequest(unsigned char index, SuperTrakCommand_t command, void *pInstance, coreCommandType **ppCommand) {
 	
+	/************************************************
+	 Dependencies:
+	  Global:
+	   core.pCommandBuffer (rw)
+	   core.error
+	   core.statusID
+	  Subroutines:
+	   getParameter
+	   logMessage
+	************************************************/
+	
 	/***********************
 	 Declare Local Variables
 	***********************/
@@ -91,9 +124,18 @@ long coreCommandRequest(unsigned char index, SuperTrakCommand_t command, void *p
 	coreCommandType *pCommand;
 	coreFormatArgumentType args;
 	
-	/***************
-	 Check Reference
-	***************/
+	/**********
+	 Check Core
+	**********/
+	getCommand(args.s[0], sizeof(args.s[0]), command);
+	
+	/* Check cyclic core */
+	if(core.error) {
+		logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(core.statusID), "%s command request aborted due to critical error in StCore", &args);
+		return core.statusID;
+	}
+	
+	/* Check reference */
 	if(core.pCommandBuffer == NULL) {
 		logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_ALLOCATION), "%s command request cannot reference command buffer", &args);
 		return stCORE_ERROR_ALLOCATION;
@@ -146,10 +188,28 @@ long coreCommandRequest(unsigned char index, SuperTrakCommand_t command, void *p
 /* Process requested user commands */
 void coreCommandManager(void) {
 	
+	/************************************************
+	 Dependencies:
+	  Global:
+	   core.pCyclicControl (w)
+	   core.pCyclicStatus 
+	   core.pSimpleRelease (rw)
+	   core.pCommandBuffer (rw)
+	   core.interface
+	   core.targetCount
+	   core.palletCount
+	   core.error
+	   core.statusID
+	  Subroutines:
+	   getCommand
+	   getContext
+	   logMessage
+	************************************************/
+	
 	/***********************
 	 Declare Local Variables
 	***********************/
-	static unsigned char logAlloc = true, logPause = true;
+	static unsigned char logAlloc = true, logCore = true, logPause = true;
 	coreCommandBufferType *pBuffer;
 	coreCommandType *pCommand;
 	SuperTrakCommand_t *pChannel;
@@ -162,18 +222,28 @@ void coreCommandManager(void) {
 	unsigned long *pSimpleReleaseTimer;
 	coreFormatArgumentType args;
 	
-	/****************
-	 Check References
-	****************/
-	if(core.pCyclicControl == NULL || core.pCyclicStatus == NULL || core.pCommandBuffer == NULL || core.pSimpleRelease == NULL) {
-		if(logAlloc) {
-			logAlloc = false;
-			logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_ALLOCATION), "StCoreCyclic (coreCommandManager) is unable to reference cyclic data", NULL);
+	/**********
+	 Check Core
+	**********/
+	/* Check cyclic core */
+	if(core.error) {
+		if(logCore) {
+			logCore = false;
+			logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(core.statusID), "Command manager is aborted due to critical in StCore", NULL);
 		}
 		return;
 	}
-	else
-		logAlloc = true;
+	else logCore = true;
+	
+	/* Check references */
+	if(core.pCyclicControl == NULL || core.pCyclicStatus == NULL || core.pCommandBuffer == NULL || core.pSimpleRelease == NULL) {
+		if(logAlloc) {
+			logAlloc = false;
+			logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_ALLOCATION), "Command manager is unable to reference cyclic data", NULL);
+		}
+		return;
+	}
+	else logAlloc = true;
 	
 	/***********************
 	 Process Command Buffers

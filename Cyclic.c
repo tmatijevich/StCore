@@ -12,6 +12,22 @@ static long logMessage(coreLogSeverityEnum severity, unsigned short code, char *
 
 /* Process SuperTrak control interface */
 long StCoreCyclic(void) {
+
+	/************************************************
+	 Dependencies:
+	  Global:
+	   core.pCyclicControl
+	   core.pCyclicStatus (w)
+	   core.interface
+	   core.palletMap (w)
+	   core.pPalletData (w)
+	   core.palletCount
+	   core.ready (w)
+	   core.error (w)
+	   core.statusID (w)
+	  Subroutines:
+	   logMessage
+	************************************************/
 	
 	/***********************
 	 Declare local variables

@@ -19,6 +19,20 @@ static void statusError(StCoreTarget_typ *inst, long status);
 /* Get target status */
 long StCoreTargetStatus(unsigned char Target, StCoreTargetStatusType *Status) {
 	
+	/************************************************
+	 Dependencies:
+	  Global:
+	   core.pCyclicStatus
+	   core.interface
+	   core.targetCount
+	   core.palletCount
+	   core.error
+	   core.statusID
+	  Subroutines:
+	   resetOutput
+	   logMessage
+	************************************************/
+	
 	/*********************** 
 	 Declare Local Variables
 	***********************/
@@ -83,6 +97,17 @@ long StCoreTargetStatus(unsigned char Target, StCoreTargetStatusType *Status) {
 
 /* Target core interface */
 void StCoreTarget(StCoreTarget_typ *inst) {
+	
+	/************************************************
+	 Dependencies:
+	  Global:
+	   core.targetCount
+	   core.error
+	   core.statusID
+	  Subroutines:
+	   resetOutput
+	   logMessage
+	************************************************/
 	
 	/*********************** 
 	 Declare Local Variables

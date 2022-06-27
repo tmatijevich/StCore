@@ -18,14 +18,32 @@ long StCoreSimpleRelease(unsigned char Target, unsigned char LocalMove) {
 /* (Internal) Release with local move configuration */
 long coreSimpleRelease(unsigned char target, unsigned char localMove, void *pInstance, coreCommandType **ppCommand) {
 	
+	/************************************************
+	 Dependencies:
+	  Global:
+	   core.pSimpleRelease
+	   core.targetCount
+	   core.error
+	   core.statusID
+	  Subroutines:
+	   logMessage
+	************************************************/
+
 	/***********************
 	 Declare Local Variables
 	***********************/
 	coreFormatArgumentType args;
 	coreCommandType *pSimpleCommand;
 	
+	if(core.error) {
+		args.i[0] = target;
+		logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(core.statusID), "Target simple release target %i aborted due to critical error in StCore", &args);
+		return core.statusID;
+	}
+	
 	if(core.pSimpleRelease == NULL) {
-		logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_ALLOCATION), "Target simple release unable to reference command buffers", NULL);
+		args.i[0] = target;
+		logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_ALLOCATION), "Target simple release target %i unable to reference command buffer", &args);
 		return stCORE_ERROR_ALLOCATION;
 	}
 	
@@ -73,6 +91,13 @@ long StCoreReleasePallet(unsigned char Target, unsigned char Pallet, unsigned sh
 /* (Internal) release pallet to target */
 long coreReleasePallet(unsigned char target, unsigned char pallet, unsigned short direction, unsigned char destinationTarget, void *pInstance, coreCommandType **ppCommand) {
 	
+	/************************************************
+	 Dependencies:
+	  Subroutines:
+	   coreCommandCreate
+	   coreCommandRequest
+	************************************************/
+
 	/***********************
 	 Declare local variables
 	***********************/
@@ -114,6 +139,13 @@ long StCoreReleaseTargetOffset(unsigned char Target, unsigned char Pallet, unsig
 /* (Internal) Release pallet to target + offset */
 long coreReleaseTargetOffset(unsigned char target, unsigned char pallet, unsigned short direction, unsigned char destinationTarget, double targetOffset, void *pInstance, coreCommandType **ppCommand) {
 	
+	/************************************************
+	 Dependencies:
+	  Subroutines:
+	   coreCommandCreate
+	   coreCommandRequest
+	************************************************/
+
 	/***********************
 	 Declare local variables
 	***********************/
@@ -157,6 +189,13 @@ long StCoreReleaseIncrementalOffset(unsigned char Target, unsigned char Pallet, 
 /* (Internal) Increment pallet offset */
 long coreReleaseIncrementalOffset(unsigned char target, unsigned char pallet, double incrementalOffset, void *pInstance, coreCommandType **ppCommand) {
 	
+	/************************************************
+	 Dependencies:
+	  Subroutines:
+	   coreCommandCreate
+	   coreCommandRequest
+	************************************************/
+	
 	/***********************
 	 Declare local variables
 	***********************/
@@ -198,6 +237,13 @@ long StCoreContinueMove(unsigned char Target, unsigned char Pallet) {
 
 /* (Internal) Resume pallet movement when at mandatory stop */
 long coreContinueMove(unsigned char target, unsigned char pallet, void *pInstance, coreCommandType **ppCommand) {
+	
+	/************************************************
+	 Dependencies:
+	  Subroutines:
+	   coreCommandCreate
+	   coreCommandRequest
+	************************************************/
 	
 	/***********************
 	 Declare local variables

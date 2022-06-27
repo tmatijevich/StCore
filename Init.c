@@ -20,6 +20,18 @@ struct coreGlobalType core = {.error = true, .statusID = stCORE_ERROR_INITIALIZA
 /* Initialize SuperTrak, verify layout, read targets, and size control interface */
 long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceList, unsigned char PalletCount, unsigned char NetworkIOCount) {
 	
+	/************************************************
+	 Dependencies:
+	  Global:
+	   Writes to all global variables except
+	    core.palletMap
+		core.ready
+		core.debug
+	  Subroutines:
+	   logMessage
+	   logMemoryManagement
+	************************************************/
+	
 	/***********************
 	 Declare Local Variables 
 	***********************/
@@ -321,7 +333,7 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	memset(core.pCyclicStatus, 0, allocationSize); /* Initialization memory to zero */
 	
 	/* Memory for simple target release */
-	allocationSize = sizeof(coreCommandType) * core.targetCount;
+	allocationSize = sizeof(coreCommandType) * MAX(core.targetCount, 1);
 	if(core.pSimpleRelease)
 		TMP_free(allocationSize, (void**)core.pSimpleRelease);
 	status = TMP_alloc(allocationSize, (void**)&core.pSimpleRelease);
@@ -332,7 +344,7 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	memset(core.pSimpleRelease, 0, allocationSize); /* Initialization memory to zero */
 	
 	/* Memory for pallet command buffers */
-	allocationSize = sizeof(coreCommandBufferType) * core.palletCount;
+	allocationSize = sizeof(coreCommandBufferType) * MAX(core.palletCount, 1);
 	if(core.pCommandBuffer)
 		TMP_free(allocationSize, (void**)core.pCommandBuffer);
 	status = TMP_alloc(allocationSize, (void**)&core.pCommandBuffer);
@@ -343,7 +355,7 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	memset(core.pCommandBuffer, 0, allocationSize); /* Initialization memory to zero */
 	
 	/* Memory for pallet information */
-	allocationSize = sizeof(SuperTrakPalletInfo_t) * core.palletCount;
+	allocationSize = sizeof(SuperTrakPalletInfo_t) * MAX(core.palletCount, 1);
 	if(core.pPalletData)
 		TMP_free(allocationSize, (void**)core.pPalletData);
 	status = TMP_alloc(allocationSize, (void**)&core.pPalletData);

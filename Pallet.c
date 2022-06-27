@@ -19,6 +19,19 @@ static void statusError(StCorePallet_typ *inst, long status);
 /* Get pallet status */
 long StCorePalletStatus(unsigned char Pallet, StCorePalletStatusType *Status) {
 	
+	/************************************************
+	 Dependencies:
+	  Global:
+	   core.palletCount
+	   core.palletMap
+	   core.pPalletData
+	   core.error
+	   core.statusID
+	  Subroutines:
+	   resetOutput
+	   logMessage
+	************************************************/
+	
 	/*********************** 
 	 Declare Local Variables
 	***********************/
@@ -97,6 +110,17 @@ long StCorePalletStatus(unsigned char Pallet, StCorePalletStatusType *Status) {
 
 /* Pallet interface */
 void StCorePallet(StCorePallet_typ *inst) {
+	
+	/************************************************
+	 Dependencies:
+	  Global:
+	   core.palletMap
+	   core.error
+	   core.statusID
+	  Subroutines:
+	   resetOutput
+	   logMessage
+	************************************************/
 	
 	/*********************** 
 	 Declare Local Variables

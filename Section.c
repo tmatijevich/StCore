@@ -14,6 +14,20 @@ static long logMessage(coreLogSeverityEnum severity, unsigned short code, char *
 /* Section core interface */
 void StCoreSection(StCoreSection_typ *inst) {
 	
+	/************************************************
+	 Dependencies:
+	  Global:
+	   core.pCyclicControl (w)
+	   core.pCyclicStatus
+	   core.interface
+	   core.sectionMap
+	   core.error
+	   core.statusID
+	  Subroutines:
+	   resetOutput
+	   logMessage
+	************************************************/
+	
 	/***********************
 	 Declare Local Variables
 	***********************/
@@ -74,6 +88,17 @@ void StCoreSection(StCoreSection_typ *inst) {
 			break;
 			
 		case CORE_FUNCTION_EXECUTING:
+			/* Check cyclic core */
+			if(core.error) {
+				args.i[0] = inst->Internal.Select;
+				logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(core.statusID), "Cannot execute StCoreSection section %i due to critical error in StCore", &args);
+				resetOutput(inst);
+				inst->Error = true;
+				inst->StatusID = core.statusID;
+				inst->Internal.State = CORE_FUNCTION_ERROR;
+				break;
+			}
+			
 			/* Check references */
 			if(core.pCyclicControl == NULL || core.pCyclicStatus == NULL) {
 				args.i[0] = inst->Internal.Select;
