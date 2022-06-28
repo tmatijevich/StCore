@@ -34,8 +34,9 @@ void StCoreSection(StCoreSection_typ *inst) {
 	static StCoreSection_typ *usedInst[CORE_SECTION_ADDRESS_MAX + 1];
 	coreFormatArgumentType args;
 	unsigned char *pSectionControl;
-	unsigned short *pSectionStatus;
-	unsigned short dataUInt16;
+	unsigned short *pSectionStatus, palletCount, hardwareSensors[CORE_SECTION_SENSOR_MAX];
+	unsigned long sectionPower;
+	long i;
 	
 	/************
 	 Switch State
@@ -153,8 +154,25 @@ void StCoreSection(StCoreSection_typ *inst) {
 			SuperTrakServChanRead(inst->Internal.Select, stPAR_SECTION_FAULTS_ACTIVE, 1, 1, (unsigned long)&inst->Info.Warnings, sizeof(inst->Info.Warnings));
 			SuperTrakServChanRead(inst->Internal.Select, stPAR_SECTION_FAULTS_ACTIVE, 0, 1, (unsigned long)&inst->Info.Faults, sizeof(inst->Info.Faults));
 			
-			SuperTrakServChanRead(inst->Internal.Select, stPAR_SECTION_PALLET_COUNT, 0, 1, (unsigned long)&dataUInt16, sizeof(dataUInt16));
-			inst->Info.PalletCount = (unsigned char)dataUInt16;
+			SuperTrakServChanRead(inst->Internal.Select, stPAR_SECTION_PALLET_COUNT, 0, 1, (unsigned long)&palletCount, sizeof(palletCount));
+			inst->Info.PalletCount = (unsigned char)palletCount;
+			
+			SuperTrakServChanRead(inst->Internal.Select, stPAR_SECTION_LOAD_POWER, 0, 1, (unsigned long)&sectionPower, sizeof(sectionPower));
+			inst->Info.LoadPower = (float)sectionPower;
+			SuperTrakServChanRead(inst->Internal.Select, stPAR_SECTION_PEAK_POWER, 0, 1, (unsigned long)&sectionPower, sizeof(sectionPower));
+			inst->Info.PeakPower = (float)sectionPower;
+			SuperTrakServChanRead(inst->Internal.Select, 1393, 0, 1, (unsigned long)&sectionPower, sizeof(sectionPower));
+			inst->Info.AveragePower = (float)sectionPower;
+			
+			SuperTrakServChanRead(inst->Internal.Select, stPAR_HARDWARE_SENSORS, 0, CORE_SECTION_SENSOR_MAX, (unsigned long)&hardwareSensors, sizeof(hardwareSensors));
+			for(i = 0; i < 5; i++) {
+				inst->Info.Left.MotorTemp[i] = ((float)hardwareSensors[i]) / 100.0;
+				inst->Info.Right.MotorTemp[i] = ((float)hardwareSensors[8 + i]) / 100.0;
+			}
+			inst->Info.Left.ElectronicsTemp = ((float)hardwareSensors[5]) / 100.0;
+			inst->Info.Left.MotorVoltage = ((float)hardwareSensors[6]) / 100.0;
+			inst->Info.Right.ElectronicsTemp = ((float)hardwareSensors[13]) / 100.0;
+			inst->Info.Right.MotorVoltage = ((float)hardwareSensors[14]) / 100.0;
 			
 			/* Allow warning reset */
 			if(inst->ErrorReset && !inst->Internal.PreviousErrorReset)

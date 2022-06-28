@@ -35,6 +35,7 @@ void StCoreSystem(StCoreSystem_typ *inst) {
 	unsigned short *pSystemControl, *pSystemStatus;
 	long i;
 	unsigned short *pSectionStatus;
+	unsigned long systemPower;
 		
 	/************
 	 Switch State
@@ -114,6 +115,13 @@ void StCoreSystem(StCoreSystem_typ *inst) {
 			/* Extended information */
 			SuperTrakServChanRead(0, stPAR_SYSTEM_FAULTS_ACTIVE, 1, 1, (unsigned long)&inst->Info.Warnings, sizeof(inst->Info.Warnings));
 			SuperTrakServChanRead(0, stPAR_SYSTEM_FAULTS_ACTIVE, 0, 1, (unsigned long)&inst->Info.Faults, sizeof(inst->Info.Faults));
+			
+			SuperTrakServChanRead(0, stPAR_SYSTEM_LOAD_POWER, 0, 1, (unsigned long)&systemPower, sizeof(systemPower));
+			inst->Info.LoadPower = (float)systemPower;
+			SuperTrakServChanRead(0, stPAR_SYSTEM_PEAK_POWER, 0, 1, (unsigned long)&systemPower, sizeof(systemPower));
+			inst->Info.PeakPower = (float)systemPower;
+			SuperTrakServChanRead(0, stPAR_SYSTEM_AVERAGE_POWER, 0, 1, (unsigned long)&systemPower, sizeof(systemPower));
+			inst->Info.AveragePower = (float)systemPower;
 			
 			/* Section information */
 			inst->Info.SectionCount = core.interface.sectionCount;

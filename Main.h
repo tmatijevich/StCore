@@ -40,6 +40,7 @@ extern "C"
 #define CORE_COMMAND_BUFFER_SIZE 			4U
 #define CORE_SECTION_MAX 					64 		/* SuperTrak is allowed up to 64 gateway communication boards */
 #define CORE_SECTION_ADDRESS_MAX 			99 		/* Users can number sections with 1-99 */
+#define CORE_SECTION_SENSOR_MAX 			16 		/* 16 sensor values are available per section (some are reserved) */
 #define CORE_TARGET_MAX 					256 	/* Users can define up to 255 targets (target 0 is a placeholder) */
 #define CORE_PALLET_MAX 					256 	/* SuperTrak memory structure has up to 256 pallets */
 #define CORE_PALLET_ID_MAX 					254 	/* Users can number pallets 1-254, 0 for unidentified */
