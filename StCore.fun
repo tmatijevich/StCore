@@ -244,3 +244,18 @@ FUNCTION_BLOCK StCorePallet (*Pallet core interface*)
 		Internal : StCoreFunctionInternalType; (*Local internal data*)
 	END_VAR
 END_FUNCTION_BLOCK
+(*Network IO*)
+
+FUNCTION StCoreGetNetworkIO : DINT (*Get network IO (output)*)
+	VAR_INPUT
+		Offset : USINT; (*Network output offset*)
+		pValue : REFERENCE TO BOOL; (*Reference output value*)
+	END_VAR
+END_FUNCTION
+
+FUNCTION StCoreSetNetworkIO : DINT (*Set network IO (input)*)
+	VAR_INPUT
+		Offset : USINT; (*Network input offset*)
+		Value : BOOL; (*Network input value*)
+	END_VAR
+END_FUNCTION
