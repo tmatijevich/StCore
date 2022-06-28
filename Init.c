@@ -40,7 +40,7 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	long status, i, j, k;
 	coreFormatArgumentType args;
 	unsigned short sectionCount, networkOrder[CORE_SECTION_MAX], headSection, flowDirection;
-	unsigned short dataUInt16[255];
+	unsigned short targetSection[CORE_TARGET_MAX];
 	unsigned long allocationSize;
 	
 	/********************
@@ -209,18 +209,17 @@ long StCoreInit(char *StoragePath, char *SimIPAddress, char *EthernetInterfaceLi
 	}
 	
 	/************
-	 Read targets
+	 Read Targets
 	************/
-	/* Read section of 255 targets, indexed 0..254 */
-	status = SuperTrakServChanRead(0, stPAR_TARGET_SECTION, 1, COUNT_OF(dataUInt16), (unsigned long)&dataUInt16, sizeof(dataUInt16));
+	status = SuperTrakServChanRead(0, stPAR_TARGET_SECTION, 0, CORE_TARGET_MAX, (unsigned long)&targetSection, sizeof(targetSection));
 	if(status != scERR_SUCCESS) {
 		coreLogServiceChannel((unsigned short)status, stPAR_TARGET_SECTION, LOG_OBJECT);
 		return core.statusID = stCORE_ERROR_PARAMETER;
 	}
 	
 	/* Find the last target to be defined (non-zero section number) */
-	for(i = 0, core.targetCount = 0; i < COUNT_OF(dataUInt16); i++) {
-		if(dataUInt16[i])
+	for(i = 0, core.targetCount = 0; i < CORE_TARGET_MAX; i++) {
+		if(targetSection[i])
 			core.targetCount = i + 1;
 	}
 

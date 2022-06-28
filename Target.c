@@ -37,10 +37,10 @@ long StCoreTargetStatus(unsigned char Target, StCoreTargetStatusType *Status) {
 	 Declare Local Variables
 	***********************/
 	unsigned char *pTargetStatus;
-	unsigned short dataUInt16;
-	long dataInt32, i;
+	long i;
 	static long timestamp;
-	static unsigned short palletDataUInt16[256];
+	static unsigned short targetSection[CORE_TARGET_MAX], destinationTarget[CORE_PALLET_MAX];
+	static long targetPosition[CORE_TARGET_MAX];
 	
 	/* Clear status structure */
 	memset(Status, 0, sizeof(*Status));
@@ -73,21 +73,22 @@ long StCoreTargetStatus(unsigned char Target, StCoreTargetStatusType *Status) {
 	
 	Status->PalletID = *(core.pCyclicStatus + core.interface.targetStatusOffset + CORE_TARGET_STATUS_BYTE_COUNT * Target + 1);
 	
-	SuperTrakServChanRead(0, stPAR_TARGET_SECTION, Target, 1, (unsigned long)&dataUInt16, sizeof(dataUInt16));
-	Status->Info.Section = (unsigned char)dataUInt16;
-	
-	SuperTrakServChanRead(0, stPAR_TARGET_POSITION, Target, 1, (unsigned long)&dataInt32, sizeof(dataInt32));
-	Status->Info.PositionUm = dataInt32;
-	Status->Info.Position = ((double)dataInt32) / 1000.0; /* um to mm */
-	
-	/* Re-read pallet data if new scan */
+	/* Pull new data on new scan */
 	if(timestamp != AsIOTimeCyclicStart()) {
 		timestamp = AsIOTimeCyclicStart();
-		SuperTrakServChanRead(0, 1339, 0, core.palletCount, (unsigned long)&palletDataUInt16, sizeof(palletDataUInt16));
+		SuperTrakServChanRead(0, stPAR_TARGET_SECTION, 0, core.targetCount, (unsigned long)&targetSection, sizeof(targetSection));
+		SuperTrakServChanRead(0, stPAR_TARGET_POSITION, 0, core.targetCount, (unsigned long)&targetPosition, sizeof(targetPosition));
+		SuperTrakServChanRead(0, 1339, 0, core.palletCount, (unsigned long)&destinationTarget, sizeof(destinationTarget));
 	}
 	
+	/* Target section and position */
+	Status->Info.Section = (unsigned char)targetSection[Target];
+	Status->Info.PositionUm = targetPosition[Target];
+	Status->Info.Position = ((double)targetPosition[Target]) / 1000.0; /* um to mm */
+	
+	/* Aggregate pallet count */
 	for(i = 0; i < core.palletCount; i++) {
-		if((unsigned char)palletDataUInt16[i] == Target) 
+		if((unsigned char)destinationTarget[i] == Target) 
 			Status->Info.PalletCount++;
 	}
 	

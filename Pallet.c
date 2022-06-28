@@ -37,12 +37,12 @@ long StCorePalletStatus(unsigned char Pallet, StCorePalletStatusType *Status) {
 	***********************/
 	SuperTrakPalletInfo_t *pPalletData;
 	static long timestamp;
-	static short velocity[UCHAR_MAX];
-	static unsigned short destination[UCHAR_MAX];
-	static unsigned short setSection[UCHAR_MAX];
-	static long setPosition[UCHAR_MAX];
-	static float setVelocity[UCHAR_MAX];
-	static float setAcceleration[UCHAR_MAX];
+	static short velocity[CORE_PALLET_MAX];
+	static unsigned short destination[CORE_PALLET_MAX];
+	static unsigned short setSection[CORE_PALLET_MAX];
+	static long setPosition[CORE_PALLET_MAX];
+	static float setVelocity[CORE_PALLET_MAX];
+	static float setAcceleration[CORE_PALLET_MAX];
 	
 	/*****
 	 Clear

@@ -5,10 +5,6 @@
 *******************************************************************************/
 
 #include "Main.h"
-#define LOG_OBJECT "Network"
-
-/* Prototypes */
-static long logMessage(coreLogSeverityEnum severity, unsigned short code, char *message, coreFormatArgumentType *args);
 
 /* Network output */
 long StCoreGetNetworkIO(unsigned char Offset, unsigned char *pValue) {
@@ -80,8 +76,3 @@ long StCoreSetNetworkIO(unsigned char Offset, unsigned char Value) {
 	return 0;
 	
 } /* End function */
-
-/* Create local logging function */
-long logMessage(coreLogSeverityEnum severity, unsigned short code, char *message, coreFormatArgumentType *args) {
-	return coreLog(core.ident, severity, CORE_LOGBOOK_FACILITY, code, LOG_OBJECT, message, args);
-}
