@@ -62,8 +62,8 @@ TYPE
 		Offset : LREAL; (*mm [-500, 500] Target offset or incremental offset*)
 	END_STRUCT;
 	StCoreMotionParameterType : 	STRUCT  (*Motion parameter structure*)
-		Velocity : REAL; (*mm/s [5, 4000] Set velocity*)
-		Acceleration : REAL; (*mm/s/s [500, 60000] Set acceleration and deceleration*)
+		Velocity : LREAL; (*mm/s [5, 4000] Set velocity*)
+		Acceleration : LREAL; (*mm/s/s [500, 60000] Set acceleration and deceleration*)
 	END_STRUCT;
 	StCoreMechanicalParameterType : 	STRUCT  (*Mechanical parameter structure*)
 		ShelfWidth : LREAL; (*mm [152, 600] Physical pallet shelf length*)
