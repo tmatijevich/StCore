@@ -70,7 +70,7 @@ long StCoreCyclic(void) {
 		
 	/* 3. Delay and save parameters */
 	else if(!core.ready) {
-		if(timerSave >= 500000) {
+		if(timerSave >= CORE_CONFIGURATION_TIMEOUT) {
 			saveParameters = 0x000020; /* Global parameters and PLC interface configuration */
 			status = SuperTrakServChanWrite(0, stPAR_SAVE_PARAMETERS, 0, 1, (unsigned long)&saveParameters, sizeof(saveParameters));
 			if(status != scERR_SUCCESS) {

@@ -396,6 +396,8 @@ void resetOutput(StCorePallet_typ *inst) {
 	inst->ServoEnabled = false;
 	inst->Initializing = false;
 	inst->Lost = false;
+	inst->Section = 0;
+	inst->Position = 0.0;
 	memset(&inst->Info, 0, sizeof(inst->Info));
 	inst->Busy = false;
 	inst->Acknowledged = false;

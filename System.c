@@ -36,6 +36,14 @@ void StCoreSystem(StCoreSystem_typ *inst) {
 	long i;
 	unsigned short *pSectionStatus;
 	unsigned long systemPower;
+	static RTInfo_typ fbRTInfo;
+	static unsigned long timer;
+	
+	/**********
+	 Cycle Time
+	**********/
+	fbRTInfo.enable = true;
+	RTInfo(&fbRTInfo);
 		
 	/************
 	 Switch State
@@ -50,8 +58,23 @@ void StCoreSystem(StCoreSystem_typ *inst) {
 			if(inst->Enable) {
 				/* Register isntance */
 				if(usedInst == NULL) {
-					usedInst = inst;
-					inst->Internal.State = CORE_FUNCTION_EXECUTING;
+					/* Do not proceed until StCoreCyclic had saved interface parameters */
+					if(core.ready) {
+						usedInst = inst;
+						inst->Internal.State = CORE_FUNCTION_EXECUTING;
+					}
+					/* Monitor for timeout in case StCoreCyclic is not called */
+					else if(timer >= 2 * CORE_CONFIGURATION_TIMEOUT) {
+						logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_CYCLE), "StCoreSystem cannot enabled due to timeout from communication with StCoreCyclic", NULL);
+						inst->Error = true;
+						inst->StatusID = stCORE_ERROR_CYCLE;
+						inst->Internal.State = CORE_FUNCTION_ERROR;
+					}
+					else {
+						/* Track time when enabled */
+						if(fbRTInfo.status == ERR_OK) timer += fbRTInfo.cycle_time;
+						else timer += CORE_CYCLE_TIME; /* Fallback increment by cycle time if RTInfo is not successful */
+					}
 				}
 				else {
 					logMessage(CORE_LOG_SEVERITY_ERROR, coreLogCode(stCORE_ERROR_INSTANCE), "Multiple instances of StCoreSystem", NULL);

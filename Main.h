@@ -45,6 +45,7 @@ extern "C"
 #define CORE_PALLET_MAX 					256 	/* SuperTrak memory structure has up to 256 pallets */
 #define CORE_PALLET_ID_MAX 					254 	/* Users can number pallets 1-254, 0 for unidentified */
 #define CORE_CYCLE_TIME 					800U 	/* 800 us cycle time */
+#define CORE_CONFIGURATION_TIMEOUT 			500000U /* 500 ms to save global interface parameters */
 #define CORE_COMMAND_TIMEOUT 				500000U /* 500 ms command request timeout */
 #define CORE_TARGET_RELEASE_PER_BYTE 		4U
 #define CORE_TARGET_RELEASE_BIT_COUNT 		2U
@@ -67,7 +68,6 @@ extern "C"
 /******
  Macros
 ******/
-#define COUNT_OF(x) ((sizeof(x)/sizeof(0[x])) / ((size_t)(!(sizeof(x) % sizeof(0[x]))))) /* https://stackoverflow.com/a/1598827 */
 #define MAX(x,y) (((x) > (y)) ? (x) : (y))
 #define MIN(x,y) (((x) < (y)) ? (x) : (y))
 #define ROUND_UP_MULTIPLE(x,y) ((x) / (y) + (size_t)((x) % (y) != 0)) * (y)
@@ -156,7 +156,7 @@ struct coreGlobalType {
 	unsigned char targetCount;
 	unsigned char palletCount;
 	unsigned char networkIOCount;
-	unsigned char ready;
+	unsigned char ready; 
 	unsigned char error;
 	long statusID;
 	ArEventLogIdentType ident;
